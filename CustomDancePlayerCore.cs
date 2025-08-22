@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using UnityEngine;
 
@@ -24,13 +26,13 @@ public class DancePlayerCore : MonoBehaviour
     public int CurrentPlayIndex { get; set; } = -1;
     // 是否正在播放
     public bool IsPlaying { get; private set; } = false;
+    private float _audioStartTime;
 
 
     // 引用依赖
     public AvatarHelper avatarHelper;
     public DanceResourceManager resourceManager;
     public DancePlayerUIManager uiManager;
-
 
     void Update()
     {
@@ -47,7 +49,7 @@ public class DancePlayerCore : MonoBehaviour
     /// </summary>
     public void InitPlayer()
     {
-        _playList = resourceManager.DanceFileList;
+        _playList = resourceManager.DanceFileList ?? new List<string>();
         CurrentPlayIndex = -1;
         IsPlaying = false;
         Debug.Log("Player initialization completed");
@@ -117,15 +119,13 @@ public class DancePlayerCore : MonoBehaviour
 
 
         SafeSetAnimatorBool(animator, "isDancing", false);
-
-        // 停止当前动画，切换控制器
-        animator.SetBool("isDancing", false);
         animator.runtimeAnimatorController = resourceManager.CurrentAnimatorCtrl;
-
-        // 开始播放舞蹈（调用角色控制器的StartDancing方法）
         animator.SetBool("isDancing", true);
-        // 将 animator.SetFloat("DanceIndex", 0); 替换为如下代码
-        animator.SetFloat(Animator.StringToHash("DanceIndex"), 0); // 使用哈希ID而非字符串
+        animator.SetFloat(Animator.StringToHash("DanceIndex"), 0);
+
+        // 关键修复：用音频时长作为基准（动画与音频时长一致）
+        _audioStartTime = Time.time;
+
 
         // 播放音频
         audioSource.Play();
@@ -278,30 +278,26 @@ public class DancePlayerCore : MonoBehaviour
     /// <summary>
     /// 检查动画是否播放完成（触发自动下一首）
     /// </summary>
+    // 重写CheckAnimationEnd，基于音频播放状态判断
+    // 修改CheckAnimationEnd方法，仅依赖isPlaying
     private void CheckAnimationEnd()
     {
-        if (!IsPlaying || !avatarHelper.IsAvatarAvailable()) return;
+        if (!IsPlaying || !avatarHelper.IsAvatarAvailable() || !resourceManager.IsResourceLoaded())
+            return;
 
+        AudioSource audioSource = avatarHelper.CurrentAudioSource;
 
-        Animator animator = avatarHelper.CurrentAnimator;
-        float normalizedTime = avatarHelper.GetAnimatorNormalizedTime();
-
-        // 后续判断逻辑同方案1
-        bool isUsingDanceController = animator.runtimeAnimatorController == resourceManager.CurrentAnimatorCtrl;
-        bool isNotTransition = !animator.IsInTransition(0);
-        bool isAnimationEnd = normalizedTime >= 1f;
-
-        if (isUsingDanceController && isNotTransition && isAnimationEnd)
+        // 核心逻辑：如果当前应该在播放，但音频已停止（播放完成）
+        if (!audioSource.isPlaying)
         {
-            Debug.Log("舞蹈动画播放完成，自动切换下一首");
-            PlayNext();
+            // 添加小延迟容错（避免音频刚启动时的短暂状态异常）
+            if (Time.time - _audioStartTime > 0.5f)
+            {
+                Debug.Log("音频已停止播放，自动切换下一首");
+                PlayNext();
+            }
         }
     }
-
-    /// <summary>
-    /// 获取当前播放进度（0~1，给进度条用）
-    /// </summary>
-
     /// <summary>
     /// 获取当前播放的文件名（给UI显示用）
     /// </summary>

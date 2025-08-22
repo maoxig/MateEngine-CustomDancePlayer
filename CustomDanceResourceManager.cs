@@ -159,7 +159,7 @@ public class DanceResourceManager : MonoBehaviour
     public void UnloadCurrentResource()
     {
         // 1. 停止音频播放
-        if (avatarHelper.IsAvatarAvailable())
+        if (avatarHelper.IsAvatarAvailable() && avatarHelper.CurrentAudioSource != null)
         {
             avatarHelper.CurrentAudioSource.Stop();
             avatarHelper.CurrentAudioSource.clip = null;

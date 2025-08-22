@@ -1,8 +1,10 @@
-﻿using System;
+﻿using LLMUnitySamples;
+using System;
 using System.Collections.Generic;
 using System.Reflection;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 /// <summary>
@@ -12,7 +14,6 @@ public class DancePlayerUIManager : MonoBehaviour
 {
     // UI控件引用（在Inspector赋值）
     public TMP_Text CurrentPlayText;       // 当前播放文件名
-    public Slider ProgressSlider;          // 播放进度条
     public Button PrevBtn;                 // 上一首按钮
     public Button PlayPauseBtn;            // 播放/暂停按钮（当前仅播放）
     public Button NextBtn;                 // 下一首按钮
@@ -21,97 +22,73 @@ public class DancePlayerUIManager : MonoBehaviour
     public TMP_Text PlayModeText;          // 播放模式文本
     public TMP_Text AvatarStatusText;      // 角色状态文本
     public TMP_Dropdown DanceFileDropdown; // 舞蹈文件下拉框（选择播放）
+    [Header("Key Prompt")]
+    public TMP_Text _toggleKeyText; // 在Inspector中拖入文本组件
+
 
     // 引用播放器核心
     public DancePlayerCore playerCore;
 
-    private Canvas _uiCanvas; // 本UI的Canvas组件（控制显示/隐藏）
 
     [Header("UI Toggle")]
     public KeyCode toggleKey = KeyCode.K; // 可配置的切换按键
-    private bool _isUIVisible; // UI当前显示状态
-    private bool _lastUIVisibleState = false;
 
-    [Header("Bone Follow")]
-    public bool followBone = true;
-    public HumanBodyBones targetBone = HumanBodyBones.Head;
-    [Range(0f, 1f)] public float followSmoothness = 0.8f;
-    private RectTransform _uiRect; // 本UI的RectTransform（用于位置更新）
-    [Tooltip("UI相对于骨骼的像素偏移：X=左右（正数右移，负数左移），Y=上下（正数上移，负数下移）")]
-    public Vector2 followOffset = new Vector2(0, 150); // 默认上移150像素（避免紧贴骨骼）
-    private Vector3 _targetScreenPos;
 
-    public float followScale = 1f; // 默认1，可放大到5-20倍测试
+    // 新增：联动游戏菜单逻辑的变量
+    private MenuActions _gameMenuActions; // 游戏原有MenuActions实例
+    private MenuEntry _myUIMenuEntry;     // 你的UI对应的MenuEntry（用于加入/移除列表）
+    private bool _isMyUIAddedToMenuList;  // 标记是否已加入menuEntries（防止重复添加）
+    private Canvas _uiCanvas;         // 你的UI的Canvas组件
 
-    private Camera _mainCamera; // 新增缓存
+
     void Start()
     {
-
         if (playerCore != null && playerCore.resourceManager != null)
         {
             playerCore.resourceManager.RefreshDanceFileList();
         }
         // 1. 初始化UI状态
         InitUI();
-
         // 2. 绑定按钮事件
         BindButtonEvents();
+
 
         // 3. 初始化播放器
         playerCore.InitPlayer();
         RefreshDropdown();
+        UpdateToggleKeyText(IsUIVisible());
     }
 
     void Update()
     {
-        // 最高优先级：处理moveCanvas状态（确保先于游戏其他逻辑）
-        bool currentUIVisible = IsUIVisible();
-        if (currentUIVisible != _lastUIVisibleState)
-        {
-            // 状态变化时才执行，减少性能消耗
-            _lastUIVisibleState = currentUIVisible;
-        }
 
-        HandleKeyToggleUI();
         UpdateUI();
-        // 如果启用跟随且UI可见，更新位置
-        if (followBone && _uiRect != null && _uiCanvas != null && _uiCanvas.enabled)
-        {
-            UpdateUIFollowBone();
-        }
+
     }
 
     private void Awake()
     {
-
-        // 获取本UI面板的RectTransform（确保脚本挂在UI面板上或其直接父节点）
-        _uiRect = GetComponent<RectTransform>();
-        if (_uiRect == null)
+        _gameMenuActions = UnityEngine.Object.FindFirstObjectByType<MenuActions>();
+        if (_gameMenuActions == null)
         {
-            // 尝试从父节点获取（防止脚本挂在子节点）
-            _uiRect = GetComponentInParent<RectTransform>();
-            if (_uiRect == null)
-            {
-                Debug.LogError("UI面板未找到RectTransform组件！");
-                followBone = false; // 禁用跟随功能
-            }
+            Debug.LogWarning("未找到游戏的MenuActions脚本，UI点击和滚轮控制可能失效！");
+            return;
         }
+
+        // 新增：创建你的UI对应的MenuEntry（配置为“打开时禁用moveCanvas和滚轮”）
+        _myUIMenuEntry = new MenuEntry
+        {
+            menu = gameObject,                  // 你的UI面板根对象（脚本挂载的对象）
+            blockMovement = true,               // 关键：打开时禁用moveCanvas和滚轮缩放
+            blockHandTracking = false,          // 不影响游戏手部追踪（按需调整）
+            blockReaction = false,              // 不影响角色反应（按需调整）
+            blockChibiMode = false              // 不影响小人模式（按需调整）
+        };
+
         // 获取本UI的Canvas（确保脚本挂在Canvas节点或其子节点）
         _uiCanvas = GetComponentInParent<Canvas>();
-        if (_uiCanvas == null)
-        {
-            Debug.LogWarning("DancePlayerUIManager: UI Canvas not found!");
-        }
-        else
-        {
-            _isUIVisible = _uiCanvas.enabled;
-        }
-        _mainCamera = Camera.main;
-        if (_mainCamera == null)
-        {
-            Debug.LogWarning("MainCamera not found, bone follow may fail");
-            followBone = false;
-        }
+
+
     }
 
     private void OnDestroy()
@@ -130,8 +107,6 @@ public class DancePlayerUIManager : MonoBehaviour
     private void InitUI()
     {
         CurrentPlayText.text = "Now Playing: None";
-        ProgressSlider.value = 0f;
-        ProgressSlider.interactable = false; // Progress bar is not draggable by default (simplified)
         PlayModeText.text = playerCore.GetPlayModeText();
         AvatarStatusText.text = "Avatar Status: Not Connected";
     }
@@ -158,16 +133,6 @@ public class DancePlayerUIManager : MonoBehaviour
         // 更新当前播放文件名
         CurrentPlayText.text = $"Now Playing: {playerCore.GetCurrentPlayFileName()}";
 
-        // 更新进度条
-        if (playerCore.IsPlaying && playerCore.avatarHelper.IsAvatarAvailable())
-        {
-            float normalizedTime = playerCore.avatarHelper.GetAnimatorNormalizedTime(); // 后续可封装到AvatarHelper
-            ProgressSlider.value = Mathf.Clamp01(normalizedTime);
-        }
-        else
-        {
-            ProgressSlider.value = 0f;
-        }
 
         // Update avatar status
         if (playerCore.avatarHelper.IsAvatarAvailable())
@@ -203,7 +168,18 @@ public class DancePlayerUIManager : MonoBehaviour
             DanceFileDropdown.captionText.text = currentFileName;
         }
     }
-
+    /// <summary>
+    /// 暴露给父组件：更新按键提示文本（传入当前显示状态）
+    /// </summary>
+    public void UpdateToggleKeyText(bool isVisible)
+    {
+        if (_toggleKeyText != null)
+        {
+            _toggleKeyText.text = isVisible
+                ? $"Hide UI (Press {toggleKey})"
+                : $"Show UI (Press {toggleKey})";
+        }
+    }
     /// <summary>
     /// 播放/暂停按钮点击（当前仅支持播放，暂停需额外处理动画暂停）
     /// </summary>
@@ -214,9 +190,15 @@ public class DancePlayerUIManager : MonoBehaviour
         {
             playerCore.PlayDanceByIndex(DanceFileDropdown.value);
         }
-        // （可选）添加暂停功能：需处理Animator.SetBool("isDancing", false)和音频Pause()
+       
     }
-
+    /// <summary>
+    /// 修复：实时判断UI是否可见（直接读Canvas.enabled，不依赖缓存变量）
+    /// </summary>
+    public bool IsUIVisible()
+    {
+        return _uiCanvas != null && _uiCanvas.enabled;
+    }
     /// <summary>
     /// 停止按钮点击
     /// </summary>
@@ -256,6 +238,7 @@ public class DancePlayerUIManager : MonoBehaviour
     public void RefreshDropdown()
     {
         DanceFileDropdown.ClearOptions();
+        playerCore.resourceManager.RefreshDanceFileList();
         var danceFiles = playerCore.resourceManager.DanceFileList;
         if (danceFiles.Count == 0)
         {
@@ -279,76 +262,41 @@ public class DancePlayerUIManager : MonoBehaviour
             DanceFileDropdown.AddOptions(displayNames);
         }
     }
-    /// <summary>
-    /// 准确判断本UI是否处于可见状态
-    /// </summary>
-    private bool IsUIVisible()
-    {
-        // 同时检查Canvas是否启用 + 自身 GameObject 是否激活
-        bool canvasEnabled = _uiCanvas != null && _uiCanvas.enabled;
-        bool gameObjectActive = gameObject.activeSelf; // 假设脚本挂在UI根节点
-        return canvasEnabled && gameObjectActive;
-    }
+
 
     /// <summary>
-    /// K键切换UI显示/隐藏
+    /// 将你的UI加入MenuActions的menuEntries，禁用moveCanvas和滚轮
     /// </summary>
-    private void HandleKeyToggleUI()
+    public void AddMyUIToGameMenuList()
     {
-        if (_uiCanvas == null) return;
+        if (_gameMenuActions == null || _isMyUIAddedToMenuList || _myUIMenuEntry == null)
+            return;
 
-        if (Input.GetKeyDown(toggleKey))
+        // 防止重复添加（遍历检查是否已存在）
+        bool isAlreadyInList = _gameMenuActions.menuEntries.Exists(
+            entry => entry.menu == gameObject
+        );
+        if (!isAlreadyInList)
         {
-            _isUIVisible = !_isUIVisible;
-            _uiCanvas.enabled = _isUIVisible;
-            _lastUIVisibleState = _isUIVisible;
+            _gameMenuActions.menuEntries.Add(_myUIMenuEntry);
+            _isMyUIAddedToMenuList = true;
+            Debug.Log("你的UI已加入游戏菜单列表，禁用moveCanvas和滚轮缩放");
         }
     }
-    private void UpdateUIFollowBone()
+
+    /// <summary>
+    /// 将你的UI从MenuActions的menuEntries移除，恢复moveCanvas和滚轮
+    /// </summary>
+    public void RemoveMyUIFromGameMenuList()
     {
-        // 1. 基础检查（角色、组件是否可用）
-        if (!playerCore.avatarHelper.IsAvatarAvailable() || _uiRect == null || _uiCanvas == null || _mainCamera == null)
+        if (_gameMenuActions == null || !_isMyUIAddedToMenuList || _myUIMenuEntry == null)
             return;
 
-        Animator targetAnimator = playerCore.avatarHelper.CurrentAnimator;
-        Transform boneTransform = targetAnimator.GetBoneTransform(targetBone);
-        if (boneTransform == null || Camera.main == null)
-            return;
-
-        // 2. 骨骼世界位置 → 屏幕坐标
-        Vector3 boneScreenPos = _mainCamera.WorldToScreenPoint(boneTransform.position);
-        // 放大骨骼自身的移动幅度（可选，根据角色运动幅度调整）
-        boneScreenPos = new Vector3(
-            boneScreenPos.x * (1 + followScale * 0.1f),  // 轻微放大X方向运动
-            boneScreenPos.y * (1 + followScale * 0.1f),  // 轻微放大Y方向运动
-            boneScreenPos.z
+        // 从列表中移除你的UI对应的MenuEntry
+        _gameMenuActions.menuEntries.RemoveAll(
+            entry => entry.menu == gameObject
         );
-        // 3. 平滑插值（避免UI抖动）
-        _targetScreenPos = Vector3.Lerp(_targetScreenPos, boneScreenPos, 1f - followSmoothness);
-
-        // 4. 关键：将屏幕坐标+偏移量 → UI世界坐标
-        RectTransform canvasRect = _uiCanvas.GetComponent<RectTransform>();
-        if (canvasRect == null)
-            return;
-
-        // 4.1 先给目标屏幕位置添加偏移量（像素单位）
-        Vector3 offsetScreenPos = _targetScreenPos + new Vector3(
-            followOffset.x * followScale,  // X方向偏移 × 缩放因子
-            followOffset.y * followScale,  // Y方向偏移 × 缩放因子
-            0
-        );
-
-        // 4.2 转换为UI坐标（兼容所有Canvas渲染模式）
-        if (RectTransformUtility.ScreenPointToWorldPointInRectangle(
-            canvasRect,          // Canvas的RectTransform
-            offsetScreenPos,     // 带偏移的屏幕位置
-            _uiCanvas.worldCamera, // Canvas的相机（Overlay模式下为null，自动兼容）
-            out Vector3 uiWorldPos))
-        {
-            // 5. 应用最终位置到UI
-            _uiRect.position = uiWorldPos;
-        }
-        // （可选）调试用：打印当前位置和偏移，方便定位问题
-        // Debug.Log($"骨骼屏幕位置：{boneScreenPos} | 偏移后：{offsetScreenPos} | UI位置：{_uiRect.position}");
+        _isMyUIAddedToMenuList = false;
+        Debug.Log("你的UI已从游戏菜单列表移除，恢复moveCanvas和滚轮缩放");
     }
 }

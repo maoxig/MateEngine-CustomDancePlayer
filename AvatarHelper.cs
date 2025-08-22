@@ -16,17 +16,12 @@ public class AvatarHelper : MonoBehaviour
     public AudioSource CurrentAudioSource { get; private set; }
     // 保存角色默认的AnimatorController（停止播放时恢复）
     public RuntimeAnimatorController DefaultAnimatorController { get; private set; }
-    private PropertyInfo _animNormalizedTimeProp;
+
+
     void Update()
     {
         // 每帧检查角色是否变化（比如用户切换了角色）
         CheckAndUpdateCurrentAvatar();
-    }
-    private void Awake()
-    {
-        // 缓存反射属性，避免每帧获取
-        _animNormalizedTimeProp = typeof(AnimatorStateInfo).GetProperty(
-            "normalizedTime", BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
     }
 
     /// <summary>
@@ -69,7 +64,7 @@ public class AvatarHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// 更新角色的Animator和AudioSource（确保音频挂在角色身上）
+    /// 更新角色的Animator
     /// </summary>
     private void UpdateAvatarComponents(GameObject newAvatar)
     {
@@ -115,11 +110,8 @@ public class AvatarHelper : MonoBehaviour
             }
         }
 
-        // 保存角色默认的AnimatorController（停止播放时恢复）
-        if (DefaultAnimatorController == null)
-        {
-            DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
-        }
+
+        DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
 
         // 更新UI状态（后续由UIManager调用）
         Debug.Log($"Connected to avatar: {newAvatar.name}");
@@ -134,6 +126,11 @@ public class AvatarHelper : MonoBehaviour
         {
 
             CurrentAnimator.runtimeAnimatorController = DefaultAnimatorController;
+        }
+        // 新增：删除临时创建的DanceAudio对象
+        if (CurrentAudioSource != null && CurrentAudioSource.gameObject.name == "DanceAudio")
+        {
+            Destroy(CurrentAudioSource.gameObject);
         }
         CurrentAvatar = null;
         CurrentAnimator = null;
@@ -156,15 +153,6 @@ public class AvatarHelper : MonoBehaviour
             DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
         }
     }
-    // 对外提供获取动画进度的方法
-    public float GetAnimatorNormalizedTime()
-    {
-        if (CurrentAnimator == null || _animNormalizedTimeProp == null) return 0f;
-        try
-        {
-            var stateInfo = CurrentAnimator.GetCurrentAnimatorStateInfo(0);
-            return (float)_animNormalizedTimeProp.GetValue(stateInfo);
-        }
-        catch { return 0f; }
-    }
+
+
 }
