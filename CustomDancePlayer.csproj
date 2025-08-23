@@ -98,6 +98,7 @@
     <Compile Include="CustomDancePlayerCore.cs" />
     <Compile Include="CustomDancePlayerUIManager.cs" />
     <Compile Include="CustomDanceResourceManager.cs" />
+    <Compile Include="CustomDancePlayerFontHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

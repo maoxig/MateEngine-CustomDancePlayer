@@ -13,6 +13,7 @@ public class DancePlayerUIManager : MonoBehaviour
 {
     // UI component references (assign in Inspector)
     public TMP_Text CurrentPlayText;       // Currently playing file name
+    public Button RefreshBtn;              // Refresh button (refresh dance file list)
     public Button PrevBtn;                 // Previous button
     public Button PlayPauseBtn;            // Play/Pause button (currently only play)
     public Button NextBtn;                 // Next button
@@ -27,6 +28,8 @@ public class DancePlayerUIManager : MonoBehaviour
     // Reference to player core
     public DancePlayerCore playerCore;
 
+    public CustomDancePlayerFontHelper FontHelper; // Font helper for custom fonts
+
     [Header("UI Toggle")]
     public KeyCode toggleKey = KeyCode.K; // Configurable toggle key
 
@@ -35,7 +38,7 @@ public class DancePlayerUIManager : MonoBehaviour
     private MenuEntry _myUIMenuEntry;     // Your UI's corresponding MenuEntry (for adding/removing from list)
     private bool _isMyUIAddedToMenuList;  // Flag to prevent duplicate addition to menuEntries
 
-    private TMP_FontAsset _targetFont; // Font asset for UI text
+    
 
     void Start()
     {
@@ -49,8 +52,11 @@ public class DancePlayerUIManager : MonoBehaviour
         BindButtonEvents();
 
         playerCore.InitPlayer();
-        RefreshDropdown();
+        playerCore.RefreshPlayList();
         UpdateToggleKeyText();
+
+        FontHelper.Apply(CurrentPlayText);                 
+        FontHelper.ApplyToDropdown(DanceFileDropdown);    
     }
 
     void Update()
@@ -95,6 +101,7 @@ private void Awake()
         NextBtn.onClick.RemoveAllListeners();
         StopBtn.onClick.RemoveAllListeners();
         PlayModeBtn.onClick.RemoveAllListeners();
+        RefreshBtn.onClick.RemoveAllListeners();
         DanceFileDropdown.onValueChanged.RemoveAllListeners();
     }
     /// <summary>
@@ -119,6 +126,8 @@ private void Awake()
         NextBtn.onClick.AddListener(playerCore.PlayNext);
         StopBtn.onClick.AddListener(OnStopBtnClick);
         PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
+        RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
+
         // Dropdown selection for playback
         DanceFileDropdown.onValueChanged.AddListener(OnDropdownValueChanged);
     }
@@ -198,7 +207,6 @@ private void Awake()
         // Reset dropdown selection
         //DanceFileDropdown.value = -1;
         DanceFileDropdown.captionText.text = "Select Dance File";
-        RefreshDropdown();
     }
 
     /// <summary>
@@ -220,7 +228,11 @@ private void Awake()
         //    playerCore.PlayDanceByIndex(index);
         //}
     }
-
+    private void RefreshFonts()
+    {
+        FontHelper.Apply(CurrentPlayText);
+        FontHelper.ApplyToDropdown(DanceFileDropdown);
+    }
     /// <summary>
     /// Refresh dropdown (called when manually clicking refresh button)
     /// </summary>
@@ -250,7 +262,7 @@ private void Awake()
             }
             DanceFileDropdown.AddOptions(displayNames);
         }
-
+        RefreshFonts();
     }
     private void HandleKeyToggleUI()
     {
