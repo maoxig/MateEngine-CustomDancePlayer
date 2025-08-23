@@ -2,48 +2,49 @@
 using UnityEngine;
 
 /// <summary>
-/// 角色工具类：查找当前激活的角色，获取必要组件
+/// Avatar utility class: finds the currently active avatar and retrieves necessary components
 /// </summary>
 public class AvatarHelper : MonoBehaviour
 {
-    // 约定：所有角色都在名为"Model"的父对象下（游戏原有结构）
+
     private const string MODEL_PARENT_NAME = "Model";
 
 
-    // 当前角色的核心组件（对外提供访问）
+
     public GameObject CurrentAvatar { get; private set; }
     public Animator CurrentAnimator { get; private set; }
     public AudioSource CurrentAudioSource { get; private set; }
-    // 保存角色默认的AnimatorController（停止播放时恢复）
+    // Store the avatar's default AnimatorController (restore when playback stops)
     public RuntimeAnimatorController DefaultAnimatorController { get; private set; }
 
 
     void Update()
     {
-        // 每帧检查角色是否变化（比如用户切换了角色）
+
         CheckAndUpdateCurrentAvatar();
     }
 
     /// <summary>
-    /// 检查并更新当前角色（核心：兼容多角色）
+    /// Checks and updates the current avatar
     /// </summary>
     private void CheckAndUpdateCurrentAvatar()
     {
-        // 1. 先找Model父对象（游戏角色都在这个节点下）
+
         GameObject modelParent = GameObject.Find(MODEL_PARENT_NAME);
         if (modelParent == null)
         {
+#if UNITY_EDITOR
             Debug.LogWarning("Model parent object not found, please check the game scene structure");
-
+#endif
             ClearCurrentAvatar();
             return;
         }
 
-        // 2. 找Model下激活的角色（可能是VRMModel或CustomVRM(Clone)）
+        // 2. Find the active avatar under the Model (could be VRMModel or CustomVRM(Clone))
         GameObject newAvatar = null;
 
 
-        // 如果没加标签，遍历Model下所有子对象，找有Animator的激活对象
+        // If no tag is added, traverse all child objects under Model to find the active object with Animator
         if (newAvatar == null)
         {
             foreach (Transform child in modelParent.transform)
@@ -56,7 +57,7 @@ public class AvatarHelper : MonoBehaviour
             }
         }
 
-        // 3. 如果角色变化了，更新组件引用
+        // 3. If the avatar has changed, update component references
         if (newAvatar != CurrentAvatar)
         {
             UpdateAvatarComponents(newAvatar);
@@ -64,7 +65,7 @@ public class AvatarHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// 更新角色的Animator
+    /// Updates the avatar's Animator
     /// </summary>
     private void UpdateAvatarComponents(GameObject newAvatar)
     {
@@ -77,23 +78,27 @@ public class AvatarHelper : MonoBehaviour
                 playerCore.StopPlay();
             }
         }
-        // 清空旧引用
+
         ClearCurrentAvatar();
 
         if (newAvatar == null)
         {
+#if UNITY_EDITOR
             Debug.LogWarning("No active avatar found");
+#endif
             return;
         }
 
-        // 保存新角色引用
+        // Store the new avatar reference
         CurrentAvatar = newAvatar;
 
-        // 获取Animator（角色必须有，否则无法播放动画）
+        // Get the Animator (the avatar must have one, otherwise animation cannot be played)
         CurrentAnimator = newAvatar.GetComponent<Animator>();
         if (CurrentAnimator == null)
         {
+#if UNITY_EDITOR
             Debug.LogError($"Avatar {newAvatar.name} does not have an Animator component, cannot play dance");
+#endif
             CurrentAvatar = null;
             return;
         }
@@ -113,12 +118,13 @@ public class AvatarHelper : MonoBehaviour
 
         DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
 
-        // 更新UI状态（后续由UIManager调用）
+#if UNITY_EDITOR
         Debug.Log($"Connected to avatar: {newAvatar.name}");
+#endif
     }
 
     /// <summary>
-    /// 清空当前角色引用（角色切换时调用）
+    /// Clears the current avatar reference (called when switching avatars)
     /// </summary>
     private void ClearCurrentAvatar()
     {
@@ -127,7 +133,7 @@ public class AvatarHelper : MonoBehaviour
 
             CurrentAnimator.runtimeAnimatorController = DefaultAnimatorController;
         }
-        // 新增：删除临时创建的DanceAudio对象
+
         if (CurrentAudioSource != null && CurrentAudioSource.gameObject.name == "DanceAudio")
         {
             Destroy(CurrentAudioSource.gameObject);
@@ -138,7 +144,7 @@ public class AvatarHelper : MonoBehaviour
     }
 
     /// <summary>
-    /// 检查角色是否可用（对外提供判断）
+
     /// </summary>
     public bool IsAvatarAvailable()
     {
@@ -146,7 +152,7 @@ public class AvatarHelper : MonoBehaviour
     }
     void Start()
     {
-        // 初始化时获取当前角色的默认AnimatorController
+        // Initialize and get the current avatar's default AnimatorController
         CheckAndUpdateCurrentAvatar();
         if (CurrentAnimator != null)
         {

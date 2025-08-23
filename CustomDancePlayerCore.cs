@@ -6,37 +6,37 @@ using System.Reflection;
 using UnityEngine;
 
 /// <summary>
-/// 播放器核心：处理播放模式、切歌、自动下一首
+/// Core player: handles play modes, track switching, and auto-next.
 /// </summary>
 public class DancePlayerCore : MonoBehaviour
 {
-    // 播放模式枚举（顺序、循环、随机）
+    // Play mode enumeration (Sequence, Loop, Random)
     public enum PlayMode
     {
-        Sequence,  // 顺序播放
-        Loop,      // 循环当前
-        Random     // 随机播放
+        Sequence,  
+        Loop,      
+        Random     
     }
 
-    // 当前播放模式（默认顺序）
+    // Current play mode (default is Sequence)
     public PlayMode CurrentPlayMode { get; private set; } = PlayMode.Sequence;
-    // 播放列表（来自资源管理器）
+    // Playlist (from resource manager)
     private List<string> _playList;
-    // 当前播放索引（-1表示未播放）
+    // Current play index (-1 means not playing)
     public int CurrentPlayIndex { get; set; } = -1;
-    // 是否正在播放
+    // Whether currently playing
     public bool IsPlaying { get; private set; } = false;
     private float _audioStartTime;
 
 
-    // 引用依赖
+    // Reference dependencies
     public AvatarHelper avatarHelper;
     public DanceResourceManager resourceManager;
     public DancePlayerUIManager uiManager;
 
     void Update()
     {
-        // 仅在播放中且角色可用时，检查动画是否播放完成（触发自动下一首）
+        // Only check animation end when playing and avatar is available
         if (IsPlaying && avatarHelper.IsAvatarAvailable() && resourceManager.IsResourceLoaded())
         {
             CheckAnimationEnd();
@@ -45,28 +45,33 @@ public class DancePlayerCore : MonoBehaviour
     }
 
     /// <summary>
-    /// 初始化播放器（从资源管理器获取播放列表）
+    /// Initializes the player (gets the playlist from the resource manager)
     /// </summary>
     public void InitPlayer()
     {
         _playList = resourceManager.DanceFileList ?? new List<string>();
         CurrentPlayIndex = -1;
         IsPlaying = false;
+#if UNITY_EDITOR
         Debug.Log("Player initialization completed");
+#endif
     }
 
     /// <summary>
-    /// 切换播放模式（顺序→循环→随机→顺序）
+    /// Switch play mode (Sequence → Loop → Random → Sequence)
     /// </summary>
     public void TogglePlayMode()
     {
         CurrentPlayMode = (PlayMode)((int)(CurrentPlayMode + 1) % Enum.GetValues(typeof(PlayMode)).Length);
-        // 更新UI时会用到播放模式文本
+
+#if UNITY_EDITOR
         Debug.Log($"Switch play mode: {GetPlayModeText()}");
+#endif
     }
 
+
     /// <summary>
-    /// 获取播放模式的中文文本（给UI显示用）
+    /// Get the play mode text (for UI display, supports internationalization)
     /// </summary>
     public string GetPlayModeText()
     {
@@ -80,32 +85,32 @@ public class DancePlayerCore : MonoBehaviour
     }
 
     /// <summary>
-    /// 播放指定索引的舞蹈
+    /// Plays the dance at the specified index
     /// </summary>
     public bool PlayDanceByIndex(int index)
     {
         // Pre-check: valid index, avatar available, playlist not empty
         if (_playList == null || _playList.Count == 0)
         {
+#if UNITY_EDITOR
             Debug.LogError("Playlist is empty");
+#endif
             return false;
         }
         if (index < 0 || index >= _playList.Count)
         {
-            Debug.LogError("Invalid play index: " + index);
             return false;
         }
         if (!avatarHelper.IsAvatarAvailable())
         {
-            Debug.LogError("Avatar not available, cannot play");
             return false;
         }
 
-        // 1. 记录当前播放索引
+        // 1. Record the current play index
         CurrentPlayIndex = index;
         string targetFileName = _playList[index];
 
-        // 2. 加载对应的舞蹈资源
+        // 2. Load the corresponding dance resource
         bool loadSuccess = resourceManager.LoadDanceResource(targetFileName);
         if (!loadSuccess)
         {
@@ -113,7 +118,7 @@ public class DancePlayerCore : MonoBehaviour
             return false;
         }
 
-        // 3. 开始播放动画和音频
+        // 3. Start playing the animation and audio
         Animator animator = avatarHelper.CurrentAnimator;
         AudioSource audioSource = avatarHelper.CurrentAudioSource;
 
@@ -123,36 +128,38 @@ public class DancePlayerCore : MonoBehaviour
         animator.SetBool("isDancing", true);
         animator.SetFloat(Animator.StringToHash("DanceIndex"), 0);
 
-        // 关键修复：用音频时长作为基准（动画与音频时长一致）
+        // Use audio duration as the benchmark (animation and audio duration match)
         _audioStartTime = Time.time;
 
 
-        // 播放音频
+        // Play audio
         audioSource.Play();
 
-        // 标记为播放中
+        // Mark as playing
         IsPlaying = true;
+        #if UNITY_EDITOR
         Debug.Log($"Start playing: {targetFileName} (Mode: {GetPlayModeText()})");
+        #endif
         return true;
     }
     /// <summary>
-    /// 安全设置Animator的Bool参数（仅在参数存在时设置）
+    /// Safely sets the Animator's Bool parameter (only sets if the parameter exists)
     /// </summary>
     private void SafeSetAnimatorBool(Animator animator, string paramName, bool value)
     {
         if (animator == null) return;
 
-        // 使用哈希值检查参数是否存在（避免字符串重复计算）
+
         int paramHash = Animator.StringToHash(paramName);
         if (HasAnimatorParameter(animator, paramHash, AnimatorControllerParameterType.Bool))
         {
             animator.SetBool(paramHash, value);
         }
-        // 不存在时不操作，避免警告
+
     }
 
     /// <summary>
-    /// 安全设置Animator的Float参数（仅在参数存在时设置）
+    /// Safely sets the Animator's Float parameter (only sets if the parameter exists)
     /// </summary>
     private void SafeSetAnimatorFloat(Animator animator, string paramName, float value)
     {
@@ -166,16 +173,16 @@ public class DancePlayerCore : MonoBehaviour
     }
 
     /// <summary>
-    /// 检查Animator是否存在指定类型的参数（不依赖被裁剪的类）
+    /// Checks if the Animator has a parameter of the specified type (does not rely on the trimmed class)
     /// </summary>
     private bool HasAnimatorParameter(Animator animator, int paramHash, AnimatorControllerParameterType type)
     {
         if (animator == null) return false;
 
-        // 遍历所有参数检查（使用基础API，不依赖AnimatorController）
+        // Check all parameters (use basic API, do not rely on AnimatorController)
         foreach (var param in animator.parameters)
         {
-            // AnimatorControllerParameter 没有 nameHash 属性，需用 Animator.StringToHash(param.name)
+            // AnimatorControllerParameter does not have nameHash property, use Animator.StringToHash(param.name)
             if (Animator.StringToHash(param.name) == paramHash && param.type == type)
             {
                 return true;
@@ -184,7 +191,7 @@ public class DancePlayerCore : MonoBehaviour
         return false;
     }
     /// <summary>
-    /// 播放下一首
+    /// Plays the next track
     /// </summary>
     public void PlayNext()
     {
@@ -194,22 +201,21 @@ public class DancePlayerCore : MonoBehaviour
         switch (CurrentPlayMode)
         {
             case PlayMode.Sequence:
-                // 顺序：当前索引+1，到末尾则停止
+                // Sequence: Current index +1, stop at the end
                 nextIndex = CurrentPlayIndex + 1;
                 if (nextIndex >= _playList.Count)
                 {
-                    Debug.Log("Reached the last song, stopping playback");
 
                     StopPlay();
                     return;
                 }
                 break;
             case PlayMode.Loop:
-                // 循环：保持当前索引（重新播放）
+                // Loop: Keep current index (replay)
                 nextIndex = CurrentPlayIndex;
                 break;
             case PlayMode.Random:
-                // 随机：生成不同于当前的索引（列表长度>1时）
+                // Random: Generate an index different from the current one (when list length > 1)
                 System.Random random = new System.Random();
                 do
                 {
@@ -218,68 +224,67 @@ public class DancePlayerCore : MonoBehaviour
                 break;
         }
 
-        // 播放下一首
+        // Plays the next track
         PlayDanceByIndex(nextIndex);
     }
 
     /// <summary>
-    /// 播放上一首
+    /// Plays the previous track
     /// </summary>
     public void PlayPrev()
     {
         if (_playList == null || _playList.Count == 0) return;
         if (CurrentPlayIndex <= 0)
         {
-            Debug.Log("Reached the first song, replaying current");
             PlayDanceByIndex(0);
             return;
         }
 
-        // 上一首：当前索引-1
+        // Plays the previous track
         PlayDanceByIndex(CurrentPlayIndex - 1);
     }
 
     /// <summary>
-    /// 停止播放（恢复默认动画）
+    /// Stops playback (restores default animation)
     /// </summary>
     public void StopPlay()
     {
         if (!avatarHelper.IsAvatarAvailable())
         {
-            Debug.LogWarning("Avatar not available, cannot stop playback");
             return;
         }
 
-        // 1. 停止音频和动画
+        // 1. Stops audio and animation
         var audioSource = avatarHelper.CurrentAudioSource;
         var animator = avatarHelper.CurrentAnimator;
         audioSource.Stop();
         animator.SetBool("isDancing", false);
-        SafeSetAnimatorBool(animator, "isDancing", false); // 安全设置
-        // 2. 关键修复：恢复默认控制器（确保DefaultAnimatorController已正确保存）
+        SafeSetAnimatorBool(animator, "isDancing", false); // Safely set
+        // 2. Restore default controller (ensure DefaultAnimatorController is correctly saved)
         if (avatarHelper.DefaultAnimatorController != null)
         {
             animator.runtimeAnimatorController = avatarHelper.DefaultAnimatorController;
-            Debug.Log("已恢复默认动画控制器");
+            #if UNITY_EDITOR
+            Debug.Log("Restored default animator controller");
+            #endif
         }
         else
         {
-            Debug.LogWarning("未保存默认控制器，尝试重新获取");
-
+            #if UNITY_EDITOR
+            Debug.LogWarning("Default controller not saved, trying to re-fetch");
+            #endif
         }
 
-        // 3. 卸载资源+重置状态（保持不变）
+        // 3. Unload resources + reset state (keep unchanged)
         resourceManager.UnloadCurrentResource();
         IsPlaying = false;
         CurrentPlayIndex = -1;
 
-        Debug.Log("Playback stopped and resources unloaded");
     }
     /// <summary>
-    /// 检查动画是否播放完成（触发自动下一首）
+    /// Checks if the animation has finished playing (triggers automatic next track)
     /// </summary>
-    // 重写CheckAnimationEnd，基于音频播放状态判断
-    // 修改CheckAnimationEnd方法，仅依赖isPlaying
+
     private void CheckAnimationEnd()
     {
         if (!IsPlaying || !avatarHelper.IsAvatarAvailable() || !resourceManager.IsResourceLoaded())
@@ -287,19 +292,18 @@ public class DancePlayerCore : MonoBehaviour
 
         AudioSource audioSource = avatarHelper.CurrentAudioSource;
 
-        // 核心逻辑：如果当前应该在播放，但音频已停止（播放完成）
+        // If currently supposed to be playing, but audio has stopped (playback finished)
         if (!audioSource.isPlaying)
         {
-            // 添加小延迟容错（避免音频刚启动时的短暂状态异常）
+            // Wait a short moment to avoid false positives
             if (Time.time - _audioStartTime > 0.5f)
             {
-                Debug.Log("音频已停止播放，自动切换下一首");
                 PlayNext();
             }
         }
     }
     /// <summary>
-    /// 获取当前播放的文件名（给UI显示用）
+    /// Gets the current playing file name (for UI display)
     /// </summary>
     public string GetCurrentPlayFileName()
     {
@@ -308,7 +312,7 @@ public class DancePlayerCore : MonoBehaviour
             return "Not Playing";
         }
         string fileName = _playList[CurrentPlayIndex];
-        // 只在显示时隐藏.unity3d后缀，但不修改原始数据
+
         if (fileName.EndsWith(".unity3d", StringComparison.OrdinalIgnoreCase))
         {
             return fileName.Substring(0, fileName.Length - ".unity3d".Length);
@@ -317,20 +321,21 @@ public class DancePlayerCore : MonoBehaviour
     }
 
     /// <summary>
-    /// 刷新播放列表（当文件夹新增/删除文件时调用）
+    /// Refreshes the playlist (called after adding/removing files)
     /// </summary>
     public void RefreshPlayList()
     {
         resourceManager.RefreshDanceFileList();
         _playList = resourceManager.DanceFileList;
-        // 如果当前播放索引超出新列表长度，重置为-1
+        // If current play index exceeds new list length, reset to -1
         if (CurrentPlayIndex >= _playList.Count)
         {
             CurrentPlayIndex = -1;
             IsPlaying = false;
         }
+        #if UNITY_EDITOR
         Debug.Log($"Playlist refreshed: {_playList.Count} files in total");
-
+        #endif
         if (uiManager != null)
         {
             uiManager.RefreshDropdown();

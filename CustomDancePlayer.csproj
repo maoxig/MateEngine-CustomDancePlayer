@@ -96,7 +96,6 @@
   <ItemGroup>
     <Compile Include="AvatarHelper.cs" />
     <Compile Include="CustomDancePlayerCore.cs" />
-    <Compile Include="CustomDancePlayerUIListener.cs" />
     <Compile Include="CustomDancePlayerUIManager.cs" />
     <Compile Include="CustomDanceResourceManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
