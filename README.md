@@ -1,6 +1,6 @@
 # Mate Engine - Custom Dance Player
 
-**Other Language Versions: [English](README.md), [Chinese](README_zh.md)**
+**Other Language Versions: [English](README.md), [中文](README_zh.md)**
 
 Note: I am a non-English speaker and a beginner in C#/Unity. As a result, I may have used AI extensively. Please bear with me if there are any inconsistencies.
 
