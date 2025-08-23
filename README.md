@@ -24,6 +24,11 @@ After discovering the MATE-ENGINE project, I found it very interesting and wonde
 ## Project Overview
 This is a custom mod developed for the **Mate Engine** desktop pet game. Its core functionality is to add "dance player" capabilities to the desktop pet—supporting custom dance resource loading, playback mode switching, playback control, and an intuitive UI interface. Users can manage the pet’s dance playback just like operating a music player.
 
+### Download Mod Files (Excluding Dance Files)
+
+You can download the latest release of the mod (does **not** include dance files) here:  
+[https://github.com/maoxig/MateEngine-CustomDancePlayer/releases](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)
+
 The mod consists of three main parts:
 1. **.me Mod Package**: Contains UI prefabs (e.g., playback control buttons, track dropdown, status text) and basic UI style resources, exported using the MATE-ENGINE SDK.
 2. **DLL Scripts**: Handle core logic, including dance resource loading/unloading, playback state management, and UI event binding. This part involves custom C# scripts and may require modifying game DLL references in dangerous ways (which may not be permitted). By using this DLL, you acknowledge that you trust this repository—you can review the source code to understand its implementation, or fork the repo to modify and compile your own version.

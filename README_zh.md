@@ -22,6 +22,11 @@ https://www.bilibili.com/video/BV12Cb6zjEfS/
 ## 项目介绍
 这是一款为 **Mate Engine** 桌宠游戏开发的自制Mod，核心功能是让桌宠具备「舞蹈播放器」的能力——支持加载自定义舞蹈资源、切换播放模式、控制播放流程，同时提供直观的UI交互界面，让用户能像操作音乐播放器一样管理桌宠的舞蹈播放。
 
+### 下载Mod文件（不含舞蹈文件）
+
+你可以在这里下载本Mod的最新发布版本（**不包含舞蹈文件**）：  
+[https://github.com/maoxig/MateEngine-CustomDancePlayer/releases](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)
+
 Mod 分为这几部分
 1. **.me模组**：包含UI预制体（如播放控制按钮、曲目下拉框、状态文本）、基础UI样式资源，这些由MATE-ENGINE SDK导出
 2. **DLL 脚本**：核心逻辑，舞蹈资源加载/卸载、播放状态管理、UI事件绑定等。这部分由于涉及到自定义C#脚本，并且需要以危险的方式修改游戏DLL引用（这也许是不被允许的），因此使用该DLL意味着你已经信任该仓库（你可以查看源代码以了解其实现细节，或者你也可以自己fork然后修改编译）
