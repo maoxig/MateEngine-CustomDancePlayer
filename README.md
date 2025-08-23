@@ -43,7 +43,7 @@ If there is sufficient interest, I may collect all dance files and upload them t
 No extra explanation needed—it’s straightforward: load dance files from disk in a specific order and play them like a music player.
 
 ### Facial Expression Support
-Nearly all the .unity3d dance files my community created support facial expressions (since most are converted from MMD motion data, which typically includes expression data). However, this requires the character model to follow specific conventions:
+Nearly all the .unity3d dance files 7DTD community created support facial expressions (since most are converted from MMD motion data, which typically includes expression data). However, this requires the character model to follow specific conventions:
 
 The **Skinned Mesh Renderer** on the model’s "Body" object must include MMD-style Japanese-named blend shapes:  
 ![Blend Shape Guide](./resources/blendshape_guide.png)
