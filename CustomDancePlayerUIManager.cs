@@ -20,6 +20,7 @@ public class DancePlayerUIManager : MonoBehaviour
     public Button StopBtn;                 // Stop button
     public Button PlayModeBtn;             // Play mode button
     public TMP_Text PlayModeText;          // Play mode text
+    public Slider  VolumeSlider;            // Volume slider (optional, can be null)
     public TMP_Text AvatarStatusText;      // Avatar status text
     public Dropdown DanceFileDropdown; // Dance file dropdown (select to play)
     public TMP_Text _toggleKeyText;        // Assign text component in Inspector
@@ -107,6 +108,9 @@ public class DancePlayerUIManager : MonoBehaviour
         PlayModeBtn.onClick.RemoveAllListeners();
         RefreshBtn.onClick.RemoveAllListeners();
         DanceFileDropdown.onValueChanged.RemoveAllListeners();
+        VolumeSlider?.onValueChanged.RemoveAllListeners();
+
+        RemoveMyUIFromGameMenuList();
     }
     /// <summary>
     /// <summary>
@@ -131,6 +135,10 @@ public class DancePlayerUIManager : MonoBehaviour
         StopBtn.onClick.AddListener(OnStopBtnClick);
         PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
         RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
+        if (VolumeSlider != null)
+        {
+            VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+        }
 
     }
 
@@ -220,6 +228,16 @@ public class DancePlayerUIManager : MonoBehaviour
         // Play mode text is automatically updated in Update
     }
 
+    /// <summary>
+    /// Volume slider value changed
+    /// </summary>
+    private void OnVolumeChanged(float value)
+    {
+        if (playerCore.avatarHelper.IsAvatarAvailable())
+        {
+            playerCore.avatarHelper.CurrentAudioSource.volume = value;
+        }
+    }
 
 
     /// <summary>
