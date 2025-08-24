@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#define UNITY_EDITOR
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -16,11 +18,6 @@ public class DanceResourceManager : MonoBehaviour
 
     public AvatarHelper avatarHelper;
 
-    void Start()
-    {
-        // Initialize: Load dance file list
-        RefreshDanceFileList();
-    }
 
     /// <summary>
     /// Refresh dance file list (read from CustomDances folder)

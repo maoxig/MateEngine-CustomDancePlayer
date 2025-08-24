@@ -21,7 +21,7 @@ public class DancePlayerCore : MonoBehaviour
     // Current play mode (default is Sequence)
     public PlayMode CurrentPlayMode { get; private set; } = PlayMode.Sequence;
     // Playlist (from resource manager)
-    private List<string> _playList;
+    public List<string> playList;
     // Current play index (-1 means not playing)
     public int CurrentPlayIndex { get; set; } = -1;
     // Whether currently playing
@@ -49,7 +49,7 @@ public class DancePlayerCore : MonoBehaviour
     /// </summary>
     public void InitPlayer()
     {
-        _playList = resourceManager.DanceFileList ?? new List<string>();
+        playList = resourceManager.DanceFileList ?? new List<string>();
         CurrentPlayIndex = -1;
         IsPlaying = false;
 #if UNITY_EDITOR
@@ -90,14 +90,14 @@ public class DancePlayerCore : MonoBehaviour
     public bool PlayDanceByIndex(int index)
     {
         // Pre-check: valid index, avatar available, playlist not empty
-        if (_playList == null || _playList.Count == 0)
+        if (playList == null || playList.Count == 0)
         {
 #if UNITY_EDITOR
             Debug.LogError("Playlist is empty");
 #endif
             return false;
         }
-        if (index < 0 || index >= _playList.Count)
+        if (index < 0 || index >= playList.Count)
         {
             return false;
         }
@@ -108,7 +108,7 @@ public class DancePlayerCore : MonoBehaviour
 
         // 1. Record the current play index
         CurrentPlayIndex = index;
-        string targetFileName = _playList[index];
+        string targetFileName = playList[index];
 
         // 2. Load the corresponding dance resource
         bool loadSuccess = resourceManager.LoadDanceResource(targetFileName);
@@ -195,7 +195,7 @@ public class DancePlayerCore : MonoBehaviour
     /// </summary>
     public void PlayNext()
     {
-        if (_playList == null || _playList.Count == 0) return;
+        if (playList == null || playList.Count == 0) return;
 
         int nextIndex = CurrentPlayIndex;
         switch (CurrentPlayMode)
@@ -203,7 +203,7 @@ public class DancePlayerCore : MonoBehaviour
             case PlayMode.Sequence:
                 // Sequence: Current index +1, stop at the end
                 nextIndex = CurrentPlayIndex + 1;
-                if (nextIndex >= _playList.Count)
+                if (nextIndex >= playList.Count)
                 {
 
                     StopPlay();
@@ -219,8 +219,8 @@ public class DancePlayerCore : MonoBehaviour
                 System.Random random = new System.Random();
                 do
                 {
-                    nextIndex = random.Next(0, _playList.Count);
-                } while (_playList.Count > 1 && nextIndex == CurrentPlayIndex);
+                    nextIndex = random.Next(0, playList.Count);
+                } while (playList.Count > 1 && nextIndex == CurrentPlayIndex);
                 break;
         }
 
@@ -233,7 +233,7 @@ public class DancePlayerCore : MonoBehaviour
     /// </summary>
     public void PlayPrev()
     {
-        if (_playList == null || _playList.Count == 0) return;
+        if (playList == null || playList.Count == 0) return;
         if (CurrentPlayIndex <= 0)
         {
             PlayDanceByIndex(0);
@@ -307,11 +307,11 @@ public class DancePlayerCore : MonoBehaviour
     /// </summary>
     public string GetCurrentPlayFileName()
     {
-        if (_playList == null || CurrentPlayIndex < 0 || CurrentPlayIndex >= _playList.Count)
+        if (playList == null || CurrentPlayIndex < 0 || CurrentPlayIndex >= playList.Count)
         {
             return "Not Playing";
         }
-        string fileName = _playList[CurrentPlayIndex];
+        string fileName = playList[CurrentPlayIndex];
 
         if (fileName.EndsWith(".unity3d", StringComparison.OrdinalIgnoreCase))
         {
@@ -326,9 +326,9 @@ public class DancePlayerCore : MonoBehaviour
     public void RefreshPlayList()
     {
         resourceManager.RefreshDanceFileList();
-        _playList = resourceManager.DanceFileList;
+        playList = resourceManager.DanceFileList;
         // If current play index exceeds new list length, reset to -1
-        if (CurrentPlayIndex >= _playList.Count)
+        if (CurrentPlayIndex >= playList.Count)
         {
             CurrentPlayIndex = -1;
             IsPlaying = false;
