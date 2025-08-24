@@ -107,13 +107,8 @@ public class AvatarHelper : MonoBehaviour
         if (soundFX != null)
         {
             CurrentAudioSource = soundFX.GetComponentInChildren<AudioSource>();
-            if (CurrentAudioSource == null)
-            {
-                GameObject danceAudioObj = new GameObject("DanceAudio");
-                danceAudioObj.transform.parent = soundFX.transform;
-                CurrentAudioSource = danceAudioObj.AddComponent<AudioSource>();
             }
-        }
+
 
 
         DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
@@ -158,6 +153,20 @@ public class AvatarHelper : MonoBehaviour
         {
             DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
         }
+
+        // Initialize AudioSource
+        GameObject soundFX = GameObject.Find("SoundFX");
+        if (soundFX != null)
+        {
+            CurrentAudioSource = soundFX.GetComponentInChildren<AudioSource>();
+            if (CurrentAudioSource == null)
+            {
+                GameObject danceAudioObj = new GameObject("DanceAudio");
+                danceAudioObj.transform.SetParent(soundFX.transform, false);
+                CurrentAudioSource = danceAudioObj.AddComponent<AudioSource>();
+            }
+        }
+        
     }
 
 
