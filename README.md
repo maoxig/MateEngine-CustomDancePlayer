@@ -1,4 +1,4 @@
-# Mate Engine - Custom Dance Player
+# [Mate Engine](https://github.com/shinyflvre/Mate-Engine) - Custom Dance Player
 
 **Other Language Versions: [English](README.md), [中文](README_zh.md)**
 
@@ -42,32 +42,16 @@ The mod consists of three main parts:
 If there is sufficient interest, I may collect all dance files and upload them to a cloud storage service. (Note: These files are converted from MMD .vmd motion data—please comply with relevant laws and copyright regulations when using them.)
 
 
-## Core Features
-
-### Dance Player
-No extra explanation needed—it’s straightforward: load dance files from disk in a specific order and play them like a music player.
-
-### Facial Expression Support
-Nearly all the .unity3d dance files 7DTD community created support facial expressions (since most are converted from MMD motion data, which typically includes expression data). However, this requires the character model to follow specific conventions:
-
-The **Skinned Mesh Renderer** on the model’s "Body" object must include MMD-style Japanese-named blend shapes:  
-![Blend Shape Guide](./resources/blendshape_guide.png)
-
-If you convert a PMX model to FBX/VRM using Unity’s MMD4Mecanim + uniVRM plugins:
-1. Before conversion, go to MMD4Mecanim’s advanced settings and **uncheck "PrefixMorphNoName"** (this option adds numeric prefixes to blend shape names, which breaks compatibility).
-2. Adjust the model’s hierarchy to match the structure shown above.
-
-For other model types, the most universal solution is to modify and adjust the model in Blender to meet the above conventions.
-
-### Camera Support (?)
-We implemented MMD-style camera movement in *7 Days to Die*, but MATE-ENGINE may not require camera functionality. 
-
 
 ## Installation Steps
 ### Prerequisites
 - **Mate Engine** desktop pet game installed
+- Downloaded .me & .dll files from [here](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)
 - Downloaded dance files (with .unity3d extension)
 
+You can view the mod release page on Discord, there is a tutorial video.
+
+https://discord.com/channels/1367667737437929513/1408758200462999583
 
 ### 1. Deploy Mod Files
 The mod requires both the **.me Mod Package** and **DLL Scripts** to work.
@@ -97,6 +81,28 @@ If all steps above are completed correctly, you will see the mod’s UI panel. P
    <div align="center">
         <img src="./resources/dance_files.png" alt="Example of Dance File Placement" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
    </div>
+
+
+
+## Core Features
+
+### Dance Player
+No extra explanation needed—it’s straightforward: load dance files from disk in a specific order and play them like a music player.
+
+### Facial Expression Support
+Nearly all the .unity3d dance files 7DTD community created support facial expressions (since most are converted from MMD motion data, which typically includes expression data). However, this requires the character model to follow specific conventions:
+
+The **Skinned Mesh Renderer** on the model’s "Body" object must include MMD-style Japanese-named blend shapes:  
+![Blend Shape Guide](./resources/blendshape_guide.png)
+
+If you convert a PMX model to FBX/VRM using Unity’s MMD4Mecanim + uniVRM plugins:
+1. Before conversion, go to MMD4Mecanim’s advanced settings and **uncheck "PrefixMorphNoName"** (this option adds numeric prefixes to blend shape names, which breaks compatibility).
+2. Adjust the model’s hierarchy to match the structure shown above.
+
+For other model types, the most universal solution is to modify and adjust the model in Blender to meet the above conventions.
+
+### Camera Support (?)
+We implemented MMD-style camera movement in *7 Days to Die*, but MATE-ENGINE may not require camera functionality. 
 
 
 ## Usage Guide
@@ -144,14 +150,13 @@ The overall logic is simple—you can easily understand it by reviewing the sour
 - Check for garbled filenames: Avoid special characters or unrecognized symbols in filenames (these can break controller/audio loading).
 
 
-### Q3: No audio plays during dance playback—why?
-- Check the audio file: Ensure the .unity3d AssetBundle contains an audio file in `.wav`, `.mp3`, or `.ogg` format (only these 3 formats are supported).
-- Verify the audio filename: The audio file’s name must exactly match the .unity3d file name (e.g., `HappyDance.unity3d` requires `HappyDance.mp3`).
+### Q3: The UI shows square boxes (garbled text)—how to resolve this?
+- The UI now uses Unity's default text component, which usually prevents garbled characters. If you still see square boxes, check if your system fonts support CJK characters.
 
-
-### Q4: The UI shows square boxes (garbled text)—how to resolve this?
-- Root cause: The UI font does not support CJK characters.
-- I tried multiple solutions but couldn’t find a better fix, so I included the `NotoSansCJK-Regular.ttc` font in the .me mod package, though there may still be some font issues. If you have suggestions for improvement, feel free to share them via PR or Issue.
+### Q4: UI, Dance, or DLL fails to load?
+- Please check the following:
+   - Ensure all files are placed in the correct directories and filenames have not been changed (the game and mod depend on specific filenames).
+   - Try reloading the game or restarting the software.
 
 
 ## License

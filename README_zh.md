@@ -1,4 +1,4 @@
-# Mate Engine - 自定义舞蹈播放器
+# [Mate Engine](https://github.com/shinyflvre/Mate-Engine) - 自定义舞蹈播放器
 
 **其他语言版本: [English](README.md), [中文](README_zh.md)**
 
@@ -43,32 +43,15 @@ Mod 分为这几部分
 
 
 
-## 核心功能特性
-
-### 舞蹈播放器
-
-不再多介绍，因为非常容易理解。从磁盘按某种顺序加载舞蹈文件并像播放音乐一样播放它们。
-
-### 表情支持
-
-实际上，我们之前制作的舞蹈.unity3d全部都是支持舞蹈表情的（因为它们大部分转换自MMD的动作数据，而MMD的动作数据通常包含表情），然而这需要模型遵循一定的约定：
-
-模型的Body物体上的Skinned Mesh Renderer有MMD的日语形态键：
-![表情形态键说明](./resources/blendshape_guide.png)
-
-通常如果你使用unity的MMD4Mecanim+uniVRM插件将pmx模型转换为fbx/vrm，你需要确保在MMD4Mecanim插件转换前的高级选项里取消勾选PrefixMorphNoName（因为这会给形态键添加上序号前缀），然后调整一下模型的层级结构符合上述规范即可。
-
-如果是其他类型，最通用的方法是使用Blender修改、调整以符合上述约定。
-
-### 镜头支持（？）
-
-我们在七日杀这款游戏实现了MMD的运镜，但是也许MATE-ENGINE并不需要镜头？
-
 ## 安装步骤
 ### 前置要求
 - 已安装 **Mate Engine** 桌宠游戏
+- 下载了 .me & .dll 文件（[这里](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)）
 - 下载舞蹈文件（.unity3d后缀）
 
+国内用户可以直接看我b站上传的视频教程
+
+https://www.bilibili.com/video/BV1Yge6zqETU/
 
 ### 1. 部署 Mod 文件
 Mod 由「.me模组」和「DLL脚本」两部分组成
@@ -102,6 +85,28 @@ Mod 由「.me模组」和「DLL脚本」两部分组成
         <img src="./resources/dance_files.png" alt="舞蹈文件示例" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
     </div>
 
+
+
+## 核心功能特性
+
+### 舞蹈播放器
+
+不再多介绍，因为非常容易理解。从磁盘按某种顺序加载舞蹈文件并像播放音乐一样播放它们。
+
+### 表情支持
+
+实际上，我们之前制作的舞蹈.unity3d全部都是支持舞蹈表情的（因为它们大部分转换自MMD的动作数据，而MMD的动作数据通常包含表情），然而这需要模型遵循一定的约定：
+
+模型的Body物体上的Skinned Mesh Renderer有MMD的日语形态键：
+![表情形态键说明](./resources/blendshape_guide.png)
+
+通常如果你使用unity的MMD4Mecanim+uniVRM插件将pmx模型转换为fbx/vrm，你需要确保在MMD4Mecanim插件转换前的高级选项里取消勾选PrefixMorphNoName（因为这会给形态键添加上序号前缀），然后调整一下模型的层级结构符合上述规范即可。
+
+如果是其他类型，最通用的方法是使用Blender修改、调整以符合上述约定。
+
+### 镜头支持（？）
+
+我们在七日杀这款游戏实现了MMD的运镜，但是也许MATE-ENGINE并不需要镜头？
 
 ## 使用指南
 
@@ -146,16 +151,13 @@ https://github.com/maoxig/VroidMMDTools
 - 检查文件文件名：确保 `.unity3d` 文件名中不包含乱码等（因为这会影响控制器、音频的读取）。
 
 
+### Q3：UI 显示方块字（乱码）怎么解决？
+- 我已经修改了UI组件，使用unity默认的text组件，通常他不会再有方块字乱码，如果出现了，请检查你的系统字体是否支持CJK字符。
 
-### Q3：播放时没有音频怎么办？
-- 检查音频文件：确保 `.unity3d` 内包含 `[文件名].wav`/`.mp3`/`.ogg` 格式的音频（仅支持这3种格式）。
-- 确认音频资源命名：音频文件名必须与 `.unity3d` 文件名一致（如 `HappyDance.unity3d` 对应 `HappyDance.mp3`）。
-
-
-### Q4：UI 显示方块字（乱码）怎么解决？
-- 问题原因：UI文本使用的字体不支持中日韩字符。
-- 我尝试了很多方案试图解决，但是无果，最后只能在.me模组中打包了一个`NotoSansCJK-Regular.ttc`，但是还是会有一些字体问题。如果你有更好的建议欢迎分享/PR/Issue。
-
+### Q4：加载UI/舞蹈/DLL失败？
+- 请检查以下内容：
+  - 确保所有文件都已正确放置在指定目录中，并且文件名没有被修改过（游戏和mod依赖文件名）。
+  - 尝试重新加载游戏或重启软件。
 
 ## 许可证
 本Mod采用 **MIT 许可证** 开源，并且遵循Mate Engine 官方的[协议](https://github.com/shinyflvre/Mate-Engine/blob/main/LICENSE)，允许个人非商业使用、修改和分发，禁止用于商业盈利目的。使用前请遵守 Mate Engine 官方的[协议](https://github.com/shinyflvre/Mate-Engine/blob/main/LICENSE)，若因Mod使用导致游戏异常，开发者不承担责任。
