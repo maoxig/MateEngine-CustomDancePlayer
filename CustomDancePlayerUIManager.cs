@@ -20,7 +20,7 @@ public class DancePlayerUIManager : MonoBehaviour
     public Button StopBtn;                 // Stop button
     public Button PlayModeBtn;             // Play mode button
     public TMP_Text PlayModeText;          // Play mode text
-    public Slider  VolumeSlider;            // Volume slider 
+    public Slider VolumeSlider;            // Volume slider (optional, can be null)
     public TMP_Text AvatarStatusText;      // Avatar status text
     public Dropdown DanceFileDropdown; // Dance file dropdown (select to play)
     public TMP_Text _toggleKeyText;        // Assign text component in Inspector
@@ -37,13 +37,20 @@ public class DancePlayerUIManager : MonoBehaviour
     private MenuActions _gameMenuActions; // Game's existing MenuActions instance
     private MenuEntry _myUIMenuEntry;     // Your UI's corresponding MenuEntry (for adding/removing from list)
     private bool _isMyUIAddedToMenuList;  // Flag to prevent duplicate addition to menuEntries
+    private Font _defaultLiberationFont;
 
 
     void Start()
     {
+        if (playerCore != null && playerCore.resourceManager != null)
+        {
+            playerCore.resourceManager.RefreshDanceFileList();
+        }
+
         InitUI();
 
         BindButtonEvents();
+
         playerCore.InitPlayer();
         playerCore.RefreshPlayList();
         UpdateToggleKeyText();
@@ -62,7 +69,12 @@ public class DancePlayerUIManager : MonoBehaviour
     private void Awake()
     {
 
-
+        _defaultLiberationFont = Resources.Load<Font>("LiberationSans.ttf");
+        if (_defaultLiberationFont == null)
+        {
+            _defaultLiberationFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            Debug.LogWarning("Failed to load LiberationSans, fall back to LegacyRuntime");
+        }
         _gameMenuActions = UnityEngine.Object.FindFirstObjectByType<MenuActions>();
         if (_gameMenuActions == null)
         {
@@ -123,8 +135,10 @@ public class DancePlayerUIManager : MonoBehaviour
         StopBtn.onClick.AddListener(OnStopBtnClick);
         PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
         RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
-        VolumeSlider?.onValueChanged.AddListener(OnVolumeChanged);
-        
+        if (VolumeSlider != null)
+        {
+            VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
+        }
 
     }
 
@@ -151,7 +165,7 @@ public class DancePlayerUIManager : MonoBehaviour
         PlayModeText.text = playerCore.GetPlayModeText();
 
         // Update button states (disable play button when playing, disable stop/next button when not playing)
-        bool isPlayerReady = playerCore.avatarHelper.IsAvatarAvailable() && playerCore.playList.Count > 0;
+        bool isPlayerReady = playerCore.avatarHelper.IsAvatarAvailable() && playerCore.resourceManager.DanceFileList.Count > 0;
         PlayPauseBtn.interactable = isPlayerReady && !playerCore.IsPlaying;
         PrevBtn.interactable = isPlayerReady && playerCore.IsPlaying;
         NextBtn.interactable = isPlayerReady && playerCore.IsPlaying;
@@ -160,9 +174,9 @@ public class DancePlayerUIManager : MonoBehaviour
 
 
         if (playerCore.IsPlaying && playerCore.CurrentPlayIndex >= 0
-            && playerCore.CurrentPlayIndex < playerCore.playList.Count)
+            && playerCore.CurrentPlayIndex < playerCore.resourceManager.DanceFileList.Count)
         {
-            string currentFileName = playerCore.playList[playerCore.CurrentPlayIndex];
+            string currentFileName = playerCore.resourceManager.DanceFileList[playerCore.CurrentPlayIndex];
             if (currentFileName.EndsWith(".unity3d", StringComparison.OrdinalIgnoreCase))
             {
                 currentFileName = currentFileName.Substring(0, currentFileName.Length - ".unity3d".Length);
@@ -232,10 +246,9 @@ public class DancePlayerUIManager : MonoBehaviour
     public void RefreshDropdown()
     {
         DanceFileDropdown.ClearOptions();
-        playerCore.RefreshPlayList();
-        var playList = playerCore.playList;
-
-        if (playList.Count == 0)
+        playerCore.resourceManager.RefreshDanceFileList();
+        var danceFiles = playerCore.resourceManager.DanceFileList;
+        if (danceFiles.Count == 0)
         {
             DanceFileDropdown.options.Add(new Dropdown.OptionData("No dance files (put in CustomDances folder)"));
         }
@@ -243,7 +256,7 @@ public class DancePlayerUIManager : MonoBehaviour
         {
 
             var displayNames = new List<string>();
-            foreach (var file in playList)
+            foreach (var file in danceFiles)
             {
                 if (file.EndsWith(".unity3d", System.StringComparison.OrdinalIgnoreCase))
                 {

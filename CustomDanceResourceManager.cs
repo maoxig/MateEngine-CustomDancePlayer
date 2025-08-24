@@ -1,5 +1,4 @@
-﻿using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 
@@ -53,25 +52,25 @@ public class DanceResourceManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Async load dance resource
+    /// Load dance resource
     /// </summary>
-    /// <param name="fileName">.unity3d filename</param>
-    /// <returns>Coroutine，可 yield 等待完成</returns>
-    public IEnumerator LoadDanceResourceAsync(string fileName)
+    /// <param name="fileName">.unity3d</param>
+    /// <returns>True if loaded successfully</returns>
+    public bool LoadDanceResource(string fileName)
     {
         if (!avatarHelper.IsAvatarAvailable())
         {
 #if UNITY_EDITOR
             Debug.LogError("Avatar is not available, cannot load resource.");
 #endif
-            yield break;
+            return false;
         }
         if (string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".unity3d"))
         {
 #if UNITY_EDITOR
             Debug.LogError("Invalid file name: " + fileName);
 #endif
-            yield break;
+            return false;
         }
 
         // 2. Unload previous resources (to avoid memory leaks)
@@ -84,23 +83,20 @@ public class DanceResourceManager : MonoBehaviour
 #if UNITY_EDITOR
             Debug.LogError("File does not exist: " + fullPath);
 #endif
-            yield break;
+            return false;
         }
 
-        // 4. async load AssetBundle
-        AssetBundleCreateRequest request = AssetBundle.LoadFromFileAsync(fullPath);
-        yield return request;
-
-        _currentAssetBundle = request.assetBundle;
+        // 4. Load AssetBundle
+        _currentAssetBundle = AssetBundle.LoadFromFile(fullPath);
         if (_currentAssetBundle == null)
         {
 #if UNITY_EDITOR
             Debug.LogError("Failed to load .unity3d (file may be corrupted or version incompatible): " + fullPath);
 #endif
-            yield break;
+            return false;
         }
 
-        // 5. extract resources 
+        // 5. Extract resources (by convention: 'file name = resource name')
         string baseName = Path.GetFileNameWithoutExtension(fileName);
         bool loadAnimatorSuccess = LoadAnimatorController(baseName);
         bool loadAudioSuccess = LoadAudioClip(baseName);
@@ -108,12 +104,13 @@ public class DanceResourceManager : MonoBehaviour
         if (!loadAnimatorSuccess)
         {
             UnloadCurrentResource();
-            yield break;
+            return false;
         }
 
 #if UNITY_EDITOR
         if (CurrentAudioClip != null)
         {
+
             Debug.Log($"Loaded successfully: {fileName} (animation + audio)");
         }
         else
@@ -121,7 +118,9 @@ public class DanceResourceManager : MonoBehaviour
             Debug.LogWarning($"Loaded successfully: {fileName} (animation only, audio not found)");
         }
 #endif
+        return true;
     }
+
     /// <summary>
     /// Load animator controller
     /// </summary>
