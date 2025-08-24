@@ -87,7 +87,7 @@ public class DancePlayerCore : MonoBehaviour
     /// <summary>
     /// Plays the dance at the specified index
     /// </summary>
-    public bool PlayDanceByIndex(int index)
+    public void PlayDanceByIndex(int index) 
     {
         // Pre-check: valid index, avatar available, playlist not empty
         if (playList == null || playList.Count == 0)
@@ -95,33 +95,39 @@ public class DancePlayerCore : MonoBehaviour
 #if UNITY_EDITOR
             Debug.LogError("Playlist is empty");
 #endif
-            return false;
+            return;
         }
         if (index < 0 || index >= playList.Count)
         {
-            return false;
+            return;
         }
         if (!avatarHelper.IsAvatarAvailable())
         {
-            return false;
+            return;
         }
 
-        // 1. Record the current play index
+        StartCoroutine(PlayDanceCoroutine(index));
+    }
+
+    private IEnumerator PlayDanceCoroutine(int index)
+    {
+        // 1. record current index
         CurrentPlayIndex = index;
         string targetFileName = playList[index];
 
-        // 2. Load the corresponding dance resource
-        bool loadSuccess = resourceManager.LoadDanceResource(targetFileName);
-        if (!loadSuccess)
+        // 2. async load resources
+        yield return resourceManager.LoadDanceResourceAsync(targetFileName);
+
+        // check if loaded successfully
+        if (resourceManager.CurrentAnimatorCtrl == null)
         {
             IsPlaying = false;
-            return false;
+            yield break;
         }
 
         // 3. Start playing the animation and audio
         Animator animator = avatarHelper.CurrentAnimator;
         AudioSource audioSource = avatarHelper.CurrentAudioSource;
-
 
         SafeSetAnimatorBool(animator, "isDancing", false);
         animator.runtimeAnimatorController = resourceManager.CurrentAnimatorCtrl;
@@ -140,7 +146,6 @@ public class DancePlayerCore : MonoBehaviour
 #if UNITY_EDITOR
         Debug.Log($"Start playing: {targetFileName} (Mode: {GetPlayModeText()})");
 #endif
-        return true;
     }
     /// <summary>
     /// Safely sets the Animator's Bool parameter (only sets if the parameter exists)
