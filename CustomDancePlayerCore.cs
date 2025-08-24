@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
-using System.Threading.Tasks;
 using UnityEngine;
 
 /// <summary>
@@ -14,9 +13,9 @@ public class DancePlayerCore : MonoBehaviour
     // Play mode enumeration (Sequence, Loop, Random)
     public enum PlayMode
     {
-        Sequence,  
-        Loop,      
-        Random     
+        Sequence,
+        Loop,
+        Random
     }
 
     // Current play mode (default is Sequence)
@@ -35,8 +34,6 @@ public class DancePlayerCore : MonoBehaviour
     public DanceResourceManager resourceManager;
     public DancePlayerUIManager uiManager;
 
-    private readonly object _playLock = new object();
-
     void Update()
     {
         // Only check animation end when playing and avatar is available
@@ -52,7 +49,7 @@ public class DancePlayerCore : MonoBehaviour
     /// </summary>
     public void InitPlayer()
     {
-        RefreshPlayList();
+        _playList = resourceManager.DanceFileList ?? new List<string>();
         CurrentPlayIndex = -1;
         IsPlaying = false;
 #if UNITY_EDITOR
@@ -90,83 +87,60 @@ public class DancePlayerCore : MonoBehaviour
     /// <summary>
     /// Plays the dance at the specified index
     /// </summary>
-    public async Task<bool> PlayDanceByIndex(int index)
+    public bool PlayDanceByIndex(int index)
     {
-        // Lock to prevent concurrent play requests
-        lock (_playLock)
-        {
-            if (resourceManager.IsResourceLoading())
-            {
-                Debug.LogWarning("Player is busy, skip play request");
-                return false;
-            }
-            if (IsPlaying)
-            {
-                Debug.Log("Stopping current play to start new one");
-                StopPlay(); 
-            }
-        }
-
-        // Pre-check conditions
+        // Pre-check: valid index, avatar available, playlist not empty
         if (_playList == null || _playList.Count == 0)
         {
+#if UNITY_EDITOR
             Debug.LogError("Playlist is empty");
+#endif
             return false;
         }
         if (index < 0 || index >= _playList.Count)
         {
-            Debug.LogError($"Invalid index: {index} (max: {_playList.Count - 1})");
             return false;
         }
         if (!avatarHelper.IsAvatarAvailable())
         {
-            Debug.LogError("Avatar not available");
             return false;
         }
 
-        try
+        // 1. Record the current play index
+        CurrentPlayIndex = index;
+        string targetFileName = _playList[index];
+
+        // 2. Load the corresponding dance resource
+        bool loadSuccess = resourceManager.LoadDanceResource(targetFileName);
+        if (!loadSuccess)
         {
-            // 1. Record current index
-            CurrentPlayIndex = index;
-            string targetFileName = _playList[index];
-
-            // 2. Asynchronously load resources
-            bool loadSuccess = await resourceManager.LoadDanceResource(targetFileName);
-            if (!loadSuccess)
-            {
-                IsPlaying = false;
-                return false;
-            }
-
-            // 3. Make sure the avatar is still available after loading
-            Animator animator = avatarHelper.CurrentAnimator;
-            AudioSource audioSource = avatarHelper.CurrentAudioSource;
-
-            // Set Parameters safely
-            SafeSetAnimatorBool(animator, "isDancing", false);
-            animator.runtimeAnimatorController = resourceManager.CurrentAnimatorCtrl;
-            SafeSetAnimatorBool(animator, "isDancing", true);
-            SafeSetAnimatorFloat(animator, "DanceIndex", 0);
-
-            // Record the start time
-            _audioStartTime = Time.time;
-
-            // Play audio
-            audioSource.Play();
-
-            // Mark as playing
-            IsPlaying = true;
-#if UNITY_EDITOR
-            Debug.Log($"Playing: {targetFileName} (Mode: {GetPlayModeText()})");
-#endif
-            return true;
-        }
-        catch (Exception e)
-        {
-            Debug.LogError($"Failed to play dance: {e.Message}");
             IsPlaying = false;
             return false;
         }
+
+        // 3. Start playing the animation and audio
+        Animator animator = avatarHelper.CurrentAnimator;
+        AudioSource audioSource = avatarHelper.CurrentAudioSource;
+
+
+        SafeSetAnimatorBool(animator, "isDancing", false);
+        animator.runtimeAnimatorController = resourceManager.CurrentAnimatorCtrl;
+        animator.SetBool("isDancing", true);
+        animator.SetFloat(Animator.StringToHash("DanceIndex"), 0);
+
+        // Use audio duration as the benchmark (animation and audio duration match)
+        _audioStartTime = Time.time;
+
+
+        // Play audio
+        audioSource.Play();
+
+        // Mark as playing
+        IsPlaying = true;
+#if UNITY_EDITOR
+        Debug.Log($"Start playing: {targetFileName} (Mode: {GetPlayModeText()})");
+#endif
+        return true;
     }
     /// <summary>
     /// Safely sets the Animator's Bool parameter (only sets if the parameter exists)
@@ -219,7 +193,7 @@ public class DancePlayerCore : MonoBehaviour
     /// <summary>
     /// Plays the next track
     /// </summary>
-    public async void PlayNext()
+    public void PlayNext()
     {
         if (_playList == null || _playList.Count == 0) return;
 
@@ -227,52 +201,47 @@ public class DancePlayerCore : MonoBehaviour
         switch (CurrentPlayMode)
         {
             case PlayMode.Sequence:
+                // Sequence: Current index +1, stop at the end
                 nextIndex = CurrentPlayIndex + 1;
                 if (nextIndex >= _playList.Count)
                 {
+
                     StopPlay();
                     return;
                 }
                 break;
             case PlayMode.Loop:
+                // Loop: Keep current index (replay)
                 nextIndex = CurrentPlayIndex;
                 break;
             case PlayMode.Random:
-
-                System.Random random = new System.Random(Guid.NewGuid().GetHashCode());
-                if (_playList.Count == 1)
+                // Random: Generate an index different from the current one (when list length > 1)
+                System.Random random = new System.Random();
+                do
                 {
-                    nextIndex = 0;
-                }
-                else
-                {
-                    do
-                    {
-                        nextIndex = random.Next(0, _playList.Count);
-                    } while (nextIndex == CurrentPlayIndex);
-                }
+                    nextIndex = random.Next(0, _playList.Count);
+                } while (_playList.Count > 1 && nextIndex == CurrentPlayIndex);
                 break;
         }
 
-        // 异步播放下一曲
-        await PlayDanceByIndex(nextIndex);
+        // Plays the next track
+        PlayDanceByIndex(nextIndex);
     }
-
 
     /// <summary>
     /// Plays the previous track
     /// </summary>
-    public async void PlayPrev()
+    public void PlayPrev()
     {
         if (_playList == null || _playList.Count == 0) return;
         if (CurrentPlayIndex <= 0)
         {
-            await PlayDanceByIndex(0);
+            PlayDanceByIndex(0);
             return;
         }
 
         // Plays the previous track
-        await PlayDanceByIndex(CurrentPlayIndex - 1);
+        PlayDanceByIndex(CurrentPlayIndex - 1);
     }
 
     /// <summary>
@@ -295,15 +264,15 @@ public class DancePlayerCore : MonoBehaviour
         if (avatarHelper.DefaultAnimatorController != null)
         {
             animator.runtimeAnimatorController = avatarHelper.DefaultAnimatorController;
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             Debug.Log("Restored default animator controller");
-            #endif
+#endif
         }
         else
         {
-            #if UNITY_EDITOR
+#if UNITY_EDITOR
             Debug.LogWarning("Default controller not saved, trying to re-fetch");
-            #endif
+#endif
         }
 
         // 3. Unload resources + reset state (keep unchanged)
@@ -322,13 +291,15 @@ public class DancePlayerCore : MonoBehaviour
             return;
 
         AudioSource audioSource = avatarHelper.CurrentAudioSource;
-        AudioClip clip = resourceManager.CurrentAudioClip;
 
-        // Double check: audio is not playin
+        // If currently supposed to be playing, but audio has stopped (playback finished)
         if (!audioSource.isPlaying)
         {
-            // Invoke next track after a short delay to avoid rapid calls
-            Invoke(nameof(PlayNext), 0.2f);
+            // Wait a short moment to avoid false positives
+            if (Time.time - _audioStartTime > 0.5f)
+            {
+                PlayNext();
+            }
         }
     }
     /// <summary>
@@ -352,9 +323,9 @@ public class DancePlayerCore : MonoBehaviour
     /// <summary>
     /// Refreshes the playlist (called after adding/removing files)
     /// </summary>
-    public async void RefreshPlayList()
+    public void RefreshPlayList()
     {
-        await resourceManager.RefreshDanceFileList();
+        resourceManager.RefreshDanceFileList();
         _playList = resourceManager.DanceFileList;
         // If current play index exceeds new list length, reset to -1
         if (CurrentPlayIndex >= _playList.Count)
@@ -367,7 +338,7 @@ public class DancePlayerCore : MonoBehaviour
 #endif
         if (uiManager != null)
         {
-            await uiManager.RefreshDropdown();
+            uiManager.RefreshDropdown();
         }
     }
 }
