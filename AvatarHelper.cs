@@ -17,6 +17,8 @@ public class AvatarHelper : MonoBehaviour
     // Store the avatar's default AnimatorController (restore when playback stops)
     public RuntimeAnimatorController DefaultAnimatorController { get; private set; }
 
+    public RuntimeAnimatorController CustomDanceAvatarController;
+
 
     void Update()
     {
@@ -106,10 +108,23 @@ public class AvatarHelper : MonoBehaviour
         GameObject soundFX = GameObject.Find("SoundFX");
         if (soundFX != null)
         {
-            CurrentAudioSource = soundFX.GetComponentInChildren<AudioSource>();
+            Transform customDanceAudioTrans = soundFX.transform.Find("CustomDanceAudio");
+            GameObject customDanceAudioObj;
+            if (customDanceAudioTrans == null)
+            {
+                customDanceAudioObj = new GameObject("CustomDanceAudio");
+                customDanceAudioObj.transform.SetParent(soundFX.transform, false);
             }
-
-
+            else
+            {
+                customDanceAudioObj = customDanceAudioTrans.gameObject;
+            }
+            CurrentAudioSource = customDanceAudioObj.GetComponent<AudioSource>();
+            if (CurrentAudioSource == null)
+            {
+                CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
+            }
+        }
 
         DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
 
@@ -158,15 +173,23 @@ public class AvatarHelper : MonoBehaviour
         GameObject soundFX = GameObject.Find("SoundFX");
         if (soundFX != null)
         {
-            CurrentAudioSource = soundFX.GetComponentInChildren<AudioSource>();
+            Transform customDanceAudioTrans = soundFX.transform.Find("CustomDanceAudio");
+            GameObject customDanceAudioObj;
+            if (customDanceAudioTrans == null)
+            {
+                customDanceAudioObj = new GameObject("CustomDanceAudio");
+                customDanceAudioObj.transform.SetParent(soundFX.transform, false);
+            }
+            else
+            {
+                customDanceAudioObj = customDanceAudioTrans.gameObject;
+            }
+            CurrentAudioSource = customDanceAudioObj.GetComponent<AudioSource>();
             if (CurrentAudioSource == null)
             {
-                GameObject danceAudioObj = new GameObject("DanceAudio");
-                danceAudioObj.transform.SetParent(soundFX.transform, false);
-                CurrentAudioSource = danceAudioObj.AddComponent<AudioSource>();
+                CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
             }
         }
-        
     }
 
 
