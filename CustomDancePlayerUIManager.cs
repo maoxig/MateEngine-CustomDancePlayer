@@ -118,7 +118,7 @@ public class DancePlayerUIManager : MonoBehaviour
     /// </summary>
     private void InitUI()
     {
-        CurrentPlayText.text = "Now Playing: None";
+        CurrentPlayText.text = "None";
         PlayModeText.text = playerCore.GetPlayModeText();
         AvatarStatusText.text = "Avatar Status: Not Connected";
     }
@@ -148,7 +148,7 @@ public class DancePlayerUIManager : MonoBehaviour
     private void UpdateUI()
     {
         // Update current playing file name
-        CurrentPlayText.text = $"Now Playing: {playerCore.GetCurrentPlayFileName()}";
+        CurrentPlayText.text = playerCore.GetCurrentPlayFileName();
 
 
         // Update avatar status
@@ -158,7 +158,7 @@ public class DancePlayerUIManager : MonoBehaviour
         }
         else
         {
-            AvatarStatusText.text = "Avatar Status: Not Connected (auto retry after switching avatar)";
+            AvatarStatusText.text = "Avatar Status: Not Connected";
         }
 
         // Update play mode text
@@ -216,7 +216,7 @@ public class DancePlayerUIManager : MonoBehaviour
         playerCore.StopPlay();
         // Reset dropdown selection
         //DanceFileDropdown.value = -1;
-        DanceFileDropdown.captionText.text = "Select Dance File";
+        //DanceFileDropdown.captionText.text = "Select Dance File";
     }
 
     /// <summary>

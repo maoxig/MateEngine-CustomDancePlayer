@@ -122,11 +122,14 @@ public class DancePlayerCore : MonoBehaviour
         Animator animator = avatarHelper.CurrentAnimator;
         AudioSource audioSource = avatarHelper.CurrentAudioSource;
 
+        var overrideController = new AnimatorOverrideController(avatarHelper.CustomDanceAvatarController);
 
-        SafeSetAnimatorBool(animator, "isDancing", false);
-        animator.runtimeAnimatorController = resourceManager.CurrentAnimatorCtrl;
+        AnimationClip danceClip = resourceManager.CurrentAnimationClip;
+
+        overrideController["CUSTOM_DANCE"] = danceClip;
+
+        animator.runtimeAnimatorController = overrideController;
         animator.SetBool("isDancing", true);
-        animator.SetFloat(Animator.StringToHash("DanceIndex"), 0);
 
         // Use audio duration as the benchmark (animation and audio duration match)
         _audioStartTime = Time.time;
@@ -142,54 +145,8 @@ public class DancePlayerCore : MonoBehaviour
 #endif
         return true;
     }
-    /// <summary>
-    /// Safely sets the Animator's Bool parameter (only sets if the parameter exists)
-    /// </summary>
-    private void SafeSetAnimatorBool(Animator animator, string paramName, bool value)
-    {
-        if (animator == null) return;
 
 
-        int paramHash = Animator.StringToHash(paramName);
-        if (HasAnimatorParameter(animator, paramHash, AnimatorControllerParameterType.Bool))
-        {
-            animator.SetBool(paramHash, value);
-        }
-
-    }
-
-    /// <summary>
-    /// Safely sets the Animator's Float parameter (only sets if the parameter exists)
-    /// </summary>
-    private void SafeSetAnimatorFloat(Animator animator, string paramName, float value)
-    {
-        if (animator == null) return;
-
-        int paramHash = Animator.StringToHash(paramName);
-        if (HasAnimatorParameter(animator, paramHash, AnimatorControllerParameterType.Float))
-        {
-            animator.SetFloat(paramHash, value);
-        }
-    }
-
-    /// <summary>
-    /// Checks if the Animator has a parameter of the specified type (does not rely on the trimmed class)
-    /// </summary>
-    private bool HasAnimatorParameter(Animator animator, int paramHash, AnimatorControllerParameterType type)
-    {
-        if (animator == null) return false;
-
-        // Check all parameters (use basic API, do not rely on AnimatorController)
-        foreach (var param in animator.parameters)
-        {
-            // AnimatorControllerParameter does not have nameHash property, use Animator.StringToHash(param.name)
-            if (Animator.StringToHash(param.name) == paramHash && param.type == type)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
     /// <summary>
     /// Plays the next track
     /// </summary>
@@ -260,7 +217,7 @@ public class DancePlayerCore : MonoBehaviour
         var animator = avatarHelper.CurrentAnimator;
         audioSource.Stop();
         animator.SetBool("isDancing", false);
-        SafeSetAnimatorBool(animator, "isDancing", false); // Safely set
+        
         // 2. Restore default controller (ensure DefaultAnimatorController is correctly saved)
         if (avatarHelper.DefaultAnimatorController != null)
         {

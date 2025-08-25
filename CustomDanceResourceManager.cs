@@ -10,7 +10,7 @@ public class DanceResourceManager : MonoBehaviour
     private const string DANCE_FOLDER_NAME = "CustomDances";
 
     private AssetBundle _currentAssetBundle;
-    public RuntimeAnimatorController CurrentAnimatorCtrl { get; private set; }
+    //public RuntimeAnimatorController CurrentAnimatorCtrl { get; private set; }
     public AudioClip CurrentAudioClip { get; private set; }
 
     public AnimationClip CurrentAnimationClip { get; private set; }
@@ -100,7 +100,7 @@ public class DanceResourceManager : MonoBehaviour
 
         // 5. Extract resources (by convention: 'file name = resource name')
         string baseName = Path.GetFileNameWithoutExtension(fileName);
-        bool loadAnimatorSuccess = LoadAnimatorController(baseName);
+        //bool loadAnimatorSuccess = LoadAnimatorController(baseName);
         bool loadAudioSuccess = LoadAudioClip(baseName);
         bool loadAnimationSuccess = LoadAnimationClip(baseName);
 
@@ -122,16 +122,16 @@ public class DanceResourceManager : MonoBehaviour
     /// <summary>
     /// Load animator controller
     /// </summary>
-    private bool LoadAnimatorController(string baseName)
-    {
-        string ctrlPath = $"{baseName}.controller";
-        CurrentAnimatorCtrl = _currentAssetBundle.LoadAsset<RuntimeAnimatorController>(ctrlPath);
-        if (CurrentAnimatorCtrl == null)
-        {
-            return false;
-        }
-        return true;
-    }
+    //private bool LoadAnimatorController(string baseName)
+    //{
+    //    string ctrlPath = $"{baseName}.controller";
+    //    CurrentAnimatorCtrl = _currentAssetBundle.LoadAsset<RuntimeAnimatorController>(ctrlPath);
+    //    if (CurrentAnimatorCtrl == null)
+    //    {
+    //        return false;
+    //    }
+    //    return true;
+    //}
 
     private bool LoadAnimationClip(string baseName)
     {
@@ -193,8 +193,8 @@ public class DanceResourceManager : MonoBehaviour
         // 3. Unload AnimationClip
         CurrentAnimationClip = null;
 
-        // 3. Clear resource references
-        CurrentAnimatorCtrl = null;
+        //// 3. Clear resource references
+        //CurrentAnimatorCtrl = null;
         CurrentAudioClip = null;
     }
 
@@ -211,6 +211,6 @@ public class DanceResourceManager : MonoBehaviour
     /// </summary>
     public bool IsResourceLoaded()
     {
-        return CurrentAnimatorCtrl != null && CurrentAudioClip != null;
+        return CurrentAnimationClip != null && CurrentAudioClip != null; // && CurrentAnimatorCtrl != null;
     }
 }
