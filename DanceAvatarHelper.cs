@@ -19,6 +19,8 @@ public class DanceAvatarHelper : MonoBehaviour
 
     public RuntimeAnimatorController CustomDanceAvatarController;
 
+    public AnimatorOverrideController CurrentOverrideController { get; set; }
+
 
     void Update()
     {

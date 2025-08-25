@@ -122,13 +122,18 @@ public class DancePlayerCore : MonoBehaviour
         Animator animator = avatarHelper.CurrentAnimator;
         AudioSource audioSource = avatarHelper.CurrentAudioSource;
 
+        if (avatarHelper.CurrentOverrideController != null)
+        {
+            Destroy(avatarHelper.CurrentOverrideController);
+            avatarHelper.CurrentOverrideController = null;
+        }
+
         var overrideController = new AnimatorOverrideController(avatarHelper.CustomDanceAvatarController);
 
-        AnimationClip danceClip = resourceManager.CurrentAnimationClip;
-
-        overrideController["CUSTOM_DANCE"] = danceClip;
-
+        overrideController["CUSTOM_DANCE"] = resourceManager.CurrentAnimationClip;
         animator.runtimeAnimatorController = overrideController;
+        avatarHelper.CurrentOverrideController = overrideController;
+
         animator.SetBool("isDancing", true);
 
         // Use audio duration as the benchmark (animation and audio duration match)
