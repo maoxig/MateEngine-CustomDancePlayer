@@ -1,4 +1,4 @@
-name: Build and Release
+name: Release
 
 on:
   push:
@@ -6,31 +6,27 @@ on:
       - "v*"
 
 jobs:
-  build:
-    runs-on: windows-latest
+  release:
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
+      - name: Generate changelog
+        id: changelog
+        run: |
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
-      - name: Build Release DLL
-        run: msbuild CustomDancePlayer.csproj /p:Configuration=Release
-
-      - name: Generate Release Notes
-        id: drafter
-        uses: release-drafter/release-drafter@v6
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
         with:
-          config-name: release-drafter.yml
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: bin/Release/CustomDancePlayer.dll
-          body: ${{ steps.drafter.outputs.body }}
+          body: ${{ env.CHANGELOG }}
+          files: |
+            dist/*.dll
+            dist/*.me
+            dist/*.rar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
