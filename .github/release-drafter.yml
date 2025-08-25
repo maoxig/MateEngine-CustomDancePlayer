@@ -1,0 +1,29 @@
+name-template: "v$NEXT_PATCH_VERSION"
+tag-template: "v$NEXT_PATCH_VERSION"
+
+categories:
+  - title: "🚀 Features"
+    commit-message: "^feat:"
+  - title: "🐛 Fixes"
+    commit-message: "^fix:"
+  - title: "🛠 Improvements"
+    commit-message: "^(refactor|chore):"
+  - title: "📦 Other Changes"
+    commit-message: ".*"
+
+change-template: "- $COMMIT_MESSAGE"
+no-changes-template: "No significant changes."
+
+template: |
+  ## Changelog
+  $CHANGES
+
+  ### Notes
+  - Please remove the old .dll & .me before updating.
+  - You need to install/update both .me and .dll files simultaneously.
+  - You can view the mod release page on Discord, there is a tutorial video.
+    https://discord.com/channels/1367667737437929513/1408758200462999583
+  - 你可以直接看我B站上传的视频
+    https://www.bilibili.com/video/BV1Yge6zqETU/
+  - For developer:
+    If you know how to use the Mate-ENGINE SDK, you can download the .prefab file and adjust the UI.
