@@ -236,7 +236,6 @@ public class DancePlayerCore : MonoBehaviour
         // 3. Unload resources + reset state (keep unchanged)
         resourceManager.UnloadCurrentResource();
         IsPlaying = false;
-        CurrentPlayIndex = -1;
 
     }
     /// <summary>

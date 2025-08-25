@@ -171,6 +171,7 @@ public class DancePlayerUIManager : MonoBehaviour
         NextBtn.interactable = isPlayerReady && playerCore.IsPlaying;
         StopBtn.interactable = isPlayerReady && playerCore.IsPlaying;
         DanceFileDropdown.interactable = isPlayerReady && !playerCore.IsPlaying;
+        RefreshBtn.interactable = !playerCore.IsPlaying;
 
 
         if (playerCore.IsPlaying && playerCore.CurrentPlayIndex >= 0
@@ -217,6 +218,7 @@ public class DancePlayerUIManager : MonoBehaviour
         // Reset dropdown selection
         //DanceFileDropdown.value = -1;
         //DanceFileDropdown.captionText.text = "Select Dance File";
+        DanceFileDropdown.value = playerCore.CurrentPlayIndex;
     }
 
     /// <summary>
