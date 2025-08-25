@@ -16,7 +16,7 @@ public class DanceResourceManager : MonoBehaviour
     public AnimationClip CurrentAnimationClip { get; private set; }
     public List<string> DanceFileList { get; private set; } = new List<string>();
 
-    public AvatarHelper avatarHelper;
+    public DanceAvatarHelper avatarHelper;
 
     void Start()
     {

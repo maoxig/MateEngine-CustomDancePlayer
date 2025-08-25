@@ -4,7 +4,7 @@ using UnityEngine;
 /// <summary>
 /// Avatar utility class: finds the currently active avatar and retrieves necessary components
 /// </summary>
-public class AvatarHelper : MonoBehaviour
+public class DanceAvatarHelper : MonoBehaviour
 {
 
     private const string MODEL_PARENT_NAME = "Model";

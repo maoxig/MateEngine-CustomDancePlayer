@@ -94,10 +94,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AvatarHelper.cs" />
-    <Compile Include="CustomDancePlayerCore.cs" />
-    <Compile Include="CustomDancePlayerUIManager.cs" />
-    <Compile Include="CustomDanceResourceManager.cs" />
+    <Compile Include="DanceAvatarHelper.cs" />
+    <Compile Include="DancePlayerCore.cs" />
+    <Compile Include="DancePlayerUIManager.cs" />
+    <Compile Include="DanceResourceManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

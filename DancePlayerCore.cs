@@ -30,7 +30,7 @@ public class DancePlayerCore : MonoBehaviour
 
 
     // Reference dependencies
-    public AvatarHelper avatarHelper;
+    public DanceAvatarHelper avatarHelper;
     public DanceResourceManager resourceManager;
     public DancePlayerUIManager uiManager;
 
