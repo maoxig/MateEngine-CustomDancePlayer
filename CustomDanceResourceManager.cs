@@ -12,6 +12,8 @@ public class DanceResourceManager : MonoBehaviour
     private AssetBundle _currentAssetBundle;
     public RuntimeAnimatorController CurrentAnimatorCtrl { get; private set; }
     public AudioClip CurrentAudioClip { get; private set; }
+
+    public AnimationClip CurrentAnimationClip { get; private set; }
     public List<string> DanceFileList { get; private set; } = new List<string>();
 
     public AvatarHelper avatarHelper;
@@ -100,12 +102,8 @@ public class DanceResourceManager : MonoBehaviour
         string baseName = Path.GetFileNameWithoutExtension(fileName);
         bool loadAnimatorSuccess = LoadAnimatorController(baseName);
         bool loadAudioSuccess = LoadAudioClip(baseName);
+        bool loadAnimationSuccess = LoadAnimationClip(baseName);
 
-        if (!loadAnimatorSuccess)
-        {
-            UnloadCurrentResource();
-            return false;
-        }
 
 #if UNITY_EDITOR
         if (CurrentAudioClip != null)
@@ -135,6 +133,16 @@ public class DanceResourceManager : MonoBehaviour
         return true;
     }
 
+    private bool LoadAnimationClip(string baseName)
+    {
+        string animPath = $"{baseName}.anim";
+        CurrentAnimationClip = _currentAssetBundle.LoadAsset<AnimationClip>(animPath);
+        if (CurrentAnimationClip == null)
+        {
+            return false;
+        }
+        return true;
+    }
     /// <summary>
     /// Load audio clip
     /// </summary>
@@ -182,6 +190,8 @@ public class DanceResourceManager : MonoBehaviour
             Debug.Log("Unloaded old resources");
 #endif
         }
+        // 3. Unload AnimationClip
+        CurrentAnimationClip = null;
 
         // 3. Clear resource references
         CurrentAnimatorCtrl = null;
