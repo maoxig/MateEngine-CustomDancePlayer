@@ -101,8 +101,8 @@ public class DanceResourceManager : MonoBehaviour
         // 5. Extract resources (by convention: 'file name = resource name')
         string baseName = Path.GetFileNameWithoutExtension(fileName);
         //bool loadAnimatorSuccess = LoadAnimatorController(baseName);
-        bool loadAudioSuccess = LoadAudioClip(baseName);
-        bool loadAnimationSuccess = LoadAnimationClip(baseName);
+        bool loadAudioSuccess = LoadAudioClipByType();
+        bool loadAnimationSuccess = LoadAnimationClipByType();
 
 
 #if UNITY_EDITOR
@@ -132,7 +132,17 @@ public class DanceResourceManager : MonoBehaviour
     //    }
     //    return true;
     //}
-
+    private bool LoadAnimationClipByType()
+    {
+        AnimationClip[] clips = _currentAssetBundle.LoadAllAssets<AnimationClip>();
+        if (clips != null && clips.Length > 0)
+        {
+            CurrentAnimationClip = clips[0];
+            return true;
+        }
+        CurrentAnimationClip = null;
+        return false;
+    }
     private bool LoadAnimationClip(string baseName)
     {
         string animPath = $"{baseName}.anim";
@@ -169,6 +179,23 @@ public class DanceResourceManager : MonoBehaviour
         return false;
     }
 
+    private bool LoadAudioClipByType()
+    {
+        AudioClip[] clips = _currentAssetBundle.LoadAllAssets<AudioClip>();
+        AudioSource audioSource = avatarHelper.CurrentAudioSource;
+
+        if (clips != null && clips.Length > 0)
+        {
+            CurrentAudioClip = clips[0];
+            audioSource.clip = CurrentAudioClip;
+            audioSource.loop = false;
+            return true;
+        }
+
+        CurrentAudioClip = null;
+        audioSource.clip = null;
+        return false;
+    }
     /// <summary>
     /// Unload current dance resource
     /// </summary>
