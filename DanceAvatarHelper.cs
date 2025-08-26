@@ -8,8 +8,8 @@ public class DanceAvatarHelper : MonoBehaviour
 {
 
     private const string MODEL_PARENT_NAME = "Model";
-
-
+    private const string CUSTOM_DANCE_AUDIO_NAME = "CustomDanceAudio";
+    private GameObject _modelParent;
 
     public GameObject CurrentAvatar { get; private set; }
     public Animator CurrentAnimator { get; private set; }
@@ -21,21 +21,58 @@ public class DanceAvatarHelper : MonoBehaviour
 
     public AnimatorOverrideController CurrentOverrideController { get; set; }
 
+    void Start()
+    {
+        _modelParent = GameObject.Find(MODEL_PARENT_NAME);
+        // Initialize and get the current avatar's default AnimatorController
+        CheckAndUpdateCurrentAvatar();
+        if (CurrentAnimator != null)
+        {
+            DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
+        }
 
+        // Initialize AudioSource
+        GameObject soundFX = GameObject.Find("SoundFX");
+        if (soundFX != null)
+        {
+            Transform customDanceAudioTrans = soundFX.transform.Find("CustomDanceAudio");
+            GameObject customDanceAudioObj;
+            if (customDanceAudioTrans == null)
+            {
+                customDanceAudioObj = new GameObject("CustomDanceAudio");
+                customDanceAudioObj.transform.SetParent(soundFX.transform, false);
+            }
+            else
+            {
+                customDanceAudioObj = customDanceAudioTrans.gameObject;
+            }
+            CurrentAudioSource = customDanceAudioObj.GetComponent<AudioSource>();
+            if (CurrentAudioSource == null)
+            {
+                CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
+            }
+        }
+    }
     void Update()
     {
 
         CheckAndUpdateCurrentAvatar();
     }
-
+    private void OnDestroy()
+    {
+        ClearCurrentAvatar(); 
+        CurrentAvatar = null;
+        CurrentAnimator = null;
+        CurrentAudioSource = null;
+    }
     /// <summary>
     /// Checks and updates the current avatar
     /// </summary>
     private void CheckAndUpdateCurrentAvatar()
     {
 
-        GameObject modelParent = GameObject.Find(MODEL_PARENT_NAME);
-        if (modelParent == null)
+  
+        if (_modelParent == null)
         {
 #if UNITY_EDITOR
             Debug.LogWarning("Model parent object not found, please check the game scene structure");
@@ -51,7 +88,7 @@ public class DanceAvatarHelper : MonoBehaviour
         // If no tag is added, traverse all child objects under Model to find the active object with Animator
         if (newAvatar == null)
         {
-            foreach (Transform child in modelParent.transform)
+            foreach (Transform child in _modelParent.transform)
             {
                 if (child.gameObject.activeSelf && child.GetComponent<Animator>() != null)
                 {
@@ -77,9 +114,10 @@ public class DanceAvatarHelper : MonoBehaviour
         if (CurrentAvatar != null && CurrentAvatar != newAvatar)
         {
             DancePlayerCore playerCore = Object.FindFirstObjectByType<DancePlayerCore>();
-            if (playerCore != null && playerCore.IsPlaying)
+            if (playerCore != null)
             {
                 playerCore.StopPlay();
+                playerCore.ResetDanceEndFlag(); // 重置结束标志，避免误触发PlayNext
             }
         }
 
@@ -144,15 +182,13 @@ public class DanceAvatarHelper : MonoBehaviour
         {
 
             CurrentAnimator.runtimeAnimatorController = DefaultAnimatorController;
+            CurrentAnimator.SetBool("isDancing", false);
         }
 
-        if (CurrentAudioSource != null && CurrentAudioSource.gameObject.name == "DanceAudio")
-        {
-            Destroy(CurrentAudioSource.gameObject);
-        }
         CurrentAvatar = null;
         CurrentAnimator = null;
         CurrentAudioSource = null;
+      
     }
 
     /// <summary>
@@ -160,39 +196,9 @@ public class DanceAvatarHelper : MonoBehaviour
     /// </summary>
     public bool IsAvatarAvailable()
     {
-        return CurrentAvatar != null && CurrentAnimator != null && CurrentAudioSource != null;
+        return CurrentAvatar != null && CurrentAnimator != null;
     }
-    void Start()
-    {
-        // Initialize and get the current avatar's default AnimatorController
-        CheckAndUpdateCurrentAvatar();
-        if (CurrentAnimator != null)
-        {
-            DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
-        }
-
-        // Initialize AudioSource
-        GameObject soundFX = GameObject.Find("SoundFX");
-        if (soundFX != null)
-        {
-            Transform customDanceAudioTrans = soundFX.transform.Find("CustomDanceAudio");
-            GameObject customDanceAudioObj;
-            if (customDanceAudioTrans == null)
-            {
-                customDanceAudioObj = new GameObject("CustomDanceAudio");
-                customDanceAudioObj.transform.SetParent(soundFX.transform, false);
-            }
-            else
-            {
-                customDanceAudioObj = customDanceAudioTrans.gameObject;
-            }
-            CurrentAudioSource = customDanceAudioObj.GetComponent<AudioSource>();
-            if (CurrentAudioSource == null)
-            {
-                CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
-            }
-        }
-    }
+    
 
 
 }

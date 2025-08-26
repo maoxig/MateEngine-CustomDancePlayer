@@ -240,6 +240,7 @@ public class DancePlayerCore : MonoBehaviour
         // 3. Unload resources + reset state (keep unchanged)
         resourceManager.UnloadCurrentResource();
         IsPlaying = false;
+        _danceEnded = false;
 
     }
     /// <summary>
@@ -283,7 +284,7 @@ public class DancePlayerCore : MonoBehaviour
         }
         return fileName;
     }
-    private void ResetDanceEndFlag()
+    public void ResetDanceEndFlag()
     {
         _danceEnded = false;
     }
