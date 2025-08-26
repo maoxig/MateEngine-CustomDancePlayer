@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - "v*"
+  workflow_dispatch: # 允许手动触发
 
 jobs:
   release:
@@ -12,18 +13,19 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # 需要获取所有历史来生成完整的变更日志
 
-      - name: Generate changelog
-        id: changelog
-        run: |
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+      - name: Draft release notes
+        uses: release-drafter/release-drafter@v5
+        id: draft_release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          body: ${{ env.CHANGELOG }}
+          body: ${{ steps.draft_release.outputs.body }} # 使用release-drafter生成的内容
           files: |
             dist/*.dll
             dist/*.me
