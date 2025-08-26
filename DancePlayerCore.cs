@@ -26,8 +26,9 @@ public class DancePlayerCore : MonoBehaviour
     public int CurrentPlayIndex { get; set; } = -1;
     // Whether currently playing
     public bool IsPlaying { get; private set; } = false;
-    private float _audioStartTime;
+    public float AudioStartTime;
 
+    private bool _danceEnded = false;
 
     // Reference dependencies
     public DanceAvatarHelper avatarHelper;
@@ -135,10 +136,7 @@ public class DancePlayerCore : MonoBehaviour
         avatarHelper.CurrentOverrideController = overrideController;
 
         animator.SetBool("isDancing", true);
-
-        // Use audio duration as the benchmark (animation and audio duration match)
-        _audioStartTime = Time.time;
-
+        ResetDanceEndFlag();
 
         // Play audio
         audioSource.Play();
@@ -252,17 +250,20 @@ public class DancePlayerCore : MonoBehaviour
         if (!IsPlaying || !avatarHelper.IsAvatarAvailable() || !resourceManager.IsResourceLoaded())
             return;
 
-        AudioSource audioSource = avatarHelper.CurrentAudioSource;
-
-        // If currently supposed to be playing, but audio has stopped (playback finished)
-        if (!audioSource.isPlaying)
+        var animator = avatarHelper.CurrentAnimator;
+        var audioSource = avatarHelper.CurrentAudioSource;
+        
+        if (animator != null)
         {
-            // Wait a short moment to avoid false positives
-            if (Time.time - _audioStartTime > 0.5f)
+            var stateInfo = animator.GetCurrentAnimatorStateInfo(0); // 默认 layer 0
+            if (!_danceEnded && !audioSource.isPlaying && stateInfo.IsName("End") )
             {
+                _danceEnded = true;
                 PlayNext();
+                return;
             }
         }
+
     }
     /// <summary>
     /// Gets the current playing file name (for UI display)
@@ -281,7 +282,10 @@ public class DancePlayerCore : MonoBehaviour
         }
         return fileName;
     }
-
+    private void ResetDanceEndFlag()
+    {
+        _danceEnded = false;
+    }
     /// <summary>
     /// Refreshes the playlist (called after adding/removing files)
     /// </summary>
