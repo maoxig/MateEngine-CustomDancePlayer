@@ -4,6 +4,8 @@ on:
   push:
     tags:
       - "v*"
+  pull_request_target:
+    types: [opened, reopened, synchronize, edited]
   workflow_dispatch: # 允许手动触发
 
 jobs:
@@ -22,13 +24,16 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # 只有在推送标签时才创建正式发布
       - name: Create GitHub Release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          body: ${{ steps.draft_release.outputs.body }} # 使用release-drafter生成的内容
+          body: ${{ steps.draft_release.outputs.body }}
           files: |
             dist/*.dll
             dist/*.me
             dist/*.rar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    

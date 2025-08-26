@@ -3,12 +3,21 @@ tag-template: "v$NEXT_PATCH_VERSION"
 
 categories:
   - title: "🚀 Features"
+    labels:
+      - "feature"
+      - "enhancement"
     commit-message: "^feat:"
   - title: "🐛 Fixes"
+    labels:
+      - "bug"
     commit-message: "^fix:"
   - title: "🛠 Improvements"
+    labels:
+      - "refactor"
+      - "chore"
     commit-message: "^(refactor|chore):"
   - title: "📦 Other Changes"
+    # 这是最后一个类别，用于匹配所有其他提交
     commit-message: ".*"
 
 change-template: "- $COMMIT_MESSAGE"
@@ -27,3 +36,4 @@ template: |
     https://www.bilibili.com/video/BV1Yge6zqETU/
   - For developer:
     If you know how to use the Mate-ENGINE SDK, you can download the .prefab file and adjust the UI.
+    
