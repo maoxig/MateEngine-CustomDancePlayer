@@ -41,8 +41,9 @@ The mod consists of three main parts:
 
 If there is sufficient interest, I may collect all dance files and upload them to a cloud storage service. (Note: These files are converted from MMD .vmd motion data—please comply with relevant laws and copyright regulations when using them.)
 
-
-
+> Edit: I have uploaded a dance file pack containing 185 converted dance files. The link is as follows:
+https://drive.google.com/file/d/15Md_x4f_0u81MJNx23wF_AvWVDFuVQlZ/view  
+You must ensure that the filenames are displayed correctly and that you do not rename the files, and also make sure to place them in the correct directory. (See [step1.3](#step-13-load-dance-files-unity3d-format))
 ## Installation Steps
 ### Prerequisites
 - **Mate Engine** desktop pet game installed
