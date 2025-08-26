@@ -26,6 +26,7 @@ public class DancePlayerCore : MonoBehaviour
     public int CurrentPlayIndex { get; set; } = -1;
     // Whether currently playing
     public bool IsPlaying { get; private set; } = false;
+
     public float AudioStartTime;
 
     private bool _danceEnded = false;
@@ -137,7 +138,7 @@ public class DancePlayerCore : MonoBehaviour
 
         animator.SetBool("isDancing", true);
         ResetDanceEndFlag();
-
+        AudioStartTime = Time.time;
         // Play audio
         audioSource.Play();
 

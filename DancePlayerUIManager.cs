@@ -13,6 +13,7 @@ public class DancePlayerUIManager : MonoBehaviour
 {
     // UI component references (assign in Inspector)
     public Text CurrentPlayText;       // Currently playing file name
+    public Slider ProgressSlider;          // Progress slider (optional, can be null)
     public Button RefreshBtn;              // Refresh button (refresh dance file list)
     public Button PrevBtn;                 // Previous button
     public Button PlayPauseBtn;            // Play/Pause button (currently only play)
@@ -25,6 +26,7 @@ public class DancePlayerUIManager : MonoBehaviour
     public Dropdown DanceFileDropdown; // Dance file dropdown (select to play)
     public TMP_Text _toggleKeyText;        // Assign text component in Inspector
     public Canvas targetCanvas;            // UI's Canvas component
+
 
     // Reference to player core
     public DancePlayerCore playerCore;
@@ -137,6 +139,7 @@ public class DancePlayerUIManager : MonoBehaviour
         RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
         if (VolumeSlider != null)
         {
+            VolumeSlider.value =  0.5f;
             VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
 
@@ -184,6 +187,18 @@ public class DancePlayerUIManager : MonoBehaviour
             }
 
             DanceFileDropdown.captionText.text = currentFileName;
+        }
+        if (playerCore.IsPlaying && playerCore.resourceManager.CurrentAudioClip != null)
+        {
+            float elapsed = Time.time - playerCore.AudioStartTime; // 你已经存了开始时间
+            float total = playerCore.resourceManager.CurrentAudioClip.length;
+            float progress = Mathf.Clamp01(elapsed / total);
+
+            ProgressSlider.value = progress;  // UI slider
+        }
+        else
+        {
+            ProgressSlider.value = 0f;
         }
     }
     /// <summary>
