@@ -257,7 +257,7 @@ public class DancePlayerCore : MonoBehaviour
         if (animator != null)
         {
             var stateInfo = animator.GetCurrentAnimatorStateInfo(0); // 默认 layer 0
-            if (!_danceEnded && !audioSource.isPlaying && stateInfo.IsName("End") )
+            if (!_danceEnded && stateInfo.IsName("End") )
             {
                 _danceEnded = true;
                 PlayNext();
