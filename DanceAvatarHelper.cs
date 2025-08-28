@@ -35,11 +35,11 @@ public class DanceAvatarHelper : MonoBehaviour
         GameObject soundFX = GameObject.Find("SoundFX");
         if (soundFX != null)
         {
-            Transform customDanceAudioTrans = soundFX.transform.Find("CustomDanceAudio");
+            Transform customDanceAudioTrans = soundFX.transform.Find(CUSTOM_DANCE_AUDIO_NAME);
             GameObject customDanceAudioObj;
             if (customDanceAudioTrans == null)
             {
-                customDanceAudioObj = new GameObject("CustomDanceAudio");
+                customDanceAudioObj = new GameObject(CUSTOM_DANCE_AUDIO_NAME);
                 customDanceAudioObj.transform.SetParent(soundFX.transform, false);
             }
             else
@@ -148,11 +148,11 @@ public class DanceAvatarHelper : MonoBehaviour
         GameObject soundFX = GameObject.Find("SoundFX");
         if (soundFX != null)
         {
-            Transform customDanceAudioTrans = soundFX.transform.Find("CustomDanceAudio");
+            Transform customDanceAudioTrans = soundFX.transform.Find(CUSTOM_DANCE_AUDIO_NAME);
             GameObject customDanceAudioObj;
             if (customDanceAudioTrans == null)
             {
-                customDanceAudioObj = new GameObject("CustomDanceAudio");
+                customDanceAudioObj = new GameObject(CUSTOM_DANCE_AUDIO_NAME);
                 customDanceAudioObj.transform.SetParent(soundFX.transform, false);
             }
             else
