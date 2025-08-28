@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using UnityEngine;
+using VRM;
 
 /// <summary>
 /// Core player: handles play modes, track switching, and auto-next.
@@ -130,6 +131,9 @@ public class DancePlayerCore : MonoBehaviour
             avatarHelper.CurrentOverrideController = null;
         }
 
+        // set  BlendShapeProxy to disable 
+        var proxy = avatarHelper.CurrentAnimator.GetComponent<UniversalBlendshapes>();
+        if (proxy != null) proxy.enabled = false;
         var overrideController = new AnimatorOverrideController(avatarHelper.CustomDanceAvatarController);
 
         overrideController["CUSTOM_DANCE"] = resourceManager.CurrentAnimationClip;
@@ -236,7 +240,8 @@ public class DancePlayerCore : MonoBehaviour
             Debug.LogWarning("Default controller not saved, trying to re-fetch");
 #endif
         }
-
+        var proxy = avatarHelper.CurrentAnimator.GetComponent<UniversalBlendshapes>();
+        if (proxy != null) proxy.enabled = true;
         // 3. Unload resources + reset state (keep unchanged)
         resourceManager.UnloadCurrentResource();
         IsPlaying = false;
