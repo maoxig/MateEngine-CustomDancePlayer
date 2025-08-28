@@ -6,16 +6,16 @@ categories:
     labels:
       - "feature"
       - "enhancement"
-    commit-message: "^feat:"
+    commit-message: "^feat"
   - title: "🐛 Fixes"
     labels:
       - "bug"
-    commit-message: "^fix:"
+    commit-message: "^fix"
   - title: "🛠 Improvements"
     labels:
       - "refactor"
       - "chore"
-    commit-message: "^(refactor|chore):"
+    commit-message: "^(refactor|chore)"
   - title: "📦 Other Changes"
     # 这是最后一个类别，用于匹配所有其他提交
     commit-message: ".*"
