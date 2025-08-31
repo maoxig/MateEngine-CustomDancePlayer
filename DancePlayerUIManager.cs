@@ -323,6 +323,8 @@ public class DancePlayerUIManager : MonoBehaviour
     private void HandleKeyToggleUI()
     {
         if (targetCanvas == null) return;
+        if (IsInTextInputState())
+            return;
         if (Input.GetKeyDown(toggleKey))
         {
             GameObject targetCanvasObject = targetCanvas.gameObject;
@@ -338,6 +340,27 @@ public class DancePlayerUIManager : MonoBehaviour
                 RemoveMyUIFromGameMenuList();
             }
         }
+    }
+    /// <summary>
+    /// Check if currently in a text input state (e.g., chat box or input field is active)
+    /// </summary>
+    /// <returns>true = inputting, false = not inputting</returns>
+    private bool IsInTextInputState()
+    {
+        // 1. First check if EventSystem exists (avoid null reference)
+        if (EventSystem.current == null)
+            return false;
+
+        // 2. Get the currently selected UI object
+        GameObject selectedObj = EventSystem.current.currentSelectedGameObject;
+        if (selectedObj == null)
+            return false;
+
+        // 3. Check if it is an input field type (supports UGUI and TMP)
+        bool isUGUIInput = selectedObj.GetComponent<InputField>() != null;
+        bool isTMPInput = selectedObj.GetComponent<TMP_InputField>() != null;
+
+        return isUGUIInput || isTMPInput;
     }
 
     public void AddMyUIToGameMenuList()
