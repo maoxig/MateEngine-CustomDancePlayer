@@ -25,6 +25,7 @@ public class DancePlayerUIManager : MonoBehaviour
     public TMP_Text AvatarStatusText;      // Avatar status text
     public Dropdown DanceFileDropdown; // Dance file dropdown (select to play)
     public TMP_Text _toggleKeyText;        // Assign text component in Inspector
+    public Toggle EnableUIPanelFollow;      // Toggle for enabling avatar follow (optional, can be null)
     public Canvas targetCanvas;            // UI's Canvas component
 
 
@@ -40,7 +41,7 @@ public class DancePlayerUIManager : MonoBehaviour
     private MenuEntry _myUIMenuEntry;     // Your UI's corresponding MenuEntry (for adding/removing from list)
     private bool _isMyUIAddedToMenuList;  // Flag to prevent duplicate addition to menuEntries
     private Font _defaultLiberationFont;
-
+    private SwingController swingController;
 
     void Start()
     {
@@ -96,7 +97,13 @@ public class DancePlayerUIManager : MonoBehaviour
         };
         AddMyUIToGameMenuList();
 
+        swingController = GetComponent<SwingController>();
 
+        // 
+        if (swingController != null && EnableUIPanelFollow != null)
+        {
+            EnableUIPanelFollow.isOn = swingController.enabled;
+        }
 
     }
 
@@ -111,7 +118,7 @@ public class DancePlayerUIManager : MonoBehaviour
         RefreshBtn.onClick.RemoveAllListeners();
         DanceFileDropdown.onValueChanged.RemoveAllListeners();
         VolumeSlider?.onValueChanged.RemoveAllListeners();
-
+        EnableUIPanelFollow?.onValueChanged.RemoveAllListeners();
         RemoveMyUIFromGameMenuList();
     }
     /// <summary>
@@ -142,7 +149,10 @@ public class DancePlayerUIManager : MonoBehaviour
             VolumeSlider.value =  0.5f;
             VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
-
+        if (EnableUIPanelFollow != null)
+        {
+            EnableUIPanelFollow.onValueChanged.AddListener(OnUIPanelFollowToggleChanged);
+        }
     }
 
     /// <summary>
@@ -256,6 +266,29 @@ public class DancePlayerUIManager : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Handle avatar follow toggle change
+    /// </summary>
+    private void OnUIPanelFollowToggleChanged(bool isOn)
+    {
+        if (swingController != null)
+        {
+            swingController.enabled = isOn;
+#if UNITY_EDITOR
+            Debug.Log($"Avatar follow {(isOn ? "enabled" : "disabled")}");
+#endif
+        }
+        else
+        {
+#if UNITY_EDITOR
+            Debug.LogWarning("SwingController component not found on the same GameObject");
+#endif
+            if (EnableUIPanelFollow != null)
+            {
+                EnableUIPanelFollow.interactable = false;
+            }
+        }
+    }
 
     /// <summary>
     /// Refresh dropdown (called when manually clicking refresh button)
