@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class DanceAvatarHelper : MonoBehaviour
@@ -11,11 +12,15 @@ public class DanceAvatarHelper : MonoBehaviour
     public GameObject CurrentAvatar { get; private set; }
     public Animator CurrentAnimator { get; private set; }
     public AudioSource CurrentAudioSource { get; private set; }
+
+    public Mesh DummyBlendshapeMesh;
     public RuntimeAnimatorController DefaultAnimatorController { get; private set; }
 
     public RuntimeAnimatorController CustomDanceAvatarController;
 
     public AnimatorOverrideController CurrentOverrideController { get; set; }
+
+    public SkinnedMeshRenderer TargetSMR {  get; private set; } = null;
 
     // Japanese MMD blendshape keywords to identify the correct SMR
     private readonly string[] _mmdBlendshapeKeywords = {
@@ -170,65 +175,78 @@ public class DanceAvatarHelper : MonoBehaviour
     {
         if (CurrentAvatar == null)
             return;
-
-        // Find all SkinnedMeshRenderers in the avatar
+        if (CurrentAnimator.GetComponent<DummyToUniversalSync>() != null)
+            return;
         SkinnedMeshRenderer[] smrs = CurrentAvatar.GetComponentsInChildren<SkinnedMeshRenderer>();
-        SkinnedMeshRenderer targetSMR = null;
 
-        // Search for SMR with MMD blendshapes
+        TargetSMR = null;
         foreach (var smr in smrs)
         {
-            if (smr.sharedMesh != null && smr.sharedMesh.blendShapeCount > 0)
+            if (smr.sharedMesh == null || smr.sharedMesh.blendShapeCount == 0)
+                continue;
+
+            // 收集所有 blendshape 名称
+            var blendShapeNames = new HashSet<string>();
+            bool hasDummy = false;
+            for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
             {
-                for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
+                string blendShapeName = smr.sharedMesh.GetBlendShapeName(i);
+                blendShapeNames.Add(blendShapeName);
+                if (blendShapeName.ToLower().Contains("dummy"))
                 {
-                    string blendShapeName = smr.sharedMesh.GetBlendShapeName(i);
-                    if (_mmdBlendshapeKeywords.Any(keyword => blendShapeName.Contains(keyword)))
-                    {
-                        targetSMR = smr;
-                        break;
-                    }
-                }
-                if (targetSMR != null)
+                    hasDummy = true;
                     break;
+                }
+            }
+
+            if (hasDummy)
+                continue;
+
+            // 检查所有 mmd 形态键都存在
+            bool allKeywordsPresent = _mmdBlendshapeKeywords.All(keyword =>
+                blendShapeNames.Any(name => name.Contains(keyword))
+            );
+
+            if (allKeywordsPresent)
+            {
+                TargetSMR = smr;
+                break;
             }
         }
 
-        if (targetSMR == null)
+        if (TargetSMR == null)
         {
-#if UNITY_EDITOR
-            Debug.LogWarning($"No SMR with MMD blendshapes found in avatar {CurrentAvatar.name}");
-#endif
-            return;
-        }
+            Debug.LogWarning($"No valid MMD SMR found in {CurrentAvatar.name}, attaching DummyMesh instead");
 
-        // Check for existing "Body" GameObject
-        Transform existingBody = CurrentAvatar.transform.Find(BODY_NAME);
-        if (existingBody != null)
-        {
-            // If the existing Body doesn't contain the target SMR, rename it
-            if (existingBody.GetComponent<SkinnedMeshRenderer>() != targetSMR)
+            // 先处理旧 Body 防止冲突
+            Transform existingBody = CurrentAvatar.transform.Find(BODY_NAME);
+            if (existingBody != null)
             {
                 existingBody.name = $"{BODY_NAME}_Old_{Random.Range(0, 10000)}";
-#if UNITY_EDITOR
-                Debug.Log($"Renamed existing Body to {existingBody.name} as it didn't contain the target SMR");
-#endif
             }
+
+            // 创建 Dummy Body
+            GameObject dummyObj = new GameObject(BODY_NAME);
+            dummyObj.transform.SetParent(CurrentAvatar.transform, false);
+
+            var smr = dummyObj.AddComponent<SkinnedMeshRenderer>();
+            smr.sharedMesh = DummyBlendshapeMesh;
+            smr.updateWhenOffscreen = true;
+            var dummySync = CurrentAvatar.AddComponent<DummyToUniversalSync>();
+            dummySync.enabled = false;
+            dummySync.dummySmr = smr;
+
+
         }
-        if (targetSMR != null)
+        else
         {
-
-            if (targetSMR.transform.parent != CurrentAvatar.transform)
+            Debug.Log($"Found valid MMD SMR: {TargetSMR.name} in {CurrentAvatar.name}");
+            if (TargetSMR.transform.parent != CurrentAvatar.transform)
             {
-                targetSMR.transform.SetParent(CurrentAvatar.transform, false);
+                TargetSMR.transform.SetParent(CurrentAvatar.transform, false);
             }
-
-            targetSMR.gameObject.name = BODY_NAME;
-#if UNITY_EDITOR
-            Debug.Log($"Moved SMR {targetSMR.name} to root and renamed to Body under {CurrentAvatar.name}");
-#endif
+            TargetSMR.gameObject.name = BODY_NAME;
         }
-
     }
 
     private void ClearCurrentAvatar()
@@ -242,10 +260,13 @@ public class DanceAvatarHelper : MonoBehaviour
         CurrentAvatar = null;
         CurrentAnimator = null;
         CurrentAudioSource = null;
+        TargetSMR = null;
     }
 
     public bool IsAvatarAvailable()
     {
         return CurrentAvatar != null && CurrentAnimator != null;
     }
+
+
 }

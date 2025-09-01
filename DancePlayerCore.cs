@@ -130,9 +130,19 @@ public class DancePlayerCore : MonoBehaviour
             avatarHelper.CurrentOverrideController = null;
         }
 
-        // set  BlendShapeProxy to disable 
-        var proxy = avatarHelper.CurrentAnimator.GetComponent<UniversalBlendshapes>();
-        if (proxy != null) proxy.enabled = false;
+        if (avatarHelper.TargetSMR != null)
+        {
+            // set  BlendShapeProxy to disable 
+            var proxy = avatarHelper.CurrentAnimator.GetComponent<UniversalBlendshapes>();
+            if (proxy != null) proxy.enabled = false;
+        }
+        else
+        {
+            var sync = avatarHelper.CurrentAvatar.GetComponent<DummyToUniversalSync>();
+            if (sync != null) sync.enabled = true;
+
+        }
+
         var overrideController = new AnimatorOverrideController(avatarHelper.CustomDanceAvatarController);
 
         overrideController["CUSTOM_DANCE"] = resourceManager.CurrentAnimationClip;
@@ -239,10 +249,21 @@ public class DancePlayerCore : MonoBehaviour
             Debug.LogWarning("Default controller not saved, trying to re-fetch");
 #endif
         }
-        var proxy = avatarHelper.CurrentAnimator.GetComponent<UniversalBlendshapes>();
-        if (proxy != null) proxy.enabled = true;
-        // 3. Unload resources + reset state (keep unchanged)
-        resourceManager.UnloadCurrentResource();
+        if (avatarHelper.TargetSMR != null)
+        {
+            // set  BlendShapeProxy to enable
+            var proxy = avatarHelper.CurrentAnimator.GetComponent<UniversalBlendshapes>();
+            if (proxy != null) proxy.enabled = true;
+        }
+        else
+        {
+            var sync = avatarHelper.CurrentAvatar.GetComponent<DummyToUniversalSync>();
+            if (sync != null) sync.enabled = false;
+
+
+        }
+            // 3. Unload resources + reset state (keep unchanged)
+            resourceManager.UnloadCurrentResource();
         IsPlaying = false;
         _danceEnded = false;
 

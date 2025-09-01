@@ -98,6 +98,7 @@
     <Compile Include="DancePlayerCore.cs" />
     <Compile Include="DancePlayerUIManager.cs" />
     <Compile Include="DanceResourceManager.cs" />
+    <Compile Include="DummyToUniversalSync.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
