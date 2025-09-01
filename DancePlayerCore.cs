@@ -138,8 +138,7 @@ public class DancePlayerCore : MonoBehaviour
         }
         else
         {
-            var sync = avatarHelper.CurrentAvatar.GetComponent<DummyToUniversalSync>();
-            if (sync != null) sync.enabled = true;
+            avatarHelper.SetupDummyForDance();
 
         }
 
@@ -257,8 +256,7 @@ public class DancePlayerCore : MonoBehaviour
         }
         else
         {
-            var sync = avatarHelper.CurrentAvatar.GetComponent<DummyToUniversalSync>();
-            if (sync != null) sync.enabled = false;
+            avatarHelper.RestoreOriginalBody();
 
 
         }

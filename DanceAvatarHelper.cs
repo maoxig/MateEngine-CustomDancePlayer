@@ -32,6 +32,10 @@ public class DanceAvatarHelper : MonoBehaviour
         "お"        // Mouth shape 'O'
     };
 
+    private Transform originalBodyTransform = null;  
+    private Transform dummyBodyTransform = null;    
+    private string oldBodyName = null;
+
     void Start()
     {
         _modelParent = GameObject.Find(MODEL_PARENT_NAME);
@@ -71,6 +75,7 @@ public class DanceAvatarHelper : MonoBehaviour
 
     private void OnDestroy()
     {
+        RestoreOriginalBody();
         ClearCurrentAvatar();
         CurrentAvatar = null;
         CurrentAnimator = null;
@@ -175,8 +180,8 @@ public class DanceAvatarHelper : MonoBehaviour
     {
         if (CurrentAvatar == null)
             return;
-        if (CurrentAnimator.GetComponent<DummyToUniversalSync>() != null)
-            return;
+
+
         SkinnedMeshRenderer[] smrs = CurrentAvatar.GetComponentsInChildren<SkinnedMeshRenderer>();
 
         TargetSMR = null;
@@ -216,31 +221,10 @@ public class DanceAvatarHelper : MonoBehaviour
 
         if (TargetSMR == null)
         {
-            Debug.LogWarning($"No valid MMD SMR found in {CurrentAvatar.name}, attaching DummyMesh instead");
-
-            // 先处理旧 Body 防止冲突
-            Transform existingBody = CurrentAvatar.transform.Find(BODY_NAME);
-            if (existingBody != null)
-            {
-                existingBody.name = $"{BODY_NAME}_Old_{Random.Range(0, 10000)}";
-            }
-
-            // 创建 Dummy Body
-            GameObject dummyObj = new GameObject(BODY_NAME);
-            dummyObj.transform.SetParent(CurrentAvatar.transform, false);
-
-            var smr = dummyObj.AddComponent<SkinnedMeshRenderer>();
-            smr.sharedMesh = DummyBlendshapeMesh;
-            smr.updateWhenOffscreen = true;
-            var dummySync = CurrentAvatar.AddComponent<DummyToUniversalSync>();
-            dummySync.enabled = false;
-            dummySync.dummySmr = smr;
-
 
         }
         else
         {
-            Debug.Log($"Found valid MMD SMR: {TargetSMR.name} in {CurrentAvatar.name}");
             if (TargetSMR.transform.parent != CurrentAvatar.transform)
             {
                 TargetSMR.transform.SetParent(CurrentAvatar.transform, false);
@@ -256,11 +240,12 @@ public class DanceAvatarHelper : MonoBehaviour
             CurrentAnimator.runtimeAnimatorController = DefaultAnimatorController;
             CurrentAnimator.SetBool("isDancing", false);
         }
+        RestoreOriginalBody();
 
         CurrentAvatar = null;
         CurrentAnimator = null;
         CurrentAudioSource = null;
-        TargetSMR = null;
+
     }
 
     public bool IsAvatarAvailable()
@@ -268,5 +253,86 @@ public class DanceAvatarHelper : MonoBehaviour
         return CurrentAvatar != null && CurrentAnimator != null;
     }
 
+    public void SetupDummyForDance()
+    {
+        if (TargetSMR != null) return;  // 有原MMD SMR，无需dummy
+
+        // 查找原始Body
+        Transform existingBody = CurrentAvatar.transform.Find(BODY_NAME);
+        if (existingBody == null)
+        {
+            return;
+        }
+
+        // 检查Body下的SkinnedMeshRenderer是否已包含dummy形态键
+        var smr = existingBody.GetComponent<SkinnedMeshRenderer>();
+        if (smr != null && smr.sharedMesh != null && smr.sharedMesh.blendShapeCount > 0)
+        {
+            for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
+            {
+                string blendShapeName = smr.sharedMesh.GetBlendShapeName(i);
+                if (blendShapeName.ToLower().Contains("dummy"))
+                {
+                    return;
+                }
+            }
+        }
+
+        // 存储原始状态
+        originalBodyTransform = existingBody;
+
+        // 重命名原始Body
+        oldBodyName = BODY_NAME + $"_Old_{Random.Range(0, 10000)}";
+        existingBody.name = oldBodyName;
+
+        // 创建Dummy Body
+        GameObject dummyObj = new GameObject(BODY_NAME);
+        dummyObj.transform.SetParent(CurrentAvatar.transform, false);
+
+        var dummySmr = dummyObj.AddComponent<SkinnedMeshRenderer>();
+        dummySmr.sharedMesh = DummyBlendshapeMesh;
+        dummySmr.updateWhenOffscreen = true;
+
+        dummyBodyTransform = dummyObj.transform;
+
+        // 添加/启用sync
+        var dummySync = CurrentAvatar.GetComponent<DummyToUniversalSync>();
+        if (dummySync == null)
+        {
+            dummySync = CurrentAvatar.AddComponent<DummyToUniversalSync>();
+        }
+        dummySync.dummySmr = dummySmr;
+        dummySync.enabled = true;
+#if UNITY_EDITOR
+        Debug.Log($"Setup dummy: Renamed original to {existingBody.name}, created new Body.");
+#endif
+    }
+
+    public void RestoreOriginalBody()
+    {
+        if (TargetSMR != null) return;  // 无需恢复
+
+        // 销毁dummy
+        if (dummyBodyTransform != null)
+        {
+            Destroy(dummyBodyTransform.gameObject);
+            dummyBodyTransform = null;
+        }
+
+        // 恢复原始Body
+        if (originalBodyTransform != null)
+        {
+            originalBodyTransform.name = BODY_NAME;
+            originalBodyTransform = null;
+            oldBodyName = null;
+        }
+
+        // 禁用/移除sync
+        var sync = CurrentAvatar?.GetComponent<DummyToUniversalSync>();
+        if (sync != null)
+        {
+            sync.enabled = false;
+        }
+    }
 
 }
