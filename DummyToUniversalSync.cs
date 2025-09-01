@@ -31,6 +31,7 @@ public class DummyToUniversalSync : MonoBehaviour
             ("怒り",   (u, v) => u.Angry = v),
             ("困る",   (u, v) => u.Sorrow = v),
             ("真面目", (u, v) => u.Neutral = v),
+            ("笑い",  (u, v) => u.Fun = v),
         };
     }
 
