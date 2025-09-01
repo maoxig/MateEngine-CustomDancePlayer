@@ -6,19 +6,18 @@ categories:
     labels:
       - "feature"
       - "enhancement"
-    commit-message: "^feat"
+    commit-message: "^feat(:| )"  # 匹配 "feat: " 或 "feat " 开头的提交
   - title: "🐛 Fixes"
     labels:
       - "bug"
-    commit-message: "^fix"
+    commit-message: "^fix(:| )"   # 匹配 "fix: " 或 "fix " 开头的提交
   - title: "🛠 Improvements"
     labels:
       - "refactor"
       - "chore"
-    commit-message: "^(refactor|chore)"
+    commit-message: "^(refactor|chore)(:| )"  # 匹配 "refactor: "、"chore: " 等
   - title: "📦 Other Changes"
-    # 这是最后一个类别，用于匹配所有其他提交
-    commit-message: ".*"
+    commit-message: ".*"  # 最后匹配所有未被分类的提交
 
 change-template: "- $COMMIT_MESSAGE"
 no-changes-template: "No significant changes."
@@ -27,13 +26,20 @@ template: |
   ## Changelog
   $CHANGES
 
-  ### Notes
-  - Please remove the old .dll & .me before updating.
-  - You need to install/update both .me and .dll files simultaneously.
-  - You can view the mod release page on Discord, there is a tutorial video.
+  ### Notes for Users
+  - Please remove old `.dll` and `.me` files before updating.
+  - You must install/update both `.me` and `.dll` files simultaneously.
+  - Tutorial video is available on the mod release page in Discord:
     https://discord.com/channels/1367667737437929513/1408758200462999583
-  - 你可以直接看我B站上传的视频
+  
+  ### 用户须知
+  - 更新前请移除旧的 `.dll` 和 `.me` 文件。
+  - 必须同时安装/更新 `.me` 和 `.dll` 文件。
+  - B站教程视频：
     https://www.bilibili.com/video/BV1Yge6zqETU/
-  - For developer:
-    If you know how to use the Mate-ENGINE SDK, you can download the .prefab file and adjust the UI.
-    
+  
+  ### For Developers
+  If you know how to use the Mate-ENGINE SDK, you can download the `.prefab` file to adjust the UI.
+  
+  ### 开发者说明
+  若您熟悉 Mate-ENGINE SDK，可下载 `.prefab` 文件自定义调整UI。
