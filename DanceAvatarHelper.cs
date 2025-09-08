@@ -75,7 +75,7 @@ public class DanceAvatarHelper : MonoBehaviour
 
     private void OnDestroy()
     {
-        RestoreOriginalBody();
+        //RestoreOriginalBody();
         ClearCurrentAvatar();
         CurrentAvatar = null;
         CurrentAnimator = null;
@@ -240,7 +240,7 @@ public class DanceAvatarHelper : MonoBehaviour
             CurrentAnimator.runtimeAnimatorController = DefaultAnimatorController;
             CurrentAnimator.SetBool("isDancing", false);
         }
-        RestoreOriginalBody();
+        //RestoreOriginalBody();
 
         CurrentAvatar = null;
         CurrentAnimator = null;
