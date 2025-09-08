@@ -98,6 +98,7 @@
     <Compile Include="DancePlayerCore.cs" />
     <Compile Include="DancePlayerUIManager.cs" />
     <Compile Include="DanceResourceManager.cs" />
+    <Compile Include="DanceShadowFollower.cs" />
     <Compile Include="DummyToUniversalSync.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="DanceUIDragPanel.cs" />
