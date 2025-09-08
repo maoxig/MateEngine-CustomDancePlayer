@@ -36,13 +36,22 @@ public class DancePlayerCore : MonoBehaviour
     public DanceResourceManager resourceManager;
     public DancePlayerUIManager uiManager;
 
+    // animation start delay (seconds). default 0.3s
+    public float AnimationStartDelay = 0.3f;
+
+    // coroutine handle for delayed animation start (so we can cancel)
+    private Coroutine _startAnimationCoroutine = null;
+
+    // suppress end-check while waiting for animation to be applied (avoid false-positive "End")
+    private bool _suppressEndCheck = false;
+
+
     void Update()
     {
         // Only check animation end when playing and avatar is available
         if (IsPlaying && avatarHelper.IsAvatarAvailable() && resourceManager.IsResourceLoaded())
         {
             CheckAnimationEnd();
-
         }
     }
 
@@ -51,12 +60,21 @@ public class DancePlayerCore : MonoBehaviour
     /// </summary>
     public void InitPlayer()
     {
+
         _playList = resourceManager.DanceFileList ?? new List<string>();
         CurrentPlayIndex = -1;
         IsPlaying = false;
 #if UNITY_EDITOR
         Debug.Log("Player initialization completed");
 #endif
+    }
+
+    /// <summary>
+    /// Set and persist animation start delay (clamped 0..1)
+    /// </summary>
+    public void SetAnimationStartDelay(float seconds)
+    {
+        AnimationStartDelay = Mathf.Clamp(seconds, 0f, 1f);
     }
 
     /// <summary>
@@ -88,6 +106,7 @@ public class DancePlayerCore : MonoBehaviour
 
     /// <summary>
     /// Plays the dance at the specified index
+    /// Behavior: audio starts immediately; animation is applied after AnimationStartDelay (can be 0).
     /// </summary>
     public bool PlayDanceByIndex(int index)
     {
@@ -124,6 +143,13 @@ public class DancePlayerCore : MonoBehaviour
         Animator animator = avatarHelper.CurrentAnimator;
         AudioSource audioSource = avatarHelper.CurrentAudioSource;
 
+        // Stop any pending animation-start coroutine from previous track
+        if (_startAnimationCoroutine != null)
+        {
+            StopCoroutine(_startAnimationCoroutine);
+            _startAnimationCoroutine = null;
+        }
+
         if (avatarHelper.CurrentOverrideController != null)
         {
             Destroy(avatarHelper.CurrentOverrideController);
@@ -139,29 +165,67 @@ public class DancePlayerCore : MonoBehaviour
         else
         {
             avatarHelper.SetupDummyForDance();
-
         }
 
-        var overrideController = new AnimatorOverrideController(avatarHelper.CustomDanceAvatarController);
-
-        overrideController["CUSTOM_DANCE"] = resourceManager.CurrentAnimationClip;
-        animator.runtimeAnimatorController = overrideController;
-        avatarHelper.CurrentOverrideController = overrideController;
-
-        animator.SetBool("isDancing", true);
+        // Important: reset flags and mark that animation is pending (suppress "End" checks)
         ResetDanceEndFlag();
+        _suppressEndCheck = true;
+
+        // Start audio immediately and record start time
         AudioStartTime = Time.time;
-        // Play audio
         audioSource.Play();
 
-        // Mark as playing
+        // Mark as playing (so UI and Update know)
         IsPlaying = true;
+
+        // If delay is effectively zero -> start animation immediately; else start coroutine
+        float delay = Mathf.Clamp(AnimationStartDelay, 0f, 1f);
+        if (delay <= 0.0001f)
+        {
+            ApplyAnimationImmediately(animator, resourceManager.CurrentAnimationClip);
+        }
+        else
+        {
+            _startAnimationCoroutine = StartCoroutine(StartAnimationAfterDelay(animator, resourceManager.CurrentAnimationClip, delay));
+        }
+
 #if UNITY_EDITOR
-        Debug.Log($"Start playing: {targetFileName} (Mode: {GetPlayModeText()})");
+        Debug.Log($"Start playing: {targetFileName} (Mode: {GetPlayModeText()}, anim delay {AnimationStartDelay:F3}s)");
 #endif
         return true;
     }
 
+    private void ApplyAnimationImmediately(Animator animator, AnimationClip clip)
+    {
+        if (animator == null || clip == null) return;
+
+        var overrideController = new AnimatorOverrideController(avatarHelper.CustomDanceAvatarController);
+        overrideController["CUSTOM_DANCE"] = clip;
+        animator.runtimeAnimatorController = overrideController;
+        avatarHelper.CurrentOverrideController = overrideController;
+
+        animator.SetBool("isDancing", true);
+
+        // allow checking for End now
+        _suppressEndCheck = false;
+    }
+
+    private IEnumerator StartAnimationAfterDelay(Animator animator, AnimationClip clip, float delay)
+    {
+        yield return new WaitForSeconds(delay);
+
+        // if we have been stopped in the meantime, abort
+        if (!IsPlaying || animator == null || clip == null)
+        {
+            _startAnimationCoroutine = null;
+            _suppressEndCheck = false;
+            yield break;
+        }
+
+        ApplyAnimationImmediately(animator, clip);
+
+        _startAnimationCoroutine = null;
+    }
 
     /// <summary>
     /// Plays the next track
@@ -228,13 +292,21 @@ public class DancePlayerCore : MonoBehaviour
             return;
         }
 
-        // 1. Stops audio and animation
+        // 1. Stops any pending animation-start coroutine
+        if (_startAnimationCoroutine != null)
+        {
+            StopCoroutine(_startAnimationCoroutine);
+            _startAnimationCoroutine = null;
+        }
+        _suppressEndCheck = false;
+
+        // 2. Stops audio and animation
         var audioSource = avatarHelper.CurrentAudioSource;
         var animator = avatarHelper.CurrentAnimator;
         audioSource.Stop();
         animator.SetBool("isDancing", false);
-        
-        // 2. Restore default controller (ensure DefaultAnimatorController is correctly saved)
+
+        // 3. Restore default controller (ensure DefaultAnimatorController is correctly saved)
         if (avatarHelper.DefaultAnimatorController != null)
         {
             animator.runtimeAnimatorController = avatarHelper.DefaultAnimatorController;
@@ -257,15 +329,14 @@ public class DancePlayerCore : MonoBehaviour
         else
         {
             avatarHelper.RestoreOriginalBody();
-
-
         }
-            // 3. Unload resources + reset state (keep unchanged)
-            resourceManager.UnloadCurrentResource();
+
+        // 4. Unload resources + reset state (keep unchanged)
+        resourceManager.UnloadCurrentResource();
         IsPlaying = false;
         _danceEnded = false;
-
     }
+
     /// <summary>
     /// Checks if the animation has finished playing (triggers automatic next track)
     /// </summary>
@@ -275,20 +346,23 @@ public class DancePlayerCore : MonoBehaviour
         if (!IsPlaying || !avatarHelper.IsAvatarAvailable() || !resourceManager.IsResourceLoaded())
             return;
 
+        // while animation is pending to be applied, skip end-check
+        if (_suppressEndCheck)
+            return;
+
         var animator = avatarHelper.CurrentAnimator;
         var audioSource = avatarHelper.CurrentAudioSource;
-        
+
         if (animator != null)
         {
             var stateInfo = animator.GetCurrentAnimatorStateInfo(0); // 默认 layer 0
-            if (!_danceEnded && stateInfo.IsName("End") )
+            if (!_danceEnded && stateInfo.IsName("End"))
             {
                 _danceEnded = true;
                 PlayNext();
                 return;
             }
         }
-
     }
     /// <summary>
     /// Gets the current playing file name (for UI display)
