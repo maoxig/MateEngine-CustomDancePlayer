@@ -5,7 +5,7 @@ using UnityEngine.EventSystems;
 /// Allows dragging a panel by one or more assigned "drag handles".
 /// Attach to the root panel that you want to move.
 /// </summary>
-public class UIDragPanel : MonoBehaviour, IBeginDragHandler, IDragHandler
+public class DanceUIDragPanel : MonoBehaviour, IBeginDragHandler, IDragHandler
 {
     [Tooltip("Assign UI elements that can be used as drag handles (e.g., Text, Image, etc.).")]
     public RectTransform[] dragHandles;
@@ -30,9 +30,25 @@ public class UIDragPanel : MonoBehaviour, IBeginDragHandler, IDragHandler
     {
         if (!isDragging) return;
 
-        // 直接用 pointer 的 delta
         panelRect.anchoredPosition += eventData.delta;
+
+        // --- constraint to screen bounds ---
+        Vector2 size = panelRect.rect.size * panelRect.lossyScale; 
+        float halfW = size.x / 2f;
+        float halfH = size.y / 2f;
+
+        float minX = -Screen.width / 2f + halfW;
+        float maxX = Screen.width / 2f - halfW;
+        float minY = -Screen.height / 2f + halfH;
+        float maxY = Screen.height / 2f - halfH;
+
+        Vector2 pos = panelRect.anchoredPosition;
+        pos.x = Mathf.Clamp(pos.x, minX, maxX);
+        pos.y = Mathf.Clamp(pos.y, minY, maxY);
+
+        panelRect.anchoredPosition = pos;
     }
+
 
     private bool IsValidHandle(PointerEventData eventData)
     {
