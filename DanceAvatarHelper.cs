@@ -32,9 +32,11 @@ public class DanceAvatarHelper : MonoBehaviour
         "お"        // Mouth shape 'O'
     };
 
-    private Transform originalBodyTransform = null;  
-    private Transform dummyBodyTransform = null;    
+    private Transform originalBodyTransform = null;
+    private Transform dummyBodyTransform = null;
     private string oldBodyName = null;
+
+    private int lastLoadedInstanceID = 0;
 
     void Start()
     {
@@ -96,16 +98,34 @@ public class DanceAvatarHelper : MonoBehaviour
         GameObject newAvatar = null;
 
         // Find the active avatar under the Model
-        foreach (Transform child in _modelParent.transform)
+        if (newAvatar == null)
         {
-            if (child.gameObject.activeSelf && child.GetComponent<Animator>() != null)
+            foreach (Transform child in _modelParent.transform)
             {
-                newAvatar = child.gameObject;
-                break;
+            if (child.gameObject.activeSelf && child.GetComponent<Animator>() != null)
+                {
+                    newAvatar = child.gameObject;
+                    break;
+                }
             }
         }
 
-        if (newAvatar != CurrentAvatar)
+        bool hasChanged = (newAvatar != CurrentAvatar);
+        if (!hasChanged && newAvatar != null)
+        {
+
+
+            int currentID = newAvatar.GetInstanceID();
+#if UNITY_EDITOR
+             Debug.Log($"Current avatar instance ID: {currentID}, Last loaded ID: {lastLoadedInstanceID}");
+#endif
+            if (currentID != lastLoadedInstanceID)
+            {
+                hasChanged = true;
+            }
+        }
+
+        if (hasChanged)
         {
             UpdateAvatarComponents(newAvatar);
         }
@@ -113,15 +133,7 @@ public class DanceAvatarHelper : MonoBehaviour
 
     private void UpdateAvatarComponents(GameObject newAvatar)
     {
-        if (CurrentAvatar != null && CurrentAvatar != newAvatar)
-        {
-            DancePlayerCore playerCore = Object.FindFirstObjectByType<DancePlayerCore>();
-            if (playerCore != null)
-            {
-                playerCore.StopPlay();
-                playerCore.ResetDanceEndFlag();
-            }
-        }
+
 
         ClearCurrentAvatar();
 
@@ -134,7 +146,7 @@ public class DanceAvatarHelper : MonoBehaviour
         }
 
         CurrentAvatar = newAvatar;
-        CurrentAnimator = newAvatar.GetComponent<Animator>();
+        CurrentAnimator = newAvatar.GetComponentInChildren<Animator>();
         if (CurrentAnimator == null)
         {
 #if UNITY_EDITOR
@@ -171,7 +183,20 @@ public class DanceAvatarHelper : MonoBehaviour
 
         DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
 
+
+        lastLoadedInstanceID = CurrentAvatar.GetInstanceID();
+        if (CurrentAvatar != null)
+        {
+            DancePlayerCore playerCore = Object.FindFirstObjectByType<DancePlayerCore>();
+            if (playerCore != null)
+            {
+                playerCore.StopPlay();
+                playerCore.ResetDanceEndFlag();
+            }
+        }
+
 #if UNITY_EDITOR
+        Debug.Log($"Avatar updated: {newAvatar.name}, InstanceID: {lastLoadedInstanceID}");
         Debug.Log($"Connected to avatar: {newAvatar.name}");
 #endif
     }
@@ -245,6 +270,7 @@ public class DanceAvatarHelper : MonoBehaviour
         CurrentAvatar = null;
         CurrentAnimator = null;
         CurrentAudioSource = null;
+        lastLoadedInstanceID = 0;
 
     }
 
