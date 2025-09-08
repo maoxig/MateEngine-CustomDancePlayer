@@ -1,6 +1,7 @@
 name-template: "v$NEXT_PATCH_VERSION"
 tag-template: "v$NEXT_PATCH_VERSION"
-
+include-commit-author: true
+commitish: main
 categories:
   - title: "🚀 Features"
     labels:
