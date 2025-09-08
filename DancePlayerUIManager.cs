@@ -8,6 +8,9 @@ using UnityEngine.UI;
 
 /// <summary>
 /// UI Manager: Binds button events and updates playback status
+/// Added:
+/// - Advanced Settings toggle (Advanced <-> Main)
+/// - AnimationStartDelay slider binding and display
 /// </summary>
 public class DancePlayerUIManager : MonoBehaviour
 {
@@ -22,12 +25,21 @@ public class DancePlayerUIManager : MonoBehaviour
     public Button PlayModeBtn;             // Play mode button
     public TMP_Text PlayModeText;          // Play mode text
     public Slider VolumeSlider;            // Volume slider (optional, can be null)
+    public TMP_Text VolumeValueText;       // Volume value text (optional, can be null)
     public TMP_Text AvatarStatusText;      // Avatar status text
     public Dropdown DanceFileDropdown; // Dance file dropdown (select to play)
     public TMP_Text _toggleKeyText;        // Assign text component in Inspector
     public Toggle EnableUIPanelFollow;      // Toggle for enabling avatar follow (optional, can be null)
     public Canvas targetCanvas;            // UI's Canvas component
 
+    // Advanced UI elements 
+    public Button AdvancedToggleBtn;       // The button that toggles advanced view
+    public TMP_Text AdvancedToggleBtnText; // text on the Advanced button (so we can change to "< Back")
+    public GameObject MainPanelRoot;       // parent container GameObject for main UI
+    public GameObject AdvancedPanelRoot;   // parent container GameObject for advanced UI (should contain a ScrollView)
+    public ScrollRect AdvancedScrollRect;  // ScrollRect inside advanced panel (optional but recommended)
+    public Slider AnimationStartDelaySlider; // slider for animation start delay (0..1s)
+    public TMP_Text AnimationStartDelayValueText; // shows numeric value "0.200s"
 
     // Reference to player core
     public DancePlayerCore playerCore;
@@ -43,6 +55,9 @@ public class DancePlayerUIManager : MonoBehaviour
     private Font _defaultLiberationFont;
     private SwingController swingController;
 
+    // track advanced state
+    private bool _isAdvancedOpen = false;
+
     void Start()
     {
         if (playerCore != null && playerCore.resourceManager != null)
@@ -57,21 +72,16 @@ public class DancePlayerUIManager : MonoBehaviour
         playerCore.InitPlayer();
         playerCore.RefreshPlayList();
         UpdateToggleKeyText();
-
     }
 
     void Update()
     {
-
         UpdateUI();
         HandleKeyToggleUI();
-
-
     }
 
     private void Awake()
     {
-
         _defaultLiberationFont = Resources.Load<Font>("LiberationSans.ttf");
         if (_defaultLiberationFont == null)
         {
@@ -99,17 +109,21 @@ public class DancePlayerUIManager : MonoBehaviour
 
         swingController = GetComponent<SwingController>();
 
-        // 
+        // restore follow toggle state from swingController if exists
         if (swingController != null && EnableUIPanelFollow != null)
         {
             EnableUIPanelFollow.isOn = swingController.enabled;
         }
 
+        // Ensure advanced panel hidden initially
+        if (AdvancedPanelRoot != null)
+            AdvancedPanelRoot.SetActive(false);
+        if (MainPanelRoot != null)
+            MainPanelRoot.SetActive(true);
     }
 
     private void OnDestroy()
     {
-
         PrevBtn.onClick.RemoveAllListeners();
         PlayPauseBtn.onClick.RemoveAllListeners();
         NextBtn.onClick.RemoveAllListeners();
@@ -118,10 +132,14 @@ public class DancePlayerUIManager : MonoBehaviour
         RefreshBtn.onClick.RemoveAllListeners();
         DanceFileDropdown.onValueChanged.RemoveAllListeners();
         VolumeSlider?.onValueChanged.RemoveAllListeners();
+       
         EnableUIPanelFollow?.onValueChanged.RemoveAllListeners();
+
+        // NEW: remove listeners for advanced
+        AdvancedToggleBtn?.onClick.RemoveAllListeners();
+        AnimationStartDelaySlider?.onValueChanged.RemoveAllListeners();
         RemoveMyUIFromGameMenuList();
     }
-    /// <summary>
     /// <summary>
     /// Initialize UI (set default state)
     /// </summary>
@@ -130,6 +148,16 @@ public class DancePlayerUIManager : MonoBehaviour
         CurrentPlayText.text = "None";
         PlayModeText.text = playerCore.GetPlayModeText();
         AvatarStatusText.text = "Avatar Status: Not Connected";
+
+        // Init animation delay slider if provided
+        if (AnimationStartDelaySlider != null && playerCore != null)
+        {
+            AnimationStartDelaySlider.minValue = 0f;
+            AnimationStartDelaySlider.maxValue = 1f;
+            AnimationStartDelaySlider.value = playerCore.AnimationStartDelay;
+            if (AnimationStartDelayValueText != null)
+                AnimationStartDelayValueText.text = $"{playerCore.AnimationStartDelay:0.000}s";
+        }
     }
 
 
@@ -146,12 +174,26 @@ public class DancePlayerUIManager : MonoBehaviour
         RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
         if (VolumeSlider != null)
         {
-            VolumeSlider.value =  0.5f;
+            VolumeSlider.value = 0.25f;
             VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
         if (EnableUIPanelFollow != null)
         {
             EnableUIPanelFollow.onValueChanged.AddListener(OnUIPanelFollowToggleChanged);
+        }
+
+        // ADVANCED button
+        if (AdvancedToggleBtn != null)
+        {
+            AdvancedToggleBtn.onClick.AddListener(ToggleAdvancedPanel);
+            if (AdvancedToggleBtnText != null)
+                AdvancedToggleBtnText.text = "Settings";
+        }
+
+        // Animation delay slider binding
+        if (AnimationStartDelaySlider != null)
+        {
+            AnimationStartDelaySlider.onValueChanged.AddListener(OnAnimationDelayChanged);
         }
     }
 
@@ -241,8 +283,6 @@ public class DancePlayerUIManager : MonoBehaviour
     {
         playerCore.StopPlay();
         // Reset dropdown selection
-        //DanceFileDropdown.value = -1;
-        //DanceFileDropdown.captionText.text = "Select Dance File";
         DanceFileDropdown.value = playerCore.CurrentPlayIndex;
     }
 
@@ -263,6 +303,11 @@ public class DancePlayerUIManager : MonoBehaviour
         if (playerCore.avatarHelper.IsAvatarAvailable())
         {
             playerCore.avatarHelper.CurrentAudioSource.volume = value;
+            if (VolumeValueText != null)
+            {
+                int percent = Mathf.RoundToInt(value * 100);
+                VolumeValueText.text = $"{percent}%";
+            }
         }
     }
 
@@ -287,6 +332,21 @@ public class DancePlayerUIManager : MonoBehaviour
             {
                 EnableUIPanelFollow.interactable = false;
             }
+        }
+    }
+
+    /// <summary>
+    /// Animation delay slider changed (0..1s)
+    /// </summary>
+    private void OnAnimationDelayChanged(float seconds)
+    {
+        if (playerCore != null)
+        {
+            playerCore.SetAnimationStartDelay(seconds);
+        }
+        if (AnimationStartDelayValueText != null)
+        {
+            AnimationStartDelayValueText.text = $"{seconds:0.000}s";
         }
     }
 
@@ -363,6 +423,25 @@ public class DancePlayerUIManager : MonoBehaviour
         return isUGUIInput || isTMPInput;
     }
 
+    // Toggle advanced panel open/close
+    private void ToggleAdvancedPanel()
+    {
+        _isAdvancedOpen = !_isAdvancedOpen;
+        if (MainPanelRoot != null) MainPanelRoot.SetActive(!_isAdvancedOpen);
+        if (AdvancedPanelRoot != null) AdvancedPanelRoot.SetActive(_isAdvancedOpen);
+
+        if (AdvancedToggleBtnText != null)
+        {
+            AdvancedToggleBtnText.text = _isAdvancedOpen ? "Back" : "Settings";
+        }
+
+        // reset scroll to top when opened
+        if (_isAdvancedOpen && AdvancedScrollRect != null)
+        {
+            AdvancedScrollRect.verticalNormalizedPosition = 1f;
+        }
+    }
+
     public void AddMyUIToGameMenuList()
     {
         if (_gameMenuActions == null || _isMyUIAddedToMenuList || _myUIMenuEntry == null)
@@ -376,7 +455,6 @@ public class DancePlayerUIManager : MonoBehaviour
         {
             _gameMenuActions.menuEntries.Add(_myUIMenuEntry);
             _isMyUIAddedToMenuList = true;
-
         }
     }
 
@@ -390,6 +468,5 @@ public class DancePlayerUIManager : MonoBehaviour
             entry => entry.menu == gameObject
         );
         _isMyUIAddedToMenuList = false;
-
     }
 }

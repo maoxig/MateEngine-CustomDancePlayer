@@ -67,6 +67,7 @@ public class DanceAvatarHelper : MonoBehaviour
             {
                 CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
             }
+            CurrentAudioSource.volume = 0.25f;
         }
     }
 
