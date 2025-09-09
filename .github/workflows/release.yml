@@ -4,36 +4,73 @@ on:
   push:
     tags:
       - "v*"
-  pull_request_target:
-    types: [opened, reopened, synchronize, edited]
-  workflow_dispatch: # 允许手动触发
+  workflow_dispatch:  # 允许手动触发
+
+permissions:
+  contents: write
 
 jobs:
   release:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # 需要获取所有历史来生成完整的变更日志
+          fetch-depth: 0
 
-      - name: Draft release notes
-        uses: release-drafter/release-drafter@v5
-        id: draft_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install git-cliff
+        uses: taiki-e/install-action@v2
+        with:
+          tool: git-cliff
 
-      # 只有在推送标签时才创建正式发布
+      - name: Generate Changelog
+        id: changelog
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ || echo "")
+          if [ -z "$PREV_TAG" ]; then
+            RANGE=""
+          else
+            RANGE="$PREV_TAG..HEAD"
+          fi
+
+          # 生成 Changelog
+          echo "## Changelog" > RELEASE_NOTE.md
+          git-cliff $RANGE --tag ${{ github.ref_name }} >> RELEASE_NOTE.md
+
+          # 添加固定说明
+          cat <<'EOF' >> RELEASE_NOTE.md
+
+### Notes for Users
+- Please remove old `.dll` and `.me` files before updating.
+- You must install/update both `.me` and `.dll` files simultaneously.
+- Tutorial video: https://discord.com/channels/136766743792/1408758200462999583
+
+### 用户须知
+- 更新前请移除旧的 `.dll` 和 `.me` 文件。
+- 必须同时安装/更新 `.me` 和 `.dll` 文件。
+- B站教程视频：https://www.bilibili.com/video/BV1Yge6zqETU/
+
+### For Developers
+If you know how to use the Mate-ENGINE SDK, you can download the `.prefab` file to adjust the UI.
+
+### 开发者说明
+若您熟悉 Mate-ENGINE SDK，可下载 `.prefab` 文件自定义调整UI。
+EOF
+
+          # 输出给后续步骤使用
+          echo "release_body<<EOF" >> $GITHUB_OUTPUT
+          cat RELEASE_NOTE.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          body: ${{ steps.draft_release.outputs.body }}
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.release_body }}
           files: |
             dist/*.dll
             dist/*.me
             dist/*.rar
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
