@@ -4,7 +4,7 @@ on:
   push:
     tags:
       - "v*"
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -36,31 +36,19 @@ jobs:
           # 生成 Changelog
           echo "## Changelog" > RELEASE_NOTE.md
           git-cliff $RANGE --tag ${{ github.ref_name }} >> RELEASE_NOTE.md
+          echo "" >> RELEASE_NOTE.md
 
-          # 添加固定说明
-          cat <<'EOF' >> RELEASE_NOTE.md
+          # 拼接固定说明
+          if [ -f ".github/RELEASE_FOOTER.md" ]; then
+            cat .github/RELEASE_FOOTER.md >> RELEASE_NOTE.md
+          fi
 
-### Notes for Users
-- Please remove old `.dll` and `.me` files before updating.
-- You must install/update both `.me` and `.dll` files simultaneously.
-- Tutorial video: https://discord.com/channels/136766743792/1408758200462999583
-
-### 用户须知
-- 更新前请移除旧的 `.dll` 和 `.me` 文件。
-- 必须同时安装/更新 `.me` 和 `.dll` 文件。
-- B站教程视频：https://www.bilibili.com/video/BV1Yge6zqETU/
-
-### For Developers
-If you know how to use the Mate-ENGINE SDK, you can download the `.prefab` file to adjust the UI.
-
-### 开发者说明
-若您熟悉 Mate-ENGINE SDK，可下载 `.prefab` 文件自定义调整UI。
-EOF
-
-          # 输出给后续步骤使用
-          echo "release_body<<EOF" >> $GITHUB_OUTPUT
-          cat RELEASE_NOTE.md >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          # 设置输出变量（给后续 step 用）
+          {
+            echo "release_body<<EOF"
+            cat RELEASE_NOTE.md
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
