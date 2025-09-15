@@ -43,17 +43,19 @@ public class DancePlayerUIManager : MonoBehaviour
 
     // Reference to player core
     public DancePlayerCore playerCore;
+    // Reference to HipsFollower (optional, can be null)
+    public HipsFollower hipsFollower;
+
 
 
     [Header("UI Toggle")]
-    public KeyCode toggleKey = KeyCode.K; // Configurable toggle key
+    public KeyCode toggleKey = KeyCode.H; // Configurable toggle key
 
     // Variables for linking with game menu logic
     private MenuActions _gameMenuActions; // Game's existing MenuActions instance
     private MenuEntry _myUIMenuEntry;     // Your UI's corresponding MenuEntry (for adding/removing from list)
     private bool _isMyUIAddedToMenuList;  // Flag to prevent duplicate addition to menuEntries
     private Font _defaultLiberationFont;
-    private SwingController swingController;
 
     // track advanced state
     private bool _isAdvancedOpen = false;
@@ -107,13 +109,6 @@ public class DancePlayerUIManager : MonoBehaviour
         };
         AddMyUIToGameMenuList();
 
-        swingController = GetComponent<SwingController>();
-
-        // restore follow toggle state from swingController if exists
-        if (swingController != null && EnableUIPanelFollow != null)
-        {
-            EnableUIPanelFollow.isOn = swingController.enabled;
-        }
 
         // Ensure advanced panel hidden initially
         if (AdvancedPanelRoot != null)
@@ -172,16 +167,12 @@ public class DancePlayerUIManager : MonoBehaviour
         StopBtn.onClick.AddListener(OnStopBtnClick);
         PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
         RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
+
         if (VolumeSlider != null)
         {
             VolumeSlider.value = 0.25f;
             VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
-        if (EnableUIPanelFollow != null)
-        {
-            EnableUIPanelFollow.onValueChanged.AddListener(OnUIPanelFollowToggleChanged);
-        }
-
         // ADVANCED button
         if (AdvancedToggleBtn != null)
         {
@@ -194,6 +185,22 @@ public class DancePlayerUIManager : MonoBehaviour
         if (AnimationStartDelaySlider != null)
         {
             AnimationStartDelaySlider.onValueChanged.AddListener(OnAnimationDelayChanged);
+        }
+        // hips follow toggle
+        if (EnableUIPanelFollow != null && hipsFollower != null)
+        {
+            EnableUIPanelFollow.isOn = hipsFollower.followEnabled;
+            EnableUIPanelFollow.onValueChanged.AddListener(isOn =>
+            {
+                if (hipsFollower != null)
+                {
+                    hipsFollower.followEnabled = isOn;
+                    if (isOn)
+                    {
+                        hipsFollower.UpdateBaseAndInitial();
+                    }
+                }
+            });
         }
     }
 
@@ -276,6 +283,7 @@ public class DancePlayerUIManager : MonoBehaviour
 
     }
 
+
     /// <summary>
     /// Stop button click
     /// </summary>
@@ -307,30 +315,6 @@ public class DancePlayerUIManager : MonoBehaviour
             {
                 int percent = Mathf.RoundToInt(value * 100);
                 VolumeValueText.text = $"{percent}%";
-            }
-        }
-    }
-
-    /// <summary>
-    /// Handle avatar follow toggle change
-    /// </summary>
-    private void OnUIPanelFollowToggleChanged(bool isOn)
-    {
-        if (swingController != null)
-        {
-            swingController.enabled = isOn;
-#if UNITY_EDITOR
-            Debug.Log($"Avatar follow {(isOn ? "enabled" : "disabled")}");
-#endif
-        }
-        else
-        {
-#if UNITY_EDITOR
-            Debug.LogWarning("SwingController component not found on the same GameObject");
-#endif
-            if (EnableUIPanelFollow != null)
-            {
-                EnableUIPanelFollow.interactable = false;
             }
         }
     }

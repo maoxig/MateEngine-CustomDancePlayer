@@ -100,9 +100,10 @@
     <Compile Include="DanceResourceManager.cs" />
     <Compile Include="DanceShadowFollower.cs" />
     <Compile Include="DummyToUniversalSync.cs" />
+    <Compile Include="HipsFollower.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="DanceUIDragPanel.cs" />
     <Compile Include="DanceScreenCompensator.cs" />
+    <Compile Include="UIDragHandler.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
