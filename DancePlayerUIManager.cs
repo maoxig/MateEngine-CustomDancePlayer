@@ -71,8 +71,8 @@ public class DancePlayerUIManager : MonoBehaviour
 
     void Start()
     {
-
         playerCore.InitPlayer();
+        RefreshDropdown();
         UpdateToggleKeyText();
 
         InitUI();
@@ -84,7 +84,7 @@ public class DancePlayerUIManager : MonoBehaviour
             RemoveMyUIFromGameMenuList();
         }
 
-        if ( playerCore != null && playerCore.CurrentPlayIndex >= 0)
+        if (playerCore.autoPlayOnStart&& playerCore != null && playerCore.CurrentPlayIndex >= 0)
         {
             if (DanceFileDropdown.options.Count > 0 && playerCore.CurrentPlayIndex >= 0)
             {
@@ -248,7 +248,7 @@ public class DancePlayerUIManager : MonoBehaviour
         NextBtn.onClick.AddListener(playerCore.PlayNext);
         StopBtn.onClick.AddListener(OnStopBtnClick);
         PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
-        RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
+        RefreshBtn.onClick.AddListener(RefreshDropdown);
         if (DanceFileDropdown != null)
         {
             DanceFileDropdown.onValueChanged.AddListener(index =>
@@ -458,7 +458,7 @@ public class DancePlayerUIManager : MonoBehaviour
     public void RefreshDropdown()
     {
         DanceFileDropdown.ClearOptions();
-        playerCore.resourceManager.RefreshDanceFileList();
+        playerCore.RefreshPlayList();
         var danceFiles = playerCore.resourceManager.DanceFileList;
         if (danceFiles.Count == 0)
         {
