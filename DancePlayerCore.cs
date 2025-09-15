@@ -18,31 +18,44 @@ public class DancePlayerCore : MonoBehaviour
         Random
     }
 
-    // Current play mode (default is Sequence)
-    public PlayMode CurrentPlayMode { get; private set; } = PlayMode.Sequence;
+
+    [Header("Playback Settings")]
+    [Tooltip("Current play mode (default is Sequence)")]
+    public PlayMode CurrentPlayMode { get; set; } = PlayMode.Sequence;
+
+    public bool autoPlayOnStart = false;
+
+
     // Playlist (from resource manager)
     private List<string> _playList;
     // Current play index (-1 means not playing)
+    [Tooltip("Current play index (-1 means not playing)")]
     public int CurrentPlayIndex { get; set; } = -1;
     // Whether currently playing
+    [Tooltip("Whether currently playing")]
     public bool IsPlaying { get; private set; } = false;
 
+    [Tooltip("Audio start time (for sync/debug)")]
     public float AudioStartTime;
 
+    // Whether the dance has ended
     private bool _danceEnded = false;
 
     // Reference dependencies
+    [Header("References")]
     public DanceAvatarHelper avatarHelper;
     public DanceResourceManager resourceManager;
     public DancePlayerUIManager uiManager;
 
     // animation start delay (seconds). default 0.3s
+    [Tooltip("Animation start delay (seconds). Default 0.3s")]
+    [Range(0f, 1f)]
     public float AnimationStartDelay = 0.3f;
 
-    // coroutine handle for delayed animation start (so we can cancel)
+    // Coroutine handle for delayed animation start (so we can cancel)
     private Coroutine _startAnimationCoroutine = null;
 
-    // suppress end-check while waiting for animation to be applied (avoid false-positive "End")
+    // Suppress end-check while waiting for animation to be applied (avoid false-positive "End")
     private bool _suppressEndCheck = false;
 
 
@@ -62,11 +75,14 @@ public class DancePlayerCore : MonoBehaviour
     {
 
         _playList = resourceManager.DanceFileList ?? new List<string>();
-        CurrentPlayIndex = -1;
         IsPlaying = false;
 #if UNITY_EDITOR
         Debug.Log("Player initialization completed");
 #endif
+        if (autoPlayOnStart && _playList.Count > 0 && CurrentPlayIndex >= 0)
+        {
+            PlayDanceByIndex(CurrentPlayIndex);
+        }
     }
 
     /// <summary>

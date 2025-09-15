@@ -38,16 +38,10 @@ public class DanceAvatarHelper : MonoBehaviour
 
     private int lastLoadedInstanceID = 0;
 
-    void Start()
+    public float danceVolume = 0.5f;
+
+    void Awake()
     {
-        _modelParent = GameObject.Find(MODEL_PARENT_NAME);
-        CheckAndUpdateCurrentAvatar();
-        if (CurrentAnimator != null)
-        {
-            DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
-        }
-        SetupMMDBlendshapeSMR();
-        // Initialize AudioSource
         GameObject soundFX = GameObject.Find("SoundFX");
         if (soundFX != null)
         {
@@ -67,8 +61,19 @@ public class DanceAvatarHelper : MonoBehaviour
             {
                 CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
             }
-            CurrentAudioSource.volume = 0.25f;
         }
+    }
+    void Start()
+    {
+        _modelParent = GameObject.Find(MODEL_PARENT_NAME);
+        CheckAndUpdateCurrentAvatar();
+        if (CurrentAnimator != null)
+        {
+            DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
+        }
+        SetupMMDBlendshapeSMR();
+        // Initialize AudioSource
+        CurrentAudioSource.volume = danceVolume;
     }
 
     void Update()

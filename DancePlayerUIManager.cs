@@ -14,6 +14,7 @@ using UnityEngine.UI;
 /// </summary>
 public class DancePlayerUIManager : MonoBehaviour
 {
+    [Header("UI Components")]
     // UI component references (assign in Inspector)
     public Text CurrentPlayText;       // Currently playing file name
     public Slider ProgressSlider;          // Progress slider (optional, can be null)
@@ -29,24 +30,31 @@ public class DancePlayerUIManager : MonoBehaviour
     public TMP_Text AvatarStatusText;      // Avatar status text
     public Dropdown DanceFileDropdown; // Dance file dropdown (select to play)
     public TMP_Text _toggleKeyText;        // Assign text component in Inspector
-    public Toggle EnableUIPanelFollow;      // Toggle for enabling avatar follow (optional, can be null)
+
     public Canvas targetCanvas;            // UI's Canvas component
 
+    [Header("Advanced UI Components")]
     // Advanced UI elements 
     public Button AdvancedToggleBtn;       // The button that toggles advanced view
     public TMP_Text AdvancedToggleBtnText; // text on the Advanced button (so we can change to "< Back")
     public GameObject MainPanelRoot;       // parent container GameObject for main UI
     public GameObject AdvancedPanelRoot;   // parent container GameObject for advanced UI (should contain a ScrollView)
     public ScrollRect AdvancedScrollRect;  // ScrollRect inside advanced panel (optional but recommended)
+
+
     public Slider AnimationStartDelaySlider; // slider for animation start delay (0..1s)
     public TMP_Text AnimationStartDelayValueText; // shows numeric value "0.200s"
+    public Toggle EnableUIPanelFollow;      // Toggle for enabling avatar follow (optional, can be null)
+    public Toggle EnableShadowFollow;
 
+    [Header("Core Components")]
     // Reference to player core
     public DancePlayerCore playerCore;
     // Reference to HipsFollower (optional, can be null)
     public HipsFollower hipsFollower;
 
-
+    [Header("Optional Settings")]
+    public bool hidePanelOnStart = false; // If true, hide the entire panel on start (can be toggled with key)
 
     [Header("UI Toggle")]
     public KeyCode toggleKey = KeyCode.H; // Configurable toggle key
@@ -74,6 +82,11 @@ public class DancePlayerUIManager : MonoBehaviour
         playerCore.InitPlayer();
         playerCore.RefreshPlayList();
         UpdateToggleKeyText();
+        if (hidePanelOnStart && targetCanvas != null)
+        {
+            targetCanvas.gameObject.SetActive(false);
+            RemoveMyUIFromGameMenuList();
+        }
     }
 
     void Update()
@@ -129,7 +142,7 @@ public class DancePlayerUIManager : MonoBehaviour
         VolumeSlider?.onValueChanged.RemoveAllListeners();
        
         EnableUIPanelFollow?.onValueChanged.RemoveAllListeners();
-
+        EnableShadowFollow?.onValueChanged.RemoveAllListeners();
         // NEW: remove listeners for advanced
         AdvancedToggleBtn?.onClick.RemoveAllListeners();
         AnimationStartDelaySlider?.onValueChanged.RemoveAllListeners();
@@ -153,6 +166,25 @@ public class DancePlayerUIManager : MonoBehaviour
             if (AnimationStartDelayValueText != null)
                 AnimationStartDelayValueText.text = $"{playerCore.AnimationStartDelay:0.000}s";
         }
+        if (playerCore != null && VolumeSlider != null)
+        {
+
+            VolumeSlider.minValue = 0f;
+            VolumeSlider.maxValue = 1f;
+            VolumeSlider.value = playerCore.avatarHelper.CurrentAudioSource.volume;
+            if (VolumeValueText != null)
+            {
+                int percent = Mathf.RoundToInt(VolumeSlider.value * 100);
+                VolumeValueText.text = $"{percent}%";
+            }
+
+        }
+
+        if (playerCore != null && DanceFileDropdown != null)
+        {
+            DanceFileDropdown.value = playerCore.CurrentPlayIndex;
+            DanceFileDropdown.captionText.text = playerCore.GetCurrentPlayFileName();
+        }
     }
 
 
@@ -167,10 +199,8 @@ public class DancePlayerUIManager : MonoBehaviour
         StopBtn.onClick.AddListener(OnStopBtnClick);
         PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
         RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
-
         if (VolumeSlider != null)
         {
-            VolumeSlider.value = 0.25f;
             VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
         }
         // ADVANCED button
@@ -201,6 +231,20 @@ public class DancePlayerUIManager : MonoBehaviour
                     }
                 }
             });
+        }
+        // shadow follow toggle
+        DanceShadowFollower danceShadowFollower = FindFirstObjectByType<DanceShadowFollower>();
+        if (EnableShadowFollow != null && danceShadowFollower !=null)
+        {
+            EnableShadowFollow.isOn = danceShadowFollower.isActiveAndEnabled;
+            EnableShadowFollow.onValueChanged.AddListener(isOn =>
+            {
+                if (danceShadowFollower != null)
+                {
+                    danceShadowFollower.enabled = isOn;
+                }
+            });
+
         }
     }
 
@@ -239,17 +283,12 @@ public class DancePlayerUIManager : MonoBehaviour
         if (playerCore.IsPlaying && playerCore.CurrentPlayIndex >= 0
             && playerCore.CurrentPlayIndex < playerCore.resourceManager.DanceFileList.Count)
         {
-            string currentFileName = playerCore.resourceManager.DanceFileList[playerCore.CurrentPlayIndex];
-            if (currentFileName.EndsWith(".unity3d", StringComparison.OrdinalIgnoreCase))
-            {
-                currentFileName = currentFileName.Substring(0, currentFileName.Length - ".unity3d".Length);
-            }
-
+            string currentFileName = playerCore.GetCurrentPlayFileName();
             DanceFileDropdown.captionText.text = currentFileName;
         }
         if (playerCore.IsPlaying && playerCore.resourceManager.CurrentAudioClip != null)
         {
-            float elapsed = Time.time - playerCore.AudioStartTime; // 你已经存了开始时间
+            float elapsed = Time.time - playerCore.AudioStartTime;
             float total = playerCore.resourceManager.CurrentAudioClip.length;
             float progress = Mathf.Clamp01(elapsed / total);
 
