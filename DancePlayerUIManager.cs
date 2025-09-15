@@ -40,7 +40,8 @@ public class DancePlayerUIManager : MonoBehaviour
     public GameObject MainPanelRoot;       // parent container GameObject for main UI
     public GameObject AdvancedPanelRoot;   // parent container GameObject for advanced UI (should contain a ScrollView)
     public ScrollRect AdvancedScrollRect;  // ScrollRect inside advanced panel (optional but recommended)
-
+    public Toggle AutoPlayOnStartToggle;   // Toggle for auto play on start
+    public Toggle HidePanelOnStartToggle;  // Toggle for hide panel on start
 
     public Slider AnimationStartDelaySlider; // slider for animation start delay (0..1s)
     public TMP_Text AnimationStartDelayValueText; // shows numeric value "0.200s"
@@ -70,22 +71,30 @@ public class DancePlayerUIManager : MonoBehaviour
 
     void Start()
     {
-        if (playerCore != null && playerCore.resourceManager != null)
-        {
-            playerCore.resourceManager.RefreshDanceFileList();
-        }
-
-        InitUI();
-
-        BindButtonEvents();
 
         playerCore.InitPlayer();
-        playerCore.RefreshPlayList();
         UpdateToggleKeyText();
+
+        InitUI();
+        BindButtonEvents();
+
         if (hidePanelOnStart && targetCanvas != null)
         {
             targetCanvas.gameObject.SetActive(false);
             RemoveMyUIFromGameMenuList();
+        }
+
+        if ( playerCore != null && playerCore.CurrentPlayIndex >= 0)
+        {
+            if (DanceFileDropdown.options.Count > 0 && playerCore.CurrentPlayIndex >= 0)
+            {
+                DanceFileDropdown.value = playerCore.CurrentPlayIndex;
+#if DEBUG
+                Debug.Log($"Set dropdown to index {playerCore.CurrentPlayIndex}, play on start");
+#endif
+                StartCoroutine(TryAutoPlay());
+
+            }
         }
     }
 
@@ -106,7 +115,7 @@ public class DancePlayerUIManager : MonoBehaviour
         _gameMenuActions = UnityEngine.Object.FindFirstObjectByType<MenuActions>();
         if (_gameMenuActions == null)
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogWarning("MenuActions script not found in the game. UI click and scroll controls may not work!");
 #endif
             return;
@@ -143,9 +152,10 @@ public class DancePlayerUIManager : MonoBehaviour
        
         EnableUIPanelFollow?.onValueChanged.RemoveAllListeners();
         EnableShadowFollow?.onValueChanged.RemoveAllListeners();
-        // NEW: remove listeners for advanced
         AdvancedToggleBtn?.onClick.RemoveAllListeners();
         AnimationStartDelaySlider?.onValueChanged.RemoveAllListeners();
+        AutoPlayOnStartToggle?.onValueChanged.RemoveAllListeners();
+        HidePanelOnStartToggle?.onValueChanged.RemoveAllListeners();
         RemoveMyUIFromGameMenuList();
     }
     /// <summary>
@@ -168,26 +178,66 @@ public class DancePlayerUIManager : MonoBehaviour
         }
         if (playerCore != null && VolumeSlider != null)
         {
-
             VolumeSlider.minValue = 0f;
             VolumeSlider.maxValue = 1f;
-            VolumeSlider.value = playerCore.avatarHelper.CurrentAudioSource.volume;
+            VolumeSlider.value = playerCore.avatarHelper.danceVolume;
             if (VolumeValueText != null)
             {
                 int percent = Mathf.RoundToInt(VolumeSlider.value * 100);
                 VolumeValueText.text = $"{percent}%";
             }
-
         }
 
         if (playerCore != null && DanceFileDropdown != null)
         {
-            DanceFileDropdown.value = playerCore.CurrentPlayIndex;
-            DanceFileDropdown.captionText.text = playerCore.GetCurrentPlayFileName();
+            if (playerCore.CurrentPlayIndex >= 0 && playerCore.CurrentPlayIndex < DanceFileDropdown.options.Count)
+            {
+                DanceFileDropdown.value = playerCore.CurrentPlayIndex;
+                DanceFileDropdown.captionText.text = playerCore.GetCurrentPlayFileName();
+            }
+            else
+            {
+                DanceFileDropdown.value = 0;
+                DanceFileDropdown.captionText.text = DanceFileDropdown.options.Count > 0 ? DanceFileDropdown.options[0].text : "None";
+            }
         }
+
     }
 
+    private System.Collections.IEnumerator TryAutoPlay()
+    {
+        // 先等待3秒
+        yield return new WaitForSeconds(3f);
 
+        // Wait until avatar is available or timeout
+        float timeout = 10f; // Max wait time (adjust as needed)
+        float elapsed = 0f;
+
+        while (!playerCore.avatarHelper.IsAvatarAvailable() && elapsed < timeout)
+        {
+            yield return null; // Wait for next frame
+            elapsed += Time.deltaTime;
+        }
+
+        if (!playerCore.avatarHelper.IsAvatarAvailable())
+        {
+            Debug.LogWarning("[DancePlayerUIManager] Auto-play failed: Avatar not available after timeout");
+            yield break;
+        }
+
+        if (playerCore.CurrentPlayIndex >= 0 && DanceFileDropdown.options.Count > 0 && playerCore.CurrentPlayIndex < DanceFileDropdown.options.Count && playerCore.avatarHelper.IsAvatarAvailable())
+        {
+            DanceFileDropdown.value = playerCore.CurrentPlayIndex;
+#if DEBUG
+            Debug.Log($"Set dropdown to index {playerCore.CurrentPlayIndex}, triggering auto-play");
+#endif
+            OnPlayPauseBtnClick();
+        }
+        else
+        {
+            Debug.LogWarning("[DancePlayerUIManager] Auto-play skipped: Invalid CurrentPlayIndex or empty dropdown");
+        }
+    }
     /// <summary>
     /// Bind all button events
     /// </summary>
@@ -199,6 +249,17 @@ public class DancePlayerUIManager : MonoBehaviour
         StopBtn.onClick.AddListener(OnStopBtnClick);
         PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
         RefreshBtn.onClick.AddListener(playerCore.RefreshPlayList);
+        if (DanceFileDropdown != null)
+        {
+            DanceFileDropdown.onValueChanged.AddListener(index =>
+            {
+                if (playerCore != null)
+                {
+                    playerCore.CurrentPlayIndex = index;
+                    DanceSettingsHandler.OnSettingChanged();
+                }
+            });
+        }
         if (VolumeSlider != null)
         {
             VolumeSlider.onValueChanged.AddListener(OnVolumeChanged);
@@ -245,6 +306,24 @@ public class DancePlayerUIManager : MonoBehaviour
                 }
             });
 
+        }
+
+        if (AutoPlayOnStartToggle != null)
+        {
+            AutoPlayOnStartToggle.isOn =  playerCore.autoPlayOnStart;
+            AutoPlayOnStartToggle.onValueChanged.AddListener(isOn =>
+            {
+                playerCore.autoPlayOnStart = isOn;
+            });
+        }
+
+        if (HidePanelOnStartToggle != null)
+        {
+            HidePanelOnStartToggle.isOn = hidePanelOnStart;
+            HidePanelOnStartToggle.onValueChanged.AddListener(isOn =>
+            {
+                hidePanelOnStart = isOn;
+            });
         }
     }
 

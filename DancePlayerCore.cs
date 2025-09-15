@@ -76,7 +76,7 @@ public class DancePlayerCore : MonoBehaviour
 
         _playList = resourceManager.DanceFileList ?? new List<string>();
         IsPlaying = false;
-#if UNITY_EDITOR
+#if DEBUG
         Debug.Log("Player initialization completed");
 #endif
         if (autoPlayOnStart && _playList.Count > 0 && CurrentPlayIndex >= 0)
@@ -100,7 +100,7 @@ public class DancePlayerCore : MonoBehaviour
     {
         CurrentPlayMode = (PlayMode)((int)(CurrentPlayMode + 1) % Enum.GetValues(typeof(PlayMode)).Length);
 
-#if UNITY_EDITOR
+#if DEBUG
         Debug.Log($"Switch play mode: {GetPlayModeText()}");
 #endif
     }
@@ -129,7 +129,7 @@ public class DancePlayerCore : MonoBehaviour
         // Pre-check: valid index, avatar available, playlist not empty
         if (_playList == null || _playList.Count == 0)
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogError("Playlist is empty");
 #endif
             return false;
@@ -142,7 +142,7 @@ public class DancePlayerCore : MonoBehaviour
         {
             return false;
         }
-
+        
         // 1. Record the current play index
         CurrentPlayIndex = index;
         string targetFileName = _playList[index];
@@ -205,7 +205,7 @@ public class DancePlayerCore : MonoBehaviour
             _startAnimationCoroutine = StartCoroutine(StartAnimationAfterDelay(animator, resourceManager.CurrentAnimationClip, delay));
         }
 
-#if UNITY_EDITOR
+#if DEBUG
         Debug.Log($"Start playing: {targetFileName} (Mode: {GetPlayModeText()}, anim delay {AnimationStartDelay:F3}s)");
 #endif
         return true;
@@ -326,13 +326,13 @@ public class DancePlayerCore : MonoBehaviour
         if (avatarHelper.DefaultAnimatorController != null)
         {
             animator.runtimeAnimatorController = avatarHelper.DefaultAnimatorController;
-#if UNITY_EDITOR
+#if DEBUG
             Debug.Log("Restored default animator controller");
 #endif
         }
         else
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogWarning("Default controller not saved, trying to re-fetch");
 #endif
         }
@@ -414,12 +414,8 @@ public class DancePlayerCore : MonoBehaviour
             CurrentPlayIndex = -1;
             IsPlaying = false;
         }
-#if UNITY_EDITOR
+#if DEBUG
         Debug.Log($"Playlist refreshed: {_playList.Count} files in total");
 #endif
-        if (uiManager != null)
-        {
-            uiManager.RefreshDropdown();
-        }
     }
 }

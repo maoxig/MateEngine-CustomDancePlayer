@@ -36,7 +36,7 @@ public class DanceResourceManager : MonoBehaviour
         if (!Directory.Exists(danceFolderPath))
         {
             Directory.CreateDirectory(danceFolderPath);
-#if UNITY_EDITOR
+#if DEBUG
             Debug.Log($"Created dance folder: {danceFolderPath}");
 #endif
             return;
@@ -48,7 +48,7 @@ public class DanceResourceManager : MonoBehaviour
         {
             DanceFileList.Add(Path.GetFileName(filePath));
         }
-#if UNITY_EDITOR
+#if DEBUG
         Debug.Log($"Dance list refreshed: {DanceFileList.Count} files found");
 #endif
     }
@@ -62,14 +62,14 @@ public class DanceResourceManager : MonoBehaviour
     {
         if (!avatarHelper.IsAvatarAvailable())
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogError("Avatar is not available, cannot load resource.");
 #endif
             return false;
         }
         if (string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".unity3d"))
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogError("Invalid file name: " + fileName);
 #endif
             return false;
@@ -82,7 +82,7 @@ public class DanceResourceManager : MonoBehaviour
         string fullPath = Path.Combine(GetDanceFolderPath(), fileName);
         if (!File.Exists(fullPath))
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogError("File does not exist: " + fullPath);
 #endif
             return false;
@@ -92,7 +92,7 @@ public class DanceResourceManager : MonoBehaviour
         _currentAssetBundle = AssetBundle.LoadFromFile(fullPath);
         if (_currentAssetBundle == null)
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogError("Failed to load .unity3d (file may be corrupted or version incompatible): " + fullPath);
 #endif
             return false;
@@ -105,7 +105,7 @@ public class DanceResourceManager : MonoBehaviour
         bool loadAnimationSuccess = LoadAnimationClipByType();
 
 
-#if UNITY_EDITOR
+#if DEBUG
         if (CurrentAudioClip != null)
         {
 
@@ -213,7 +213,7 @@ public class DanceResourceManager : MonoBehaviour
         {
             _currentAssetBundle.Unload(true); // true：unload all assets loaded from this bundle
             _currentAssetBundle = null;
-#if UNITY_EDITOR
+#if DEBUG
             Debug.Log("Unloaded old resources");
 #endif
         }

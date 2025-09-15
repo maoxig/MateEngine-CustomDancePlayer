@@ -3,16 +3,26 @@
 public class DanceShadowFollower : MonoBehaviour
 {
     [Header("配置")]
-    public string shadowObjectName = "Shadow"; 
+    public string shadowObjectName = "Shadow";
 
-    private Transform hips;         
-    private Transform shadowPlane;  
-    public float initialZOffset = 2.02f;   
+    private Transform hips;
+    private Transform shadowPlane;
+    public float initialZOffset = 2.02f;
 
-    public DanceAvatarHelper avatarHelper; 
+    public DanceAvatarHelper avatarHelper;
     public DancePlayerCore dancePlayerCore;
 
     void Start()
+    {
+        InitReferences();
+    }
+
+    void OnEnable()
+    {
+        InitReferences();
+    }
+
+    private void InitReferences()
     {
         if (avatarHelper != null)
         {
@@ -21,6 +31,14 @@ public class DanceShadowFollower : MonoBehaviour
             {
                 hips = animator.GetBoneTransform(HumanBodyBones.Hips);
             }
+            else
+            {
+                hips = null;
+            }
+        }
+        else
+        {
+            hips = null;
         }
 
         GameObject shadowObj = GameObject.Find(shadowObjectName);
@@ -28,8 +46,10 @@ public class DanceShadowFollower : MonoBehaviour
         {
             shadowPlane = shadowObj.transform;
         }
-
-
+        else
+        {
+            shadowPlane = null;
+        }
     }
 
     void Update()

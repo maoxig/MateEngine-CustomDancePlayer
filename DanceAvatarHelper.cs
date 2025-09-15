@@ -62,10 +62,12 @@ public class DanceAvatarHelper : MonoBehaviour
                 CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
             }
         }
+        _modelParent = GameObject.Find(MODEL_PARENT_NAME);
+        CheckAndUpdateCurrentAvatar();
     }
     void Start()
     {
-        _modelParent = GameObject.Find(MODEL_PARENT_NAME);
+        
         CheckAndUpdateCurrentAvatar();
         if (CurrentAnimator != null)
         {
@@ -122,7 +124,7 @@ public class DanceAvatarHelper : MonoBehaviour
 
 
             int currentID = newAvatar.GetInstanceID();
-#if UNITY_EDITOR
+#if DEBUG
              Debug.Log($"Current avatar instance ID: {currentID}, Last loaded ID: {lastLoadedInstanceID}");
 #endif
             if (currentID != lastLoadedInstanceID)
@@ -145,7 +147,7 @@ public class DanceAvatarHelper : MonoBehaviour
 
         if (newAvatar == null)
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogWarning("No active avatar found");
 #endif
             return;
@@ -155,7 +157,7 @@ public class DanceAvatarHelper : MonoBehaviour
         CurrentAnimator = newAvatar.GetComponentInChildren<Animator>();
         if (CurrentAnimator == null)
         {
-#if UNITY_EDITOR
+#if DEBUG
             Debug.LogError($"Avatar {newAvatar.name} does not have an Animator component, cannot play dance");
 #endif
             CurrentAvatar = null;
@@ -201,7 +203,7 @@ public class DanceAvatarHelper : MonoBehaviour
             }
         }
 
-#if UNITY_EDITOR
+#if DEBUG
         Debug.Log($"Avatar updated: {newAvatar.name}, InstanceID: {lastLoadedInstanceID}");
         Debug.Log($"Connected to avatar: {newAvatar.name}");
 #endif
@@ -335,7 +337,7 @@ public class DanceAvatarHelper : MonoBehaviour
         }
         dummySync.dummySmr = dummySmr;
         dummySync.enabled = true;
-#if UNITY_EDITOR
+#if DEBUG
         Debug.Log($"Setup dummy: Renamed original to {existingBody.name}, created new Body.");
 #endif
     }

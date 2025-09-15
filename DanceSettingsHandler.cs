@@ -168,11 +168,13 @@ public class DanceSettingsHandler : MonoBehaviour
             data.currentPlayMode = playerCore.CurrentPlayMode;
             data.currentPlayIndex = playerCore.CurrentPlayIndex;
             data.animationStartDelay = playerCore.AnimationStartDelay;
+            data.autoPlayOnStart = playerCore.autoPlayOnStart;
         }
 
         if (uiManager != null)
         {
             data.danceVolume = uiManager.VolumeSlider.value;
+            data.hidePanelOnStart = uiManager.hidePanelOnStart;
         }
 
         if (hipsFollower != null)
