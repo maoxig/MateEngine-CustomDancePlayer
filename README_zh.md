@@ -2,8 +2,6 @@
 
 **其他语言版本: [English](README.md), [中文](README_zh.md)**
 
-注意：我是非英语使用者，并且是C#/Unity新手，因此可能大量使用AI，请多包涵。
-
 
 ## 预览图
 <div style="display: flex; gap: 16px;">
@@ -17,7 +15,7 @@
 
 https://www.bilibili.com/video/BV12Cb6zjEfS/
 
-最近看到MATE-ENGINE这个项目后觉得非常有趣，我就在思考是否能够让MATE-ENGINE也能够使用我们之前在七日杀的舞蹈文件。并且我看到ME的ISSUE中有不少人希望能有自定义跳舞的功能，因此我尝试着为它开发了这个Mod，不过由于我是C#/Unity新手因此请多包涵。
+最近看到MATE-ENGINE这个项目后觉得非常有趣，我就在思考是否能够让MATE-ENGINE也能够使用我们之前在七日杀的舞蹈文件。并且我看到ME的ISSUE中有不少人希望能有自定义跳舞的功能，因此我尝试着为它开发了这个Mod。
 
 ## 项目介绍
 这是一款为 **Mate Engine** 桌宠游戏开发的自制Mod，核心功能是让桌宠具备「舞蹈播放器」的能力——支持加载自定义舞蹈资源、切换播放模式、控制播放流程，同时提供直观的UI交互界面，让用户能像操作音乐播放器一样管理桌宠的舞蹈播放。
@@ -40,9 +38,10 @@ Mod 分为这几部分
     **非东亚用户注意！这些.unity3d文件的文件名中可能混杂了简中繁中日韩等字符，因此你必须确保它们正常解压并显示（修改解压软件的名称编码、添加字体等），否则可能将无法正常加载舞蹈**
 
   如果喜欢的人多，我也许会收集全部然后把它们上传到云盘。（这些数据来自于MMD动作.vmd，使用时请遵循相关法律法规）
-> 更新：我已上传了一个包含185个已转换舞蹈文件的舞蹈包。下载链接如下：  
-> https://drive.google.com/file/d/15Md_x4f_0u81MJNx23wF_AvWVDFuVQlZ/view  
-> 请务必确保文件名能够正确显示，且不要随意重命名文件，并将其放置在正确的目录下。（参见[步骤1.3](#step-13-load-dance-files-unity3d-format)）
+
+**更新：** 我已上传了一个包含**185个**已转换舞蹈文件的舞蹈包。下载链接如下：  
+https://drive.google.com/file/d/15Md_x4f_0u81MJNx23wF_AvWVDFuVQlZ/view  
+请务必确保文件名能够正确显示，且不要随意重命名文件，并将其放置在正确的目录下。（参见[步骤1.3](#step-13-加载舞蹈文件unity3d格式)）
 
 
 ## 安装步骤
@@ -58,34 +57,36 @@ https://www.bilibili.com/video/BV1Yge6zqETU/
 ### 1. 部署 Mod 文件
 Mod 由「.me模组」和「DLL脚本」两部分组成
 
-- 添加DLL脚本到游戏中（也许有更好的方式，而且我不确定这样做是否合适，但是至少这对我来说有用）
+#### Step 1.1 添加DLL脚本到游戏中（也许有更好的方式，而且我不确定这样做是否合适，但是至少这对我来说有用）
+
   这一步必须非常谨慎，因为这很可能会导致游戏崩溃或其他不可预知的问题，因此建议你备份将要修改的文件。并且，游戏更新可能也会导致需要重新设置。但是目前我还没有找到更好、更简单的添加dll的方法。
 
-    a. 将 `CustomDancePlayer.dll` 文件放入游戏目录的 `MateEngine\MateEngineX_Data\Managed` 文件夹中。
-    <div align="center">
-        <img src="./resources/dll_guide1.png" alt="放置" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-    </div>
+a. 将 `CustomDancePlayer.dll` 文件放入游戏目录的 `MateEngine\MateEngineX_Data\Managed` 文件夹中。
 
-    b. 修改`MateEngineX_Data\ScriptingAssemblies.json`引用新增的dll。具体来说，在`'names"`数组中添加 `"CustomDancePlayer.dll"`，在`"types"`数组中添加 `16`。
+<div align="center">
+    <img src="./resources/dll_guide1.png" alt="放置" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
 
-    <div align="center">
-        <img src="./resources/dll_guide2.png" alt="修改json文件" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-    </div>
-    
+b. 修改`MateEngineX_Data\ScriptingAssemblies.json`引用新增的dll。具体来说，在`'names"`数组中添加 `"CustomDancePlayer.dll"`，在`"types"`数组中添加 `16`。
 
-- 加载.me模组
+<div align="center">
+    <img src="./resources/dll_guide2.png" alt="修改json文件" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
 
-    <div align="center">
-        <img src="./resources/load_me_mod.png" alt="加载.me模组" style="width: 50%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-    </div>
 
-- 加载舞蹈文件（.unity3d格式）
+#### Step 1.2 加载.me模组
+
+<div align="center">
+    <img src="./resources/load_me_mod.png" alt="加载.me模组" style="width: 50%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
+
+#### Step 1.3 加载舞蹈文件（.unity3d格式）
 
     如果以上步骤无误，你将会看到一个正确的UI面板，之后将下载的舞蹈文件放入 `MateEngineX_Data、StreamingAssets/CustomDances` 目录下，点击刷新按钮即可加载舞蹈资源。
 
-    <div align="center">
-        <img src="./resources/dance_files.png" alt="舞蹈文件示例" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-    </div>
+<div align="center">
+    <img src="./resources/dance_files.png" alt="舞蹈文件示例" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
 
 
 
@@ -94,6 +95,22 @@ Mod 由「.me模组」和「DLL脚本」两部分组成
 ### 舞蹈播放器
 
 不再多介绍，因为非常容易理解。从磁盘按某种顺序加载舞蹈文件并像播放音乐一样播放它们。
+
+- **全局热键**：  
+    - `H`：显示/隐藏UI
+
+- **播放模式**：  
+    - 单曲循环  
+    - 列表循环  
+    - 随机播放
+
+- **设置项**：  
+    - 音量控制  
+    - 动画启动延迟（默认0.3秒）  
+    - UI跟随角色  
+    - 阴影面板跟随角色  
+    - 启动时自动播放  
+    - 启动时隐藏UI
 
 ### 表情支持
 
@@ -118,15 +135,14 @@ Mod 由「.me模组」和「DLL脚本」两部分组成
 舞蹈资源需按以下规范制作，否则可能加载失败，此外我提供了一个我自己的工具箱，你可以在其中方便快速地（~3min）将一个MMD动作、表情、镜头转换为可使用的舞蹈文件。
 https://github.com/maoxig/VroidMMDTools
 
-（非中文用户抱歉，我有时间会提供英文版的工具使用说明）
 
 #### 舞蹈文件结构（.unity3d AssetBundle）
 每个舞蹈对应一个 `.unity3d` 格式的AssetBundle，内部必须包含以下资源（命名需一致）：
-| 资源类型                          | 文件名规范                   | 说明                                                        |
-| --------------------------------- | ---------------------------- | ----------------------------------------------------------- |
-| 动画控制器（Animator Controller） | `[舞蹈名].controller`        | 这个controller包含一个state（即舞蹈动画）                   |
-| 音频文件                          | `[舞蹈名].wav`/`.mp3`/`.ogg` | 支持3种常见音频格式，时长需与动画时长匹配（避免音画不同步） |
-| 动画（Animation）                 | `[舞蹈名].anim`              | 需包含舞蹈的动画数据                                        |
+| 资源类型                          | 文件名规范                   | 说明                                                                                                                                                                                  |
+| --------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 动画控制器（Animator Controller） | `[舞蹈名].controller`        | 简单的单状态控制器：新建一个 Animator Controller，然后将对应的 `[舞蹈名].anim` 文件拖入控制器窗口，Unity 会自动生成一个动画状态，且控制器的 "Entry"（默认入口）会无条件跳转到该状态。 |
+| 音频文件                          | `[舞蹈名].wav`/`.mp3`/`.ogg` | 支持3种常见音频格式，时长需与动画时长匹配（避免音画不同步）                                                                                                                           |
+| 动画（Animation）                 | `[舞蹈名].anim`              | 需包含舞蹈的动画数据                                                                                                                                                                  |
 
 示例：  
 若舞蹈名为「HappyDance」，则AssetBundle内需包含 `HappyDance.controller` 和 `HappyDance.mp3`。
@@ -174,5 +190,5 @@ https://github.com/maoxig/VroidMMDTools
 - GitHub Issues：[提交Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)
 
 
-**最后更新时间**：2025年8月23日  
+**最后更新时间**：2025年9月16日  
 **适配Mate Engine版本**：1.9.0b

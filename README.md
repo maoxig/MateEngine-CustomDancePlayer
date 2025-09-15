@@ -2,8 +2,6 @@
 
 **Other Language Versions: [English](README.md), [中文](README_zh.md)**
 
-Note: I am a non-English speaker and a beginner in C#/Unity. As a result, I may have used AI extensively. Please bear with me if there are any inconsistencies.
-
 
 ## Preview
 <div style="display: flex; gap: 16px;">
@@ -14,11 +12,11 @@ Note: I am a non-English speaker and a beginner in C#/Unity. As a result, I may 
 ## Introduction
 I only recently came into contact with MATE-ENGINE. Previously, I was a player for *7 Days to Die*—. There is a mod [VRoidMod](https://www.nexusmods.com/7daystodie/mods/3501) by author Alter that was well-received by the Chinese community. It allows players to switch character models and perform dances in the game.
 
-Along with friends from the community, we converted over 150+ dance files for use with VRoidMod (mainly from MMDs, and the number is still growing). We also experimented with embedding facial expression curves and camera curves into animations, letting us dance to MMD-style animations whenever we felt bored in *7 Days to Die*! You can see the effect in this video (apologies for non-Chinese users):
+Along with friends from the community, we converted over 150+ dance files for use with VRoidMod (mainly from MMDs, and the number is still growing). We also experimented with embedding facial expression curves and camera curves into animations, letting us dance to MMD-style animations whenever we felt bored in *7 Days to Die*! You can see the effect in this video
 
 https://www.bilibili.com/video/BV12Cb6zjEfS/
 
-After discovering the MATE-ENGINE project, I found it very interesting and wondered if I could adapt the dance files we created for *7 Days to Die* to work with MATE-ENGINE. I also noticed multiple requests for custom dance functionality in MATE-ENGINE’s GitHub Issues, so I decided to develop this mod. Again, please excuse any rough edges as I am new to C# and Unity.
+After discovering the MATE-ENGINE project, I found it very interesting and wondered if I could adapt the dance files we created for *7 Days to Die* to work with MATE-ENGINE. I also noticed multiple requests for custom dance functionality in MATE-ENGINE’s GitHub Issues, so I decided to develop this mod. 
 
 
 ## Project Overview
@@ -41,7 +39,7 @@ The mod consists of three main parts:
 
 If there is sufficient interest, I may collect all dance files and upload them to a cloud storage service. (Note: These files are converted from MMD .vmd motion data—please comply with relevant laws and copyright regulations when using them.)
 
-> Edit: I have uploaded a dance file pack containing 185 converted dance files. The link is as follows:
+**Edit:** I have uploaded a dance file pack containing **185** converted dance files. The link is as follows:
 https://drive.google.com/file/d/15Md_x4f_0u81MJNx23wF_AvWVDFuVQlZ/view  
 You must ensure that the filenames are displayed correctly and that you do not rename the files, and also make sure to place them in the correct directory. (See [step1.3](#step-13-load-dance-files-unity3d-format))
 ## Installation Steps
@@ -109,12 +107,27 @@ We implemented MMD-style camera movement in *7 Days to Die*, but MATE-ENGINE may
 ## Usage Guide
 The mod works just like a standard music player—controls are intuitive and require no additional explanation.
 
+- **Global Hotkey**:  
+   - `H`: Show/Hide UI
+
+- **Playback Modes**:  
+   - Single Loop  
+   - Playlist Loop  
+   - Shuffle
+
+- **Settings**:  
+   - Volume control  
+   - Animation start delay (default: 0.3s)  
+   - UI follows character  
+   - Shadow panel follows character  
+   - Auto-play on startup  
+   - Hide UI on startup
+
 
 ## Custom Dance File Specifications
 Dance resources must follow these rules to load correctly. I also provide a toolbox to help you quickly convert MMD motions, expressions, and camera data into compatible dance files (takes ~3 minutes per file):  
 https://github.com/maoxig/VroidMMDTools  
 
-(Apologies for the lack of English documentation—I will add English instructions for the tool when I have time.)
 
 ### Dance File Structure (.unity3d AssetBundle)
 Each dance corresponds to one `.unity3d` AssetBundle, which must contain the following resources (**filenames must match exactly**):
@@ -173,5 +186,5 @@ If you encounter issues or have feature requests, please provide feedback via:
 - GitHub Issues: [Submit an Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)
 
 
-**Last Updated**: August 23, 2025  
+**Last Updated**: September 16, 2025  
 **Compatible Mate Engine Version**: 1.9.0b
