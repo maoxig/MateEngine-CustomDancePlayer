@@ -105,6 +105,7 @@ b. 修改`MateEngineX_Data\ScriptingAssemblies.json`引用新增的dll。具体�
     - 随机播放
 
 - **设置项**：  
+  > 持久化设置会保存在 `C:\Users\{你的用户名}\AppData\LocalLow\Shinymoon\MateEngineX\danceSettings.json` 文件中。如果遇到疑似由配置文件引起的问题，可以尝试删除该 danceSettings.json 文件，看是否能解决问题。
     - 音量控制  
     - 动画启动延迟（默认0.3秒）  
     - UI跟随角色  

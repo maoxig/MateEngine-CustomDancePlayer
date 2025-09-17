@@ -116,6 +116,8 @@ The mod works just like a standard music player—controls are intuitive and req
    - Shuffle
 
 - **Settings**:  
+   > persistent settings are saved in `C:\Users{YOURUSERNAME}\AppData\LocalLow\Shinymoon\MateEngineX\danceSettings.json` file. 
+   If you run into issues that seem to be caused by the config file, try deleting this danceSettings.json to see if it fixes the problem.
    - Volume control  
    - Animation start delay (default: 0.3s)  
    - UI follows character  
