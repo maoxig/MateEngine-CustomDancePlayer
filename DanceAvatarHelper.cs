@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
@@ -195,7 +196,7 @@ public class DanceAvatarHelper : MonoBehaviour
         lastLoadedInstanceID = CurrentAvatar.GetInstanceID();
         if (CurrentAvatar != null)
         {
-            DancePlayerCore playerCore = Object.FindFirstObjectByType<DancePlayerCore>();
+            DancePlayerCore playerCore = UnityEngine.Object.FindFirstObjectByType<DancePlayerCore>();
             if (playerCore != null)
             {
                 playerCore.StopPlay();
@@ -242,7 +243,7 @@ public class DanceAvatarHelper : MonoBehaviour
 
             // 检查所有 mmd 形态键都存在
             bool allKeywordsPresent = _mmdBlendshapeKeywords.All(keyword =>
-                blendShapeNames.Any(name => name.Contains(keyword))
+                blendShapeNames.Any(name => string.Equals(name, keyword, StringComparison.Ordinal))
             );
 
             if (allKeywordsPresent)
@@ -293,32 +294,29 @@ public class DanceAvatarHelper : MonoBehaviour
 
         // 查找原始Body
         Transform existingBody = CurrentAvatar.transform.Find(BODY_NAME);
-        if (existingBody == null)
+        if (existingBody != null)
         {
-            return;
-        }
-
-        // 检查Body下的SkinnedMeshRenderer是否已包含dummy形态键
-        var smr = existingBody.GetComponent<SkinnedMeshRenderer>();
-        if (smr != null && smr.sharedMesh != null && smr.sharedMesh.blendShapeCount > 0)
-        {
-            for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
+            // 检查Body下的SkinnedMeshRenderer是否已包含dummy形态键
+            var smr = existingBody.GetComponent<SkinnedMeshRenderer>();
+            if (smr != null && smr.sharedMesh != null && smr.sharedMesh.blendShapeCount > 0)
             {
-                string blendShapeName = smr.sharedMesh.GetBlendShapeName(i);
-                if (blendShapeName.ToLower().Contains("dummy"))
+                for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
                 {
-                    return;
+                    string blendShapeName = smr.sharedMesh.GetBlendShapeName(i);
+                    if (blendShapeName.ToLower().Contains("dummy"))
+                    {
+                        return;
+                    }
                 }
             }
+            // 存储原始状态
+            originalBodyTransform = existingBody;
+
+            // 重命名原始Body
+            oldBodyName = BODY_NAME + $"_Old_{UnityEngine.Random.Range(0, 10000)}";
+            existingBody.name = oldBodyName;
         }
-
-        // 存储原始状态
-        originalBodyTransform = existingBody;
-
-        // 重命名原始Body
-        oldBodyName = BODY_NAME + $"_Old_{Random.Range(0, 10000)}";
-        existingBody.name = oldBodyName;
-
+           
         // 创建Dummy Body
         GameObject dummyObj = new GameObject(BODY_NAME);
         dummyObj.transform.SetParent(CurrentAvatar.transform, false);
