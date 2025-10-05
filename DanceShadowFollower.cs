@@ -1,78 +1,80 @@
 ﻿using UnityEngine;
-
-public class DanceShadowFollower : MonoBehaviour
+namespace CustomDancePlayer
 {
-    [Header("配置")]
-    public string shadowObjectName = "Shadow";
-
-    private Transform hips;
-    private Transform shadowPlane;
-    public float initialZOffset = 2.02f;
-
-    public DanceAvatarHelper avatarHelper;
-    public DancePlayerCore dancePlayerCore;
-
-    void Start()
+    public class DanceShadowFollower : MonoBehaviour
     {
-        InitReferences();
-    }
+        [Header("配置")]
+        public string shadowObjectName = "Shadow";
 
-    void OnEnable()
-    {
-        InitReferences();
-    }
+        private Transform hips;
+        private Transform shadowPlane;
+        public float initialZOffset = 2.02f;
 
-    private void InitReferences()
-    {
-        if (avatarHelper != null)
+        public DanceAvatarHelper avatarHelper;
+        public DancePlayerCore dancePlayerCore;
+
+        void Start()
         {
-            var animator = avatarHelper.CurrentAnimator;
-            if (animator != null)
+            InitReferences();
+        }
+
+        void OnEnable()
+        {
+            InitReferences();
+        }
+
+        private void InitReferences()
+        {
+            if (avatarHelper != null)
             {
-                hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+                var animator = avatarHelper.CurrentAnimator;
+                if (animator != null)
+                {
+                    hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+                }
+                else
+                {
+                    hips = null;
+                }
             }
             else
             {
                 hips = null;
             }
-        }
-        else
-        {
-            hips = null;
-        }
 
-        GameObject shadowObj = GameObject.Find(shadowObjectName);
-        if (shadowObj != null)
-        {
-            shadowPlane = shadowObj.transform;
-        }
-        else
-        {
-            shadowPlane = null;
-        }
-    }
-
-    void Update()
-    {
-        if (!dancePlayerCore.IsPlaying || shadowPlane == null)
-            return;
-        if (avatarHelper != null && hips == null)
-        {
-            var animator = avatarHelper.CurrentAnimator;
-            if (animator != null)
+            GameObject shadowObj = GameObject.Find(shadowObjectName);
+            if (shadowObj != null)
             {
-                hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+                shadowPlane = shadowObj.transform;
+            }
+            else
+            {
+                shadowPlane = null;
             }
         }
-        if (hips == null)
-            return;
-        Vector3 pos = shadowPlane.position;
 
-        pos.x = hips.position.x;
-        pos.y = hips.position.y;
+        void Update()
+        {
+            if (!dancePlayerCore.IsPlaying || shadowPlane == null)
+                return;
+            if (avatarHelper != null && hips == null)
+            {
+                var animator = avatarHelper.CurrentAnimator;
+                if (animator != null)
+                {
+                    hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+                }
+            }
+            if (hips == null)
+                return;
+            Vector3 pos = shadowPlane.position;
 
-        pos.z = hips.position.z + initialZOffset;
+            pos.x = hips.position.x;
+            pos.y = hips.position.y;
 
-        shadowPlane.position = pos;
+            pos.z = hips.position.z + initialZOffset;
+
+            shadowPlane.position = pos;
+        }
     }
 }

@@ -1,95 +1,98 @@
 ﻿using UnityEngine;
 
-public class HipsFollower : MonoBehaviour
+namespace CustomDancePlayer
 {
-    [Tooltip("The smoothness factor for following (0 = instant, 1 = no movement).")]
-    [Range(0f, 1f)]
-    public float smoothness = 0.9f;
-
-    public Vector2 basePosition;
-    public bool followEnabled = true;
-
-    private RectTransform panelRect;
-    public DanceAvatarHelper avatarHelper;
-    private Camera mainCam;
-    private Vector3 initialHipsPos;
-    private Vector2 currentPosition;
-    private bool hasInitialSetup;
-
-    private void Awake()
+    public class HipsFollower : MonoBehaviour
     {
-        panelRect = GetComponent<RectTransform>();
-        mainCam = Camera.main;
-    }
+        [Tooltip("The smoothness factor for following (0 = instant, 1 = no movement).")]
+        [Range(0f, 1f)]
+        public float smoothness = 0.9f;
 
-    private void OnEnable()
-    {
-        if (followEnabled)
+        public Vector2 basePosition;
+        public bool followEnabled = true;
+
+        private RectTransform panelRect;
+        public DanceAvatarHelper avatarHelper;
+        private Camera mainCam;
+        private Vector3 initialHipsPos;
+        private Vector2 currentPosition;
+        private bool hasInitialSetup;
+
+        private void Awake()
         {
-            UpdateBaseAndInitial();
+            panelRect = GetComponent<RectTransform>();
+            mainCam = Camera.main;
         }
-    }
 
-    public void UpdateBaseAndInitial()
-    {
-        if (panelRect == null) return;
-
-        basePosition = panelRect.anchoredPosition;
-        currentPosition = basePosition;
-
-        var animator = avatarHelper?.CurrentAnimator;
-        if (animator != null)
+        private void OnEnable()
         {
-            Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
-            if (hips != null)
+            if (followEnabled)
             {
-                initialHipsPos = hips.position;
-                hasInitialSetup = true;
+                UpdateBaseAndInitial();
             }
         }
-    }
 
-    private void LateUpdate()
-    {
-        if (!followEnabled || !hasInitialSetup || panelRect == null || avatarHelper?.CurrentAnimator == null) return;
-
-        if (mainCam == null)
+        public void UpdateBaseAndInitial()
         {
-            mainCam = Camera.main;
-            if (mainCam == null) return;
+            if (panelRect == null) return;
+
+            basePosition = panelRect.anchoredPosition;
+            currentPosition = basePosition;
+
+            var animator = avatarHelper?.CurrentAnimator;
+            if (animator != null)
+            {
+                Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
+                if (hips != null)
+                {
+                    initialHipsPos = hips.position;
+                    hasInitialSetup = true;
+                }
+            }
         }
 
-        Transform hips = avatarHelper.CurrentAnimator.GetBoneTransform(HumanBodyBones.Hips);
-        if (hips == null) return;
+        private void LateUpdate()
+        {
+            if (!followEnabled || !hasInitialSetup || panelRect == null || avatarHelper?.CurrentAnimator == null) return;
 
-        Vector3 currentHipsPos = hips.position;
-        Vector3 initialScreenPos = mainCam.WorldToScreenPoint(initialHipsPos);
-        Vector3 currentScreenPos = mainCam.WorldToScreenPoint(currentHipsPos);
+            if (mainCam == null)
+            {
+                mainCam = Camera.main;
+                if (mainCam == null) return;
+            }
 
-        Vector2 deltaScreen = (Vector2)(currentScreenPos - initialScreenPos);
-        Vector2 targetPosition = basePosition + deltaScreen;
+            Transform hips = avatarHelper.CurrentAnimator.GetBoneTransform(HumanBodyBones.Hips);
+            if (hips == null) return;
 
-        currentPosition = Vector2.Lerp(currentPosition, targetPosition, 1f - smoothness);
-        panelRect.anchoredPosition = currentPosition;
+            Vector3 currentHipsPos = hips.position;
+            Vector3 initialScreenPos = mainCam.WorldToScreenPoint(initialHipsPos);
+            Vector3 currentScreenPos = mainCam.WorldToScreenPoint(currentHipsPos);
 
-        ClampToScreenBounds();
-    }
+            Vector2 deltaScreen = (Vector2)(currentScreenPos - initialScreenPos);
+            Vector2 targetPosition = basePosition + deltaScreen;
 
-    private void ClampToScreenBounds()
-    {
-        Vector2 size = panelRect.rect.size * panelRect.lossyScale;
-        float halfW = size.x / 2f;
-        float halfH = size.y / 2f;
+            currentPosition = Vector2.Lerp(currentPosition, targetPosition, 1f - smoothness);
+            panelRect.anchoredPosition = currentPosition;
 
-        float minX = -Screen.width / 2f + halfW;
-        float maxX = Screen.width / 2f - halfW;
-        float minY = -Screen.height / 2f + halfH;
-        float maxY = Screen.height / 2f - halfH;
+            ClampToScreenBounds();
+        }
 
-        Vector2 pos = panelRect.anchoredPosition;
-        pos.x = Mathf.Clamp(pos.x, minX, maxX);
-        pos.y = Mathf.Clamp(pos.y, minY, maxY);
+        private void ClampToScreenBounds()
+        {
+            Vector2 size = panelRect.rect.size * panelRect.lossyScale;
+            float halfW = size.x / 2f;
+            float halfH = size.y / 2f;
 
-        panelRect.anchoredPosition = pos;
+            float minX = -Screen.width / 2f + halfW;
+            float maxX = Screen.width / 2f - halfW;
+            float minY = -Screen.height / 2f + halfH;
+            float maxY = Screen.height / 2f - halfH;
+
+            Vector2 pos = panelRect.anchoredPosition;
+            pos.x = Mathf.Clamp(pos.x, minX, maxX);
+            pos.y = Mathf.Clamp(pos.y, minY, maxY);
+
+            panelRect.anchoredPosition = pos;
+        }
     }
 }
