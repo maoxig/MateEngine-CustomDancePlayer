@@ -9,9 +9,20 @@
     <img src="./resources/mod_preview.gif" alt="预览gif" style="max-width: 320px; height: auto; border: 1px solid #ccc;">
 </div>
 
+
+国内用户请观看这个视频：
+https://www.bilibili.com/video/BV1Yge6zqETU/，
+
+如果有任何问题可以随时评论区回复。
+
+也可以在Discord页面回复：
+
+https://discord.com/channels/1367667737437929513/1408758200462999583
+
 ## 前言
 
-实际上我是最近才接触到MATE-ENGINE，我之前是7日杀的玩家，其中的[VRoidMod](https://www.nexusmods.com/7daystodie/mods/3501)受到了我们中文社区的广泛喜欢（它支持在游戏中切换角色模型、跳舞）。因此我和我社区上的朋友转换了大量的可供VRoidMod使用的舞蹈文件（主要来自于MMD，总计150+并且仍在增长），并且通过尝试将表情曲线、镜头曲线写入到anim中，使得我们在七日杀游戏中无聊时可以随时跳上一段MMD！效果就是下面这个视频（非中文用户抱歉）：
+
+我之前是7日杀的玩家，其中的[VRoidMod](https://www.nexusmods.com/7daystodie/mods/3501)受到了我们中文社区的广泛喜欢（它支持在游戏中切换角色模型、跳舞）。因此我和我社区上的朋友转换了大量的可供VRoidMod使用的舞蹈文件（主要来自于MMD，总计250+并且仍在增长），并且通过尝试将表情曲线、镜头曲线写入到anim中，使得我们在七日杀游戏中无聊时可以随时跳上一段MMD！效果就是下面这个视频（非中文用户抱歉）：
 
 https://www.bilibili.com/video/BV12Cb6zjEfS/
 
@@ -32,15 +43,16 @@ Mod 分为这几部分
    
    - https://www.nexusmods.com/7daystodie/mods/3956
    - https://www.nexusmods.com/7daystodie/mods/5430
-   - https://www.7risha.com/rolemodel (对非中文用户可能不友好，抱歉)
+   - https://www.7risha.com/rolemodel (虽然是七日杀网站，但是这个板块主要还是分享模型和舞蹈，以及一些教程的，可以随便看看)
     
 
     **非东亚用户注意！这些.unity3d文件的文件名中可能混杂了简中繁中日韩等字符，因此你必须确保它们正常解压并显示（修改解压软件的名称编码、添加字体等），否则可能将无法正常加载舞蹈**
 
   如果喜欢的人多，我也许会收集全部然后把它们上传到云盘。（这些数据来自于MMD动作.vmd，使用时请遵循相关法律法规）
 
-**更新：** 我已上传了一个包含**185个**已转换舞蹈文件的舞蹈包。下载链接如下：  
-https://drive.google.com/file/d/15Md_x4f_0u81MJNx23wF_AvWVDFuVQlZ/view  
+**更新：** 我已上传了一个包含**250+个**已转换舞蹈文件的舞蹈包。下载链接如下：  
+https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing
+
 请务必确保文件名能够正确显示，且不要随意重命名文件，并将其放置在正确的目录下。（参见[步骤1.3](#step-13-加载舞蹈文件unity3d格式)）
 
 
@@ -191,5 +203,5 @@ https://github.com/maoxig/VroidMMDTools
 - GitHub Issues：[提交Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)
 
 
-**最后更新时间**：2025年9月16日  
-**适配Mate Engine版本**：1.9.0b
+**最后更新时间**：2025年10月6日  
+**适配Mate Engine版本**：2.2.0

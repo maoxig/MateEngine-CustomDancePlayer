@@ -9,10 +9,19 @@
     <img src="./resources/mod_preview.gif" alt="Preview GIF" style="max-width: 320px; height: auto; border: 1px solid #ccc;">
 </div>
 
-## Introduction
-I only recently came into contact with MATE-ENGINE. Previously, I was a player for *7 Days to Die*—. There is a mod [VRoidMod](https://www.nexusmods.com/7daystodie/mods/3501) by author Alter that was well-received by the Chinese community. It allows players to switch character models and perform dances in the game.
+For users in China, please watch this video:  
+https://www.bilibili.com/video/BV1Yge6zqETU/
 
-Along with friends from the community, we converted over 150+ dance files for use with VRoidMod (mainly from MMDs, and the number is still growing). We also experimented with embedding facial expression curves and camera curves into animations, letting us dance to MMD-style animations whenever we felt bored in *7 Days to Die*! You can see the effect in this video
+If you have any questions, feel free to leave a comment below the video.  
+
+You can also post on the Discord page:  
+https://discord.com/channels/1367667737437929513/1408758200462999583
+
+
+## Introduction
+Previously, I was a player for *7 Days to Die*—. There is a mod [VRoidMod](https://www.nexusmods.com/7daystodie/mods/3501) by author Alter that was well-received by the Chinese community. It allows players to switch character models and perform dances in the game.
+
+Along with friends from the community, we converted over 250+ dance files for use with VRoidMod (mainly from MMDs, and the number is still growing). We also experimented with embedding facial expression curves and camera curves into animations, letting us dance to MMD-style animations whenever we felt bored in *7 Days to Die*! You can see the effect in this video
 
 https://www.bilibili.com/video/BV12Cb6zjEfS/
 
@@ -39,8 +48,9 @@ The mod consists of three main parts:
 
 If there is sufficient interest, I may collect all dance files and upload them to a cloud storage service. (Note: These files are converted from MMD .vmd motion data—please comply with relevant laws and copyright regulations when using them.)
 
-**Edit:** I have uploaded a dance file pack containing **185** converted dance files. The link is as follows:
-https://drive.google.com/file/d/15Md_x4f_0u81MJNx23wF_AvWVDFuVQlZ/view  
+**Edit:** I have uploaded a dance file pack containing **250+** converted dance files. The link is as follows:
+https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing
+
 You must ensure that the filenames are displayed correctly and that you do not rename the files, and also make sure to place them in the correct directory. (See [step1.3](#step-13-load-dance-files-unity3d-format))
 ## Installation Steps
 ### Prerequisites
@@ -188,5 +198,5 @@ If you encounter issues or have feature requests, please provide feedback via:
 - GitHub Issues: [Submit an Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)
 
 
-**Last Updated**: September 16, 2025  
-**Compatible Mate Engine Version**: 1.9.0b
+**Last Updated**: October 6, 2025  
+**Compatible Mate Engine Version**: 2.2.0
