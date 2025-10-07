@@ -129,6 +129,8 @@ namespace CustomDancePlayer
             {
 
                 Instance.uiManager.hidePanelOnStart = data.hidePanelOnStart;
+                Instance.uiManager.EnableWindowFollow.isOn = data.enableWindowFollow;
+                Instance.uiManager.EnableCameraDistanceKeep.isOn = data.enableCameraDistanceKeep;
             }
             if (Instance.avatarHelper != null)
             {
@@ -178,6 +180,8 @@ namespace CustomDancePlayer
             {
                 data.danceVolume = uiManager.VolumeSlider.value;
                 data.hidePanelOnStart = uiManager.hidePanelOnStart;
+                data.enableWindowFollow = uiManager.EnableWindowFollow.isOn;
+                data.enableCameraDistanceKeep = uiManager.EnableCameraDistanceKeep.isOn;
             }
 
             if (hipsFollower != null)
@@ -227,6 +231,8 @@ namespace CustomDancePlayer
             public float danceVolume = 0.25f;
             public bool enableDanceUIFollow = true;
             public bool enableShadowFollow = true;
+            public bool enableWindowFollow = true;
+            public bool enableCameraDistanceKeep = true;
             public bool autoPlayOnStart = false;
             public bool hidePanelOnStart = false;
             public bool enableCameraCompensation = true;

@@ -1,23 +1,26 @@
 ﻿using CustomDancePlayer;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class CameraDistanceKeeper : MonoBehaviour
 {
     [Tooltip("Fixed Z-axis distance to maintain between camera and hips")]
     public float fixedZDistance = -3.27f;
 
-    private DanceAvatarHelper _danceAvatarHelper;
+    public DanceAvatarHelper avatarHelper;
+    public Toggle EnableCameraDistanceKeep;
+
     private Camera _mainCamera;
     private Animator _avatarAnimator;
     private Transform _hipsTransform;
 
     private void OnEnable()
     {
-        _danceAvatarHelper = GetComponent<DanceAvatarHelper>();
+
         _mainCamera = Camera.main;
 
         // Validate required references
-        if (_danceAvatarHelper == null)
+        if (avatarHelper == null)
         {
             Debug.LogError("Missing DanceAvatarHelper component!", this);
             enabled = false;
@@ -33,12 +36,12 @@ public class CameraDistanceKeeper : MonoBehaviour
 
     private void Update()
     {
-        if (_mainCamera == null || _danceAvatarHelper.CurrentAvatar == null) return;
+        if (_mainCamera == null || avatarHelper.CurrentAvatar == null) return;
 
         // Update animator reference if avatar changed
-        if (_avatarAnimator == null || _avatarAnimator.gameObject != _danceAvatarHelper.CurrentAvatar)
+        if (_avatarAnimator == null || _avatarAnimator.gameObject != avatarHelper.CurrentAvatar)
         {
-            _avatarAnimator = _danceAvatarHelper.CurrentAvatar.GetComponent<Animator>();
+            _avatarAnimator = avatarHelper.CurrentAvatar.GetComponent<Animator>();
             UpdateHipsTransform();
         }
 

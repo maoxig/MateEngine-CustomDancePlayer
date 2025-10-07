@@ -57,6 +57,8 @@ namespace CustomDancePlayer
         public TMP_Text AnimationStartDelayValueText; // shows numeric value "0.200s"
         public Toggle EnableUIPanelFollow;      // Toggle for enabling avatar follow (optional, can be null)
         public Toggle EnableShadowFollow;
+        public Toggle EnableWindowFollow; 
+        public Toggle EnableCameraDistanceKeep;
 
         [Header("UI Toggle")]
         public KeyCode toggleKey = KeyCode.H; // Configurable toggle key
