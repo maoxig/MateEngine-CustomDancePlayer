@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using UnityEngine;
 
@@ -12,20 +14,24 @@ namespace CustomDancePlayer
         public DanceAvatarHelper avatarHelper;       // 必须：用于获取 CurrentAvatar
         public DancePlayerCore dancePlayerCore; // 可选：用于检测是否在播放
 
+        [Header("Control")]
+        [Tooltip("Enable or disable the screen compensation functionality")]
+        public bool isEnabled = true;                // 控制脚本是否启用
+
         [Header("Detection")]
-        public float screenMarginPx = 200f;          // 距离屏幕边缘多少像素时触发补偿
+        public float screenMarginFraction = 0.15f;   // Fraction of screen size for margin (0 to 0.5)
         public float checkInterval = 0.06f;          // 检测周期（秒）
         public float minShiftPx = 2f;                // 小于此像素的不触发（防抖）
 
         [Header("Movement / smoothing")]
-        public float smoothTime = 0.10f;             // 平滑时长（秒），你要求 0.1s，默认即 0.1
+        public float smoothTime = 0.10f;             // 平滑时长（秒）
         [Tooltip("放大或缩小相机响应量（若相机移动量看起来不够大，可把它调 >1）")]
         public float cameraMovementMultiplier = 1.0f;
         [Tooltip("放大或缩小窗口响应量（通常为 1）")]
         public float windowMovementMultiplier = 1.0f;
 
         [Header("Sign adjustments (flip if axis is reversed)")]
-        public bool invertCameraX = false;            // 若相机 X 方向反了（角色左移相机 X 反向），切换此项
+        public bool invertCameraX = false;            // 若相机 X 方向反了，切换此项
         public bool invertCameraY = false;           // 若相机 Y 方向反了，切换此项
         public bool invertWindowX = true;            // 若窗口 X 方向反了，切换此项
         public bool invertWindowY = false;           // 若窗口 Y 方向反了，切换此项
@@ -34,10 +40,17 @@ namespace CustomDancePlayer
         public float maxCumulativeWindowShiftPx = 10000f; // 防止窗口累积移动过大
         public bool enableVerticalCompensation = true;    // 是否处理 Y 方向
 
+        [Header("Additional Objects to Move")]
+        [Tooltip("Names of other objects that must move with the main camera (e.g., menus).")]
+        public string[] additionalObjectNames;
+
         // internal state
         private Vector3 cameraOriginalPos;
         private Vector2 windowOriginalPos;
         private bool haveOriginals = false;
+
+        private List<Transform> additionalTransforms = new List<Transform>();
+        private List<Vector3> additionalOriginalPos = new List<Vector3>();
 
         private Vector2 cumulativeWindowShift = Vector2.zero;
         private float lastShiftTime = -10f;
@@ -47,14 +60,15 @@ namespace CustomDancePlayer
 
         private IntPtr hWnd = IntPtr.Zero;
 
+        private Kirurobo.UniWindowMoveHandle _windowMoveHandle;
+        private bool _lastIsDragging = false;
+
         // Win32 constants
         const uint SWP_NOSIZE = 0x0001;
         const uint SWP_NOZORDER = 0x0004;
+        const uint MONITOR_DEFAULTTONEAREST = 2;
 
         #region Win32 P/Invoke
-        [DllImport("user32.dll")]
-        static extern IntPtr GetForegroundWindow();
-
         [DllImport("user32.dll")]
         static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
 
@@ -62,8 +76,23 @@ namespace CustomDancePlayer
         static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter,
             int X, int Y, int cx, int cy, uint uFlags);
 
+        [DllImport("user32.dll")]
+        static extern IntPtr MonitorFromWindow(IntPtr hwnd, uint dwFlags);
+
+        [DllImport("user32.dll")]
+        static extern bool GetMonitorInfo(IntPtr hMonitor, ref MONITORINFO lpmi);
+
         [StructLayout(LayoutKind.Sequential)]
         private struct RECT { public int left, top, right, bottom; }
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct MONITORINFO
+        {
+            public int cbSize;
+            public RECT rcMonitor;
+            public RECT rcWork;
+            public uint dwFlags;
+        }
         #endregion
 
         private void Start()
@@ -71,25 +100,62 @@ namespace CustomDancePlayer
             if (targetCamera == null) targetCamera = Camera.main;
             if (targetCamera == null)
             {
-                Debug.LogError("[DanceScreenCompensator_Final] No camera assigned and Camera.main is null. Disabled.");
+                UnityEngine.Debug.LogError("[DanceScreenCompensator] No camera assigned and Camera.main is null. Disabled.");
                 enabled = false;
                 return;
             }
 
             if (avatarHelper == null)
             {
-                Debug.LogError("[DanceScreenCompensator_Final] avatarHelper is not assigned. Disabled.");
+                UnityEngine.Debug.LogError("[DanceScreenCompensator] avatarHelper is not assigned. Disabled.");
                 enabled = false;
                 return;
             }
 
-            // cache originals
+            // Find window move handle
+            _windowMoveHandle = FindFirstObjectByType<Kirurobo.UniWindowMoveHandle>();
+            if (_windowMoveHandle == null)
+            {
+                UnityEngine.Debug.LogWarning("[DanceScreenCompensator] UniWindowMoveHandle not found. Drag detection may not work properly.");
+            }
+
+            // Find additional objects
+            foreach (var name in additionalObjectNames)
+            {
+                var go = GameObject.Find(name);
+                if (go != null)
+                {
+                    additionalTransforms.Add(go.transform);
+                }
+                else
+                {
+                    UnityEngine.Debug.LogWarning($"[DanceScreenCompensator] Additional object '{name}' not found.");
+                }
+            }
+
+            // Cache originals
             cameraOriginalPos = targetCamera.transform.position;
-            hWnd = GetForegroundWindow();
+            hWnd = Process.GetCurrentProcess().MainWindowHandle;
             windowOriginalPos = GetWindowPosition(hWnd);
+            additionalOriginalPos = additionalTransforms.ConvertAll(t => t ? t.position : Vector3.zero);
             haveOriginals = true;
 
             StartCoroutine(CheckLoop());
+        }
+
+        // Public method to toggle the script's functionality externally
+        public void SetEnabled(bool enable)
+        {
+            if (isEnabled != enable)
+            {
+                isEnabled = enable;
+                if (!isEnabled && wasPlaying)
+                {
+                    // If disabling during play, trigger restore
+                    wasPlaying = false;
+                    StartRestore();
+                }
+            }
         }
 
         private IEnumerator CheckLoop()
@@ -97,6 +163,17 @@ namespace CustomDancePlayer
             while (true)
             {
                 yield return new WaitForSeconds(checkInterval);
+
+                if (!isEnabled)
+                {
+                    // If disabled, check if we were playing and need to restore
+                    if (wasPlaying)
+                    {
+                        wasPlaying = false;
+                        StartRestore();
+                    }
+                    continue;
+                }
 
                 if (!avatarHelper.IsAvatarAvailable() || avatarHelper.CurrentAvatar == null)
                 {
@@ -109,9 +186,9 @@ namespace CustomDancePlayer
                     continue;
                 }
 
+                bool isPlaying = (dancePlayerCore != null && dancePlayerCore.IsPlaying);
 
-
-                if (dancePlayerCore.IsPlaying)
+                if (isPlaying)
                 {
                     if (!wasPlaying)
                     {
@@ -119,12 +196,30 @@ namespace CustomDancePlayer
                         // capture baseline for restore
                         cameraOriginalPos = targetCamera.transform.position;
                         windowOriginalPos = GetWindowPosition(hWnd);
+                        additionalOriginalPos = additionalTransforms.ConvertAll(t => t ? t.position : Vector3.zero);
                         cumulativeWindowShift = Vector2.zero;
                         if (restoreCoroutine != null) { StopCoroutine(restoreCoroutine); restoreCoroutine = null; }
                     }
 
-                    // get hips
+                    // Handle window drag using UniWindowMoveHandle
+                    bool isDragging = (_windowMoveHandle != null && _windowMoveHandle.IsDragging);
 
+                    if (isDragging)
+                    {
+                        _lastIsDragging = true;
+                        continue; // Skip compensation during drag
+                    }
+
+                    if (_lastIsDragging && !isDragging)
+                    {
+                        // Drag just ended, update original window position
+                        Vector2 currentWinPos = GetWindowPosition(hWnd);
+                        windowOriginalPos = currentWinPos - cumulativeWindowShift;
+                        UnityEngine.Debug.Log("[DanceScreenCompensator] Updated original window position after drag.");
+                        _lastIsDragging = false;
+                    }
+
+                    // get hips
                     Transform hips = null;
                     try
                     {
@@ -138,28 +233,31 @@ namespace CustomDancePlayer
 
                     Vector3 screenPos = targetCamera.WorldToScreenPoint(hips.position);
 
+                    float marginX = Screen.width * screenMarginFraction;
+                    float marginY = Screen.height * screenMarginFraction;
+
                     Vector2 deltaPixels = Vector2.zero;
 
                     // X
-                    if (screenPos.x < screenMarginPx)
+                    if (screenPos.x < marginX)
                     {
-                        deltaPixels.x = screenMarginPx - screenPos.x; // positive value: push right
+                        deltaPixels.x = marginX - screenPos.x; // positive value: push right
                     }
-                    else if (screenPos.x > Screen.width - screenMarginPx)
+                    else if (screenPos.x > Screen.width - marginX)
                     {
-                        deltaPixels.x = (Screen.width - screenMarginPx) - screenPos.x; // negative value: push left
+                        deltaPixels.x = (Screen.width - marginX) - screenPos.x; // negative value: push left
                     }
 
                     // Y (Unity screen Y origin is bottom)
                     if (enableVerticalCompensation)
                     {
-                        if (screenPos.y < screenMarginPx)
+                        if (screenPos.y < marginY)
                         {
-                            deltaPixels.y = screenMarginPx - screenPos.y; // positive: push up
+                            deltaPixels.y = marginY - screenPos.y; // positive: push up
                         }
-                        else if (screenPos.y > Screen.height - screenMarginPx)
+                        else if (screenPos.y > Screen.height - marginY)
                         {
-                            deltaPixels.y = (Screen.height - screenMarginPx) - screenPos.y; // negative: push down
+                            deltaPixels.y = (Screen.height - marginY) - screenPos.y; // negative: push down
                         }
                     }
 
@@ -212,7 +310,7 @@ namespace CustomDancePlayer
 
         private IEnumerator DoCameraAndWindowShift(Vector2 camPixelDelta, Vector2 windowPixelDelta, float duration)
         {
-            if (targetCamera == null) yield break;
+            if (targetCamera == null || !isEnabled) yield break;
 
             // compute camera world shift (accurate) based on hips projection
             // pick hips again (guard)
@@ -235,6 +333,8 @@ namespace CustomDancePlayer
             Vector3 camStart = targetCamera.transform.position;
             Vector3 camTarget = camStart + cameraShift;
 
+            List<Vector3> addStarts = additionalTransforms.ConvertAll(t => t ? t.position : Vector3.zero);
+
             Vector2 winStart = GetWindowPosition(hWnd);
             Vector2 winTarget = winStart + windowPixelDelta;
 
@@ -242,12 +342,25 @@ namespace CustomDancePlayer
             duration = Mathf.Max(0.0001f, duration);
             while (elapsed < duration)
             {
+                if (!isEnabled) yield break; // Exit coroutine if disabled during execution
+
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
                 float easeT = Mathf.SmoothStep(0f, 1f, t);
 
                 // camera
                 targetCamera.transform.position = Vector3.Lerp(camStart, camTarget, easeT);
+
+                // additional objects
+                for (int i = 0; i < additionalTransforms.Count; i++)
+                {
+                    var trans = additionalTransforms[i];
+                    if (trans)
+                    {
+                        Vector3 addTarget = addStarts[i] + cameraShift;
+                        trans.position = Vector3.Lerp(addStarts[i], addTarget, easeT);
+                    }
+                }
 
                 // window
                 SetWindowPosition(hWnd, Vector2.Lerp(winStart, winTarget, easeT));
@@ -257,6 +370,15 @@ namespace CustomDancePlayer
 
             // finalize
             targetCamera.transform.position = camTarget;
+            for (int i = 0; i < additionalTransforms.Count; i++)
+            {
+                var trans = additionalTransforms[i];
+                if (trans)
+                {
+                    Vector3 addTarget = addStarts[i] + cameraShift;
+                    trans.position = addTarget;
+                }
+            }
             SetWindowPosition(hWnd, winTarget);
 
             // accumulate
@@ -279,6 +401,9 @@ namespace CustomDancePlayer
 
             Vector3 camStart = targetCamera.transform.position;
             Vector3 camTarget = cameraOriginalPos;
+
+            List<Vector3> addStarts = additionalTransforms.ConvertAll(t => t ? t.position : Vector3.zero);
+
             Vector2 winStart = GetWindowPosition(hWnd);
             Vector2 winTarget = windowOriginalPos;
 
@@ -286,17 +411,37 @@ namespace CustomDancePlayer
             duration = Mathf.Max(0.0001f, duration);
             while (elapsed < duration)
             {
+                // Removed isEnabled check to allow restore to complete even if disabled
+
                 elapsed += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(elapsed / duration);
                 float easeT = Mathf.SmoothStep(0f, 1f, t);
 
                 targetCamera.transform.position = Vector3.Lerp(camStart, camTarget, easeT);
+
+                for (int i = 0; i < additionalTransforms.Count; i++)
+                {
+                    var trans = additionalTransforms[i];
+                    if (trans && i < additionalOriginalPos.Count)
+                    {
+                        trans.position = Vector3.Lerp(addStarts[i], additionalOriginalPos[i], easeT);
+                    }
+                }
+
                 SetWindowPosition(hWnd, Vector2.Lerp(winStart, winTarget, easeT));
 
                 yield return null;
             }
 
             targetCamera.transform.position = camTarget;
+            for (int i = 0; i < additionalTransforms.Count; i++)
+            {
+                var trans = additionalTransforms[i];
+                if (trans && i < additionalOriginalPos.Count)
+                {
+                    trans.position = additionalOriginalPos[i];
+                }
+            }
             SetWindowPosition(hWnd, winTarget);
 
             cumulativeWindowShift = Vector2.zero;
@@ -331,6 +476,15 @@ namespace CustomDancePlayer
                 SetWindowPosition(hWnd, windowOriginalPos);
                 if (targetCamera != null)
                     targetCamera.transform.position = cameraOriginalPos;
+                for (int i = 0; i < additionalTransforms.Count; i++)
+                {
+                    var trans = additionalTransforms[i];
+                    if (trans && i < additionalOriginalPos.Count)
+                    {
+                        trans.position = additionalOriginalPos[i];
+                    }
+                }
+                cumulativeWindowShift = Vector2.zero;
             }
         }
     }
