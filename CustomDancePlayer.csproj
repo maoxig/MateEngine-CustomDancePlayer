@@ -104,7 +104,7 @@
   <ItemGroup>
     <Compile Include="Tools\CameraDistanceKeeper.cs" />
     <Compile Include="Core\DanceAvatarHelper.cs" />
-    <Compile Include="DancePlayerUIManager.cs" />
+    <Compile Include="Tools\DanceCameraHandler.cs" />
     <Compile Include="Core\DancePlayerCore.cs" />
     <Compile Include="Core\DancePlayerUIManager.cs" />
     <Compile Include="Core\DanceResourceManager.cs" />
@@ -115,7 +115,7 @@
     <Compile Include="Tools\MoveToChatBotAI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Tools\DanceScreenCompensator.cs" />
-    <Compile Include="UIDragHandler.cs" />
+    <Compile Include="Tools\SMRHandler.cs" />
     <Compile Include="Tools\UIDragHandler.cs" />
   </ItemGroup>
   <ItemGroup />

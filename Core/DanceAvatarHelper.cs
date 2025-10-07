@@ -206,6 +206,9 @@ namespace CustomDancePlayer
                 }
             }
 
+            // avoid smr clipping
+            SMRHandler.SetUpdateWhenOffscreen(CurrentAvatar, true);
+
 #if DEBUG
         Debug.Log($"Avatar updated: {newAvatar.name}, InstanceID: {lastLoadedInstanceID}");
         Debug.Log($"Connected to avatar: {newAvatar.name}");
