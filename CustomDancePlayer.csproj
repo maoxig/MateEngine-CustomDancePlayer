@@ -111,6 +111,7 @@
     <Compile Include="Core\DanceSettingsHandler.cs" />
     <Compile Include="Tools\DanceShadowFollower.cs" />
     <Compile Include="Tools\DummyToUniversalSync.cs" />
+    <Compile Include="Tools\GlobalHotkeyListener.cs" />
     <Compile Include="Tools\HipsFollower.cs" />
     <Compile Include="Tools\MoveToChatBotAI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
