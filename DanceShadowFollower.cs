@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Collections;
+using UnityEngine;
 namespace CustomDancePlayer
 {
     public class DanceShadowFollower : MonoBehaviour
@@ -13,14 +14,21 @@ namespace CustomDancePlayer
         public DanceAvatarHelper avatarHelper;
         public DancePlayerCore dancePlayerCore;
 
+        IEnumerator EnableAfterTwoFrames(System.Action action)
+        {
+            yield return null;
+            yield return null;
+            action?.Invoke();
+        }
+
         void Start()
         {
-            InitReferences();
+            StartCoroutine(EnableAfterTwoFrames(InitReferences));
         }
 
         void OnEnable()
         {
-            InitReferences();
+            StartCoroutine(EnableAfterTwoFrames(InitReferences));
         }
 
         private void InitReferences()
