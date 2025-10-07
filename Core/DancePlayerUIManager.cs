@@ -73,7 +73,6 @@ namespace CustomDancePlayer
         private MenuActions _gameMenuActions; // Game's existing MenuActions instance
         private MenuEntry _myUIMenuEntry;     // Your UI's corresponding MenuEntry (for adding/removing from list)
         private bool _isMyUIAddedToMenuList;  // Flag to prevent duplicate addition to menuEntries
-        private Font _defaultLiberationFont;
 
         // track advanced state
         private bool _isAdvancedOpen = false;
@@ -115,12 +114,7 @@ namespace CustomDancePlayer
 
         private void Awake()
         {
-            _defaultLiberationFont = Resources.Load<Font>("LiberationSans.ttf");
-            if (_defaultLiberationFont == null)
-            {
-                _defaultLiberationFont = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-                Debug.LogWarning("Failed to load LiberationSans, fall back to LegacyRuntime");
-            }
+
             _gameMenuActions = UnityEngine.Object.FindFirstObjectByType<MenuActions>();
             if (_gameMenuActions == null)
             {

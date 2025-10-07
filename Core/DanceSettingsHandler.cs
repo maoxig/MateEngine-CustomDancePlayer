@@ -21,6 +21,7 @@ namespace CustomDancePlayer
         private HipsFollower hipsFollower;
         private DanceShadowFollower shadowFollower;
         private DanceAvatarHelper avatarHelper;
+        private DanceScreenCompensator screenCompensator;
 
         private void Awake()
         {
@@ -51,6 +52,7 @@ namespace CustomDancePlayer
             hipsFollower = FindFirstObjectByType<HipsFollower>();
             shadowFollower = FindFirstObjectByType<DanceShadowFollower>();
             avatarHelper = FindFirstObjectByType<DanceAvatarHelper>();
+            screenCompensator = FindFirstObjectByType<DanceScreenCompensator>();
         }
 
         public void SaveToDisk()
@@ -227,10 +229,11 @@ namespace CustomDancePlayer
             public bool enableShadowFollow = true;
             public bool autoPlayOnStart = false;
             public bool hidePanelOnStart = false;
+            public bool enableCameraCompensation = true;
 
             // UI Position Persistence
             public Vector2 uiBasePosition = Vector2.zero; // For when follow is enabled (offset)
-            public Vector2 uiRawPosition = new Vector2(-300f, 0f); // For when follow is disabled (absolute)
+            public Vector2 uiRawPosition = new Vector2(300f, 0f); // For when follow is disabled (absolute)
         }
 
         // Custom JsonConverter for Vector2 to avoid serialization issues

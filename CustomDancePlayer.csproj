@@ -99,12 +99,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="DanceAvatarHelper.cs" />
-    <Compile Include="DancePlayerCore.cs" />
+    <Compile Include="Core\DanceAvatarHelper.cs" />
     <Compile Include="DancePlayerUIManager.cs" />
-    <Compile Include="DanceResourceManager.cs" />
-    <Compile Include="DanceSettingsHandler.cs" />
-    <Compile Include="DanceShadowFollower.cs" />
-    <Compile Include="DummyToUniversalSync.cs" />
+    <Compile Include="Core\DancePlayerCore.cs" />
+    <Compile Include="Core\DancePlayerUIManager.cs" />
+    <Compile Include="Core\DanceResourceManager.cs" />
+    <Compile Include="Core\DanceSettingsHandler.cs" />
     <Compile Include="HipsFollower.cs" />
     <Compile Include="MoveToChatBotAI.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
