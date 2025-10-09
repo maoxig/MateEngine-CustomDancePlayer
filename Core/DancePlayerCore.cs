@@ -17,8 +17,7 @@ namespace CustomDancePlayer
 
         private DanceSettingsHandler _settingsHandler;
         private Coroutine _startAnimationCoroutine;
-        private bool _suppressEndCheck;
-        private bool _danceEnded;
+
         public bool IsPlaying
         {
             get => _settingsHandler.data.isPlaying;
@@ -33,14 +32,6 @@ namespace CustomDancePlayer
         {
 
             _settingsHandler = DanceSettingsHandler.Instance;
-        }
-
-        void Update()
-        {
-            if (_settingsHandler.data.isPlaying && avatarHelper.IsAvatarAvailable() && resourceManager.IsResourceLoaded())
-            {
-                CheckAnimationEnd();
-            }
         }
 
         // Initializes player with playlist
@@ -96,9 +87,6 @@ namespace CustomDancePlayer
                 avatarHelper.SetupDummyForDance();
             }
 
-            ResetDanceEndFlag();
-            _suppressEndCheck = true;
-
             _settingsHandler.data.audioStartTime = Time.time;
             avatarHelper.CurrentAudioSource.Play();
             _settingsHandler.data.isPlaying = true;
@@ -123,7 +111,6 @@ namespace CustomDancePlayer
             if (animator == null || clip == null) return;
 
             avatarHelper.SetupAnimation(clip);
-            _suppressEndCheck = false;
         }
 
         // Starts animation after delay
@@ -133,7 +120,6 @@ namespace CustomDancePlayer
 
             if (!_settingsHandler.data.isPlaying || animator == null || clip == null)
             {
-                _suppressEndCheck = false;
                 _startAnimationCoroutine = null;
                 yield break;
             }
@@ -191,7 +177,6 @@ namespace CustomDancePlayer
                 StopCoroutine(_startAnimationCoroutine);
                 _startAnimationCoroutine = null;
             }
-            _suppressEndCheck = false;
 
             avatarHelper.CurrentAudioSource.Stop();
             avatarHelper.CurrentAnimator.SetBool("isDancing", false);
@@ -213,22 +198,10 @@ namespace CustomDancePlayer
 
             resourceManager.UnloadCurrentResource();
             _settingsHandler.data.isPlaying = false;
-            _danceEnded = false;
             DanceSettingsHandler.OnSettingChanged();
         }
 
-        // Checks if animation has ended
-        private void CheckAnimationEnd()
-        {
-            if (!_settingsHandler.data.isPlaying || _suppressEndCheck || !avatarHelper.IsAvatarAvailable() || !resourceManager.IsResourceLoaded()) return;
 
-            var stateInfo = avatarHelper.CurrentAnimator.GetCurrentAnimatorStateInfo(0);
-            if (!_danceEnded && stateInfo.IsName("End"))
-            {
-                _danceEnded = true;
-                PlayNext();
-            }
-        }
 
         // Gets current playing file name
         public string GetCurrentPlayFileName()
@@ -239,12 +212,6 @@ namespace CustomDancePlayer
             }
             string fileName = resourceManager.DanceFileList[_settingsHandler.data.currentPlayIndex];
             return fileName.EndsWith(".unity3d", StringComparison.OrdinalIgnoreCase) ? fileName.Substring(0, fileName.Length - ".unity3d".Length) : fileName;
-        }
-
-        // Resets dance end flag
-        public void ResetDanceEndFlag()
-        {
-            _danceEnded = false;
         }
     }
 }

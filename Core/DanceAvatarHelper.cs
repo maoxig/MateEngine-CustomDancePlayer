@@ -130,6 +130,7 @@ namespace CustomDancePlayer
 
             CurrentAvatar = newAvatar;
             CurrentAnimator = newAvatar.GetComponentInChildren<Animator>();
+           
             if (CurrentAnimator == null)
             {
                 CurrentAvatar = null;

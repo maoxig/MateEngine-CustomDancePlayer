@@ -102,6 +102,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Core\DancePlayerAvatarProxy.cs" />
     <Compile Include="Tools\DanceCameraDistKeeper.cs" />
     <Compile Include="Core\DanceAvatarHelper.cs" />
     <Compile Include="Core\DancePlayerCore.cs" />
