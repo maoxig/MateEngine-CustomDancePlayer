@@ -55,9 +55,8 @@ namespace CustomDancePlayer
         }
 
         // ================================ Lifecycle & Hook Management ================================
-        private void Awake()
+        private void Start()
         {
-            // Auto-find PlayerCore (if not manually assigned)
             if (playerCore == null)
             {
                 playerCore = GetComponent<DancePlayerCore>();
@@ -194,7 +193,7 @@ namespace CustomDancePlayer
         {
             // Check player state: show warning if playlist is empty
             if (playerCore == null) return;
-            if (playerCore.GetCurrentPlayFileName() == "Not Playing")
+            if (!playerCore.IsPlaying)
             {
                 // Not playing: start from track 0 (can be changed to "remember last index" as needed)
                 bool playSuccess = playerCore.PlayDanceByIndex(0);

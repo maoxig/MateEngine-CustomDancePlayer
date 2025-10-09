@@ -1,84 +1,51 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
 namespace CustomDancePlayer
-{
+{ // Manages avatar-related components and audio setup
     public class DanceAvatarHelper : MonoBehaviour
     {
-        private const string MODEL_PARENT_NAME = "Model";
-        private const string CUSTOM_DANCE_AUDIO_NAME = "CustomDanceAudio";
-        private const string BODY_NAME = "Body";
-        private GameObject _modelParent;
+        private const string MODEL_PARENT_NAME = "Model"; private const string CUSTOM_DANCE_AUDIO_NAME = "CustomDanceAudio"; private const string BODY_NAME = "Body";
+        private static readonly string[] MMDBlendshapeKeywords = { "まばたき", "あ", "い", "う", "え", "お" };
+
+        public Mesh DummyBlendshapeMesh;
+        public RuntimeAnimatorController CustomDanceAvatarController;
+        public DancePlayerCore playerCore;
+
+
 
         public GameObject CurrentAvatar { get; private set; }
         public Animator CurrentAnimator { get; private set; }
-        public AudioSource CurrentAudioSource { get; private set; }
 
-        public Mesh DummyBlendshapeMesh;
+        public Transform CurrentAvatarHips { get; private set; }
+        public AudioSource CurrentAudioSource { get; private set; }
+        public SkinnedMeshRenderer TargetSMR { get; private set; }
+        public AnimatorOverrideController CurrentOverrideController { get; private set; }
+
         public RuntimeAnimatorController DefaultAnimatorController { get; private set; }
 
-        public RuntimeAnimatorController CustomDanceAvatarController;
+        private GameObject _modelParent;
+        private DanceSettingsHandler _settingsHandler;
+        private Transform _originalBodyTransform;
+        private Transform _dummyBodyTransform;
+        private string _oldBodyName;
+        
 
-        public AnimatorOverrideController CurrentOverrideController { get; set; }
-
-        public SkinnedMeshRenderer TargetSMR { get; private set; } = null;
-
-        // Japanese MMD blendshape keywords to identify the correct SMR
-        private readonly string[] _mmdBlendshapeKeywords = {
-        "まばたき", // Blink
-        "あ",       // Mouth shape 'A'
-        "い",       // Mouth shape 'I'
-        "う",       // Mouth shape 'U'
-        "え",       // Mouth shape 'E'
-        "お"        // Mouth shape 'O'
-    };
-
-        private Transform originalBodyTransform = null;
-        private Transform dummyBodyTransform = null;
-        private string oldBodyName = null;
-
-        private int lastLoadedInstanceID = 0;
-
-        public float danceVolume = 0.5f;
-
-        void Awake()
-        {
-            GameObject soundFX = GameObject.Find("SoundFX");
-            if (soundFX != null)
-            {
-                Transform customDanceAudioTrans = soundFX.transform.Find(CUSTOM_DANCE_AUDIO_NAME);
-                GameObject customDanceAudioObj;
-                if (customDanceAudioTrans == null)
-                {
-                    customDanceAudioObj = new GameObject(CUSTOM_DANCE_AUDIO_NAME);
-                    customDanceAudioObj.transform.SetParent(soundFX.transform, false);
-                }
-                else
-                {
-                    customDanceAudioObj = customDanceAudioTrans.gameObject;
-                }
-                CurrentAudioSource = customDanceAudioObj.GetComponent<AudioSource>();
-                if (CurrentAudioSource == null)
-                {
-                    CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
-                }
-            }
-            _modelParent = GameObject.Find(MODEL_PARENT_NAME);
-            CheckAndUpdateCurrentAvatar();
-        }
         void Start()
         {
 
+            _modelParent = GameObject.Find(MODEL_PARENT_NAME);
+            SetupAudioSource();
+
+            _settingsHandler = DanceSettingsHandler.Instance;
             CheckAndUpdateCurrentAvatar();
             if (CurrentAnimator != null)
             {
                 DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
             }
             SetupMMDBlendshapeSMR();
-            // Initialize AudioSource
-            CurrentAudioSource.volume = danceVolume;
+            UpdateAudioVolume();
         }
 
         void Update()
@@ -86,192 +53,119 @@ namespace CustomDancePlayer
             CheckAndUpdateCurrentAvatar();
         }
 
-        private void OnDestroy()
+        void OnDestroy()
         {
-            //RestoreOriginalBody();
             ClearCurrentAvatar();
             CurrentAvatar = null;
+            CurrentAvatarHips = null;
             CurrentAnimator = null;
             CurrentAudioSource = null;
         }
 
+
+        private void SetupAudioSource()
+        {
+            GameObject soundFX = GameObject.Find("SoundFX");
+            if (soundFX == null) return;
+
+            Transform audioTrans = soundFX.transform.Find(CUSTOM_DANCE_AUDIO_NAME);
+            GameObject audioObj;
+            if (audioTrans != null)
+            {
+                audioObj = audioTrans.gameObject;
+            }
+            else
+            {
+                audioObj = new GameObject(CUSTOM_DANCE_AUDIO_NAME);
+                audioObj.transform.SetParent(soundFX.transform, false);
+            }
+
+            CurrentAudioSource = audioObj.GetComponent<AudioSource>();
+            if (CurrentAudioSource == null)
+            {
+                CurrentAudioSource = audioObj.AddComponent<AudioSource>();
+            }
+        }
+
+        // Updates audio volume from settings
+        public void UpdateAudioVolume()
+        {
+            if (CurrentAudioSource != null)
+            {
+                CurrentAudioSource.volume = _settingsHandler.data.danceVolume;
+            }
+        }
+
+        // Checks and updates the active avatar
         private void CheckAndUpdateCurrentAvatar()
         {
             if (_modelParent == null)
             {
-
-                Debug.LogWarning("Model parent object not found, please check the game scene structure");
-
                 ClearCurrentAvatar();
                 return;
             }
-
             GameObject newAvatar = null;
 
-            // Find the active avatar under the Model
-            if (newAvatar == null)
+            foreach (Transform child in _modelParent.transform)
             {
-                foreach (Transform child in _modelParent.transform)
+                if (child.gameObject.activeSelf && child.GetComponent<Animator>() != null)
                 {
-                    if (child.gameObject.activeSelf && child.GetComponent<Animator>() != null)
-                    {
-                        newAvatar = child.gameObject;
-                        break;
-                    }
+                    newAvatar = child.gameObject;
+                    break;
                 }
             }
 
-            bool hasChanged = (newAvatar != CurrentAvatar);
-            if (!hasChanged && newAvatar != null)
-            {
-
-
-                int currentID = newAvatar.GetInstanceID();
-#if DEBUG
-             Debug.Log($"Current avatar instance ID: {currentID}, Last loaded ID: {lastLoadedInstanceID}");
-#endif
-                if (currentID != lastLoadedInstanceID)
-                {
-                    hasChanged = true;
-                }
-            }
-
-            if (hasChanged)
+            if (newAvatar != CurrentAvatar)
             {
                 UpdateAvatarComponents(newAvatar);
             }
         }
 
+        // Updates avatar components and notifies core
         private void UpdateAvatarComponents(GameObject newAvatar)
         {
-
-
             ClearCurrentAvatar();
 
-            if (newAvatar == null)
-            {
-#if DEBUG
-            Debug.LogWarning("No active avatar found");
-#endif
-                return;
-            }
+            if (newAvatar == null) return;
 
             CurrentAvatar = newAvatar;
             CurrentAnimator = newAvatar.GetComponentInChildren<Animator>();
             if (CurrentAnimator == null)
             {
-#if DEBUG
-            Debug.LogError($"Avatar {newAvatar.name} does not have an Animator component, cannot play dance");
-#endif
                 CurrentAvatar = null;
+                CurrentAvatarHips = null;
                 return;
             }
-
-            // Handle SMR with MMD blendshapes
+            CurrentAvatarHips = CurrentAnimator.GetBoneTransform(HumanBodyBones.Hips);
             SetupMMDBlendshapeSMR();
 
-            // Initialize AudioSource
-            GameObject soundFX = GameObject.Find("SoundFX");
-            if (soundFX != null)
-            {
-                Transform customDanceAudioTrans = soundFX.transform.Find(CUSTOM_DANCE_AUDIO_NAME);
-                GameObject customDanceAudioObj;
-                if (customDanceAudioTrans == null)
-                {
-                    customDanceAudioObj = new GameObject(CUSTOM_DANCE_AUDIO_NAME);
-                    customDanceAudioObj.transform.SetParent(soundFX.transform, false);
-                }
-                else
-                {
-                    customDanceAudioObj = customDanceAudioTrans.gameObject;
-                }
-                CurrentAudioSource = customDanceAudioObj.GetComponent<AudioSource>();
-                if (CurrentAudioSource == null)
-                {
-                    CurrentAudioSource = customDanceAudioObj.AddComponent<AudioSource>();
-                }
-            }
-
             DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
-
-
-            lastLoadedInstanceID = CurrentAvatar.GetInstanceID();
-            if (CurrentAvatar != null)
+            if (playerCore != null)
             {
-                DancePlayerCore playerCore = UnityEngine.Object.FindFirstObjectByType<DancePlayerCore>();
-                if (playerCore != null)
-                {
-                    playerCore.StopPlay();
-                    playerCore.ResetDanceEndFlag();
-                }
+                playerCore.StopPlay();
             }
-
-            // avoid smr clipping
             SMRHandler.SetUpdateWhenOffscreen(CurrentAvatar, true);
-
-#if DEBUG
-        Debug.Log($"Avatar updated: {newAvatar.name}, InstanceID: {lastLoadedInstanceID}");
-        Debug.Log($"Connected to avatar: {newAvatar.name}");
-#endif
         }
 
+        // Sets up SkinnedMeshRenderer for MMD blendshapes
         private void SetupMMDBlendshapeSMR()
         {
-            if (CurrentAvatar == null)
-                return;
-
+            if (CurrentAvatar == null) return;
 
             SkinnedMeshRenderer[] smrs = CurrentAvatar.GetComponentsInChildren<SkinnedMeshRenderer>();
+            TargetSMR = smrs.FirstOrDefault(smr => smr.sharedMesh != null && smr.sharedMesh.blendShapeCount > 0 &&
+                !smr.sharedMesh.GetBlendShapeName(0).ToLower().Contains("dummy") &&
+                MMDBlendshapeKeywords.All(keyword => Enumerable.Range(0, smr.sharedMesh.blendShapeCount)
+                    .Any(i => smr.sharedMesh.GetBlendShapeName(i) == keyword)));
 
-            TargetSMR = null;
-            foreach (var smr in smrs)
+            if (TargetSMR != null && TargetSMR.transform.parent != CurrentAvatar.transform)
             {
-                if (smr.sharedMesh == null || smr.sharedMesh.blendShapeCount == 0)
-                    continue;
-
-                // 收集所有 blendshape 名称
-                var blendShapeNames = new HashSet<string>();
-                bool hasDummy = false;
-                for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
-                {
-                    string blendShapeName = smr.sharedMesh.GetBlendShapeName(i);
-                    blendShapeNames.Add(blendShapeName);
-                    if (blendShapeName.ToLower().Contains("dummy"))
-                    {
-                        hasDummy = true;
-                        break;
-                    }
-                }
-
-                if (hasDummy)
-                    continue;
-
-                // 检查所有 mmd 形态键都存在
-                bool allKeywordsPresent = _mmdBlendshapeKeywords.All(keyword =>
-                    blendShapeNames.Any(name => string.Equals(name, keyword, StringComparison.Ordinal))
-                );
-
-                if (allKeywordsPresent)
-                {
-                    TargetSMR = smr;
-                    break;
-                }
-            }
-
-            if (TargetSMR == null)
-            {
-
-            }
-            else
-            {
-                if (TargetSMR.transform.parent != CurrentAvatar.transform)
-                {
-                    TargetSMR.transform.SetParent(CurrentAvatar.transform, false);
-                }
+                TargetSMR.transform.SetParent(CurrentAvatar.transform, false);
                 TargetSMR.gameObject.name = BODY_NAME;
             }
         }
 
+        // Clears current avatar state
         private void ClearCurrentAvatar()
         {
             if (CurrentAnimator != null && DefaultAnimatorController != null)
@@ -279,98 +173,81 @@ namespace CustomDancePlayer
                 CurrentAnimator.runtimeAnimatorController = DefaultAnimatorController;
                 CurrentAnimator.SetBool("isDancing", false);
             }
-            //RestoreOriginalBody();
-
-            CurrentAvatar = null;
-            CurrentAnimator = null;
-            CurrentAudioSource = null;
-            lastLoadedInstanceID = 0;
-
         }
 
+        // Checks if avatar is available
         public bool IsAvatarAvailable()
         {
             return CurrentAvatar != null && CurrentAnimator != null;
         }
 
+        // Sets up dummy mesh for dance if needed
         public void SetupDummyForDance()
         {
-            if (TargetSMR != null) return;  // 有原MMD SMR，无需dummy
+            if (TargetSMR != null) return;
 
-            // 查找原始Body
             Transform existingBody = CurrentAvatar.transform.Find(BODY_NAME);
             if (existingBody != null)
             {
-                // 检查Body下的SkinnedMeshRenderer是否已包含dummy形态键
-                var smr = existingBody.GetComponent<SkinnedMeshRenderer>();
-                if (smr != null && smr.sharedMesh != null && smr.sharedMesh.blendShapeCount > 0)
+                SkinnedMeshRenderer smr = existingBody.GetComponent<SkinnedMeshRenderer>();
+                if (smr != null && smr.sharedMesh != null && smr.sharedMesh.blendShapeCount > 0 &&
+                    Enumerable.Range(0, smr.sharedMesh.blendShapeCount).Any(i => smr.sharedMesh.GetBlendShapeName(i).ToLower().Contains("dummy")))
                 {
-                    for (int i = 0; i < smr.sharedMesh.blendShapeCount; i++)
-                    {
-                        string blendShapeName = smr.sharedMesh.GetBlendShapeName(i);
-                        if (blendShapeName.ToLower().Contains("dummy"))
-                        {
-                            return;
-                        }
-                    }
+                    return;
                 }
-                // 存储原始状态
-                originalBodyTransform = existingBody;
-
-                // 重命名原始Body
-                oldBodyName = BODY_NAME + $"_Old_{UnityEngine.Random.Range(0, 10000)}";
-                existingBody.name = oldBodyName;
+                _originalBodyTransform = existingBody;
+                _oldBodyName = BODY_NAME + $"_Old_{UnityEngine.Random.Range(0, 10000)}";
+                existingBody.name = _oldBodyName;
             }
 
-            // 创建Dummy Body
             GameObject dummyObj = new GameObject(BODY_NAME);
             dummyObj.transform.SetParent(CurrentAvatar.transform, false);
-
             var dummySmr = dummyObj.AddComponent<SkinnedMeshRenderer>();
             dummySmr.sharedMesh = DummyBlendshapeMesh;
             dummySmr.updateWhenOffscreen = true;
+            _dummyBodyTransform = dummyObj.transform;
 
-            dummyBodyTransform = dummyObj.transform;
-
-            // 添加/启用sync
-            var dummySync = CurrentAvatar.GetComponent<DummyToUniversalSync>();
-            if (dummySync == null)
+            if (!CurrentAvatar.TryGetComponent<DummyToUniversalSync>(out var dummySync))
             {
                 dummySync = CurrentAvatar.AddComponent<DummyToUniversalSync>();
             }
             dummySync.dummySmr = dummySmr;
             dummySync.enabled = true;
-#if DEBUG
-        Debug.Log($"Setup dummy: Renamed original to {existingBody.name}, created new Body.");
-#endif
         }
 
+        // Restores original body if dummy was used
         public void RestoreOriginalBody()
         {
-            if (TargetSMR != null) return;  // 无需恢复
+            if (TargetSMR != null) return;
 
-            // 销毁dummy
-            if (dummyBodyTransform != null)
+            if (_dummyBodyTransform != null)
             {
-                Destroy(dummyBodyTransform.gameObject);
-                dummyBodyTransform = null;
+                Destroy(_dummyBodyTransform.gameObject);
+                _dummyBodyTransform = null;
             }
 
-            // 恢复原始Body
-            if (originalBodyTransform != null)
+            if (_originalBodyTransform != null)
             {
-                originalBodyTransform.name = BODY_NAME;
-                originalBodyTransform = null;
-                oldBodyName = null;
+                _originalBodyTransform.name = BODY_NAME;
+                _originalBodyTransform = null;
+                _oldBodyName = null;
             }
 
-            // 禁用/移除sync
-            var sync = CurrentAvatar?.GetComponent<DummyToUniversalSync>();
-            if (sync != null)
+            if (CurrentAvatar.TryGetComponent<DummyToUniversalSync>(out var sync))
             {
                 sync.enabled = false;
             }
         }
 
+        // Sets up animation override controller
+        public void SetupAnimation(AnimationClip clip)
+        {
+            if (CurrentAnimator == null || clip == null) return;
+
+            CurrentOverrideController = new AnimatorOverrideController(CustomDanceAvatarController);
+            CurrentOverrideController["CUSTOM_DANCE"] = clip;
+            CurrentAnimator.runtimeAnimatorController = CurrentOverrideController;
+            CurrentAnimator.SetBool("isDancing", true);
+        }
     }
 }

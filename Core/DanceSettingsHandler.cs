@@ -4,143 +4,77 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
+
 namespace CustomDancePlayer
-{
+{ // Centralizes all settings as the single source of truth
     public class DanceSettingsHandler : MonoBehaviour
     {
-        public static DanceSettingsHandler Instance { get; private set; }
+        private static DanceSettingsHandler _instance;
+        public static DanceSettingsHandler Instance
+        {
+            get
+            {
+                if (_instance == null)
+                {
+                    _instance = FindFirstObjectByType<DanceSettingsHandler>();
+                    if (_instance == null)
+                    {
+                        GameObject go = new GameObject("DanceSettingsHandler");
+                        _instance = go.AddComponent<DanceSettingsHandler>();
+                    }
+                }
+                return _instance;
+            }
+            private set => _instance = value;
+        }
 
-        public DanceSettingsData data;
+        private DanceSettingsData _data;
+        public DanceSettingsData data
+        {
+            get
+            {
+                if (_data == null)
+                {
+                    _data = new DanceSettingsData();
+                    LoadFromDisk();
+                }
+                return _data;
+            }
+            set => _data = value;
+        }
 
-        private string fileName = "danceSettings.json";
-        private string FilePath => Path.Combine(Application.persistentDataPath, fileName);
+        private string FilePath => Path.Combine(Application.persistentDataPath, "danceSettings.json");
 
-        // Cached references for efficient apply/save
-        private DancePlayerCore playerCore;
-        private DancePlayerUIManager uiManager;
-        private HipsFollower hipsFollower;
-        private DanceShadowFollower shadowFollower;
-        private DanceAvatarHelper avatarHelper;
-        private DanceScreenCompensator screenCompensator;
+        // Component references for applying settings
+        public HipsFollower hipsFollower;
 
-        private void Awake()
+
+        void Awake()
         {
             if (Instance != null && Instance != this)
             {
                 Destroy(gameObject);
                 return;
             }
-
+            
             Instance = this;
-
-            // Cache references
             CacheComponents();
-
             LoadFromDisk();
             ApplyAllSettings();
-        }
 
-        private void OnApplicationQuit()
-        {
-            SaveToDisk(); // Auto-save on exit
         }
-
         private void CacheComponents()
         {
-            playerCore = FindFirstObjectByType<DancePlayerCore>();
-            uiManager = FindFirstObjectByType<DancePlayerUIManager>();
             hipsFollower = FindFirstObjectByType<HipsFollower>();
-            shadowFollower = FindFirstObjectByType<DanceShadowFollower>();
-            avatarHelper = FindFirstObjectByType<DanceAvatarHelper>();
-            screenCompensator = FindFirstObjectByType<DanceScreenCompensator>();
         }
-
-        public void SaveToDisk()
-        {
-            try
-            {
-                // Sync data from components before saving
-                SyncDataFromComponents();
-
-                string dir = Path.GetDirectoryName(FilePath);
-                if (!Directory.Exists(dir))
-                    Directory.CreateDirectory(dir);
-
-                // Use custom JsonSerializerSettings to handle Vector2
-                var settings = new JsonSerializerSettings
-                {
-                    Formatting = Formatting.Indented,
-                    Converters = new List<JsonConverter> { new Vector2Converter() },
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore // Fallback safety
-                };
-
-                string json = JsonConvert.SerializeObject(data, settings);
-                File.WriteAllText(FilePath, json);
-                Debug.Log("[DanceSettingsHandler] Saved settings to: " + FilePath);
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError("[DanceSettingsHandler] Failed to save: " + e);
-            }
-        }
-
-        public void LoadFromDisk()
-        {
-            if (File.Exists(FilePath))
-            {
-                try
-                {
-                    string json = File.ReadAllText(FilePath);
-                    var settings = new JsonSerializerSettings
-                    {
-                        Converters = new List<JsonConverter> { new Vector2Converter() }
-                    };
-                    data = JsonConvert.DeserializeObject<DanceSettingsData>(json, settings);
-                    Debug.Log("[DanceSettingsHandler] Loaded settings from: " + FilePath);
-                }
-                catch (System.Exception e)
-                {
-                    Debug.LogError("[DanceSettingsHandler] Failed to load: " + e);
-                    data = new DanceSettingsData();
-                }
-            }
-            else
-            {
-                data = new DanceSettingsData();
-            }
-        }
-
         public static void ApplyAllSettings()
         {
             if (Instance == null) return;
             var data = Instance.data;
 
-            // Apply to DancePlayerCore
-            if (Instance.playerCore != null)
-            {
-                Instance.playerCore.CurrentPlayIndex = data.currentPlayIndex;
-                Instance.playerCore.CurrentPlayMode = data.currentPlayMode;
-                Instance.playerCore.SetAnimationStartDelay(data.animationStartDelay);
-                Instance.playerCore.autoPlayOnStart = data.autoPlayOnStart;
-            }
-
-            // Apply to DancePlayerUIManager (volume, etc.)
-            if (Instance.uiManager != null)
-            {
-
-                Instance.uiManager.hidePanelOnStart = data.hidePanelOnStart;
-                Instance.uiManager.EnableWindowFollow.isOn = data.enableWindowFollow;
-                Instance.uiManager.EnableCameraDistanceKeep.isOn = data.enableCameraDistanceKeep;
-            }
-            if (Instance.avatarHelper != null)
-            {
-                Instance.avatarHelper.danceVolume = data.danceVolume;
-            }
-
-            // Apply to HipsFollower (follow enabled + position)
+          
             if (Instance.hipsFollower != null)
             {
-                Instance.hipsFollower.followEnabled = data.enableDanceUIFollow;
                 var rect = Instance.hipsFollower.GetComponent<RectTransform>();
                 if (rect != null)
                 {
@@ -157,36 +91,12 @@ namespace CustomDancePlayer
                     }
                 }
             }
-
-            // Apply to DanceShadowFollower
-            if (Instance.shadowFollower != null)
-            {
-                Instance.shadowFollower.enabled = data.enableShadowFollow;
-            }
         }
-
         private void SyncDataFromComponents()
         {
-            // Pull current values from components to data before save
-            if (playerCore != null)
-            {
-                data.currentPlayMode = playerCore.CurrentPlayMode;
-                data.currentPlayIndex = playerCore.CurrentPlayIndex;
-                data.animationStartDelay = playerCore.AnimationStartDelay;
-                data.autoPlayOnStart = playerCore.autoPlayOnStart;
-            }
-
-            if (uiManager != null)
-            {
-                data.danceVolume = uiManager.VolumeSlider.value;
-                data.hidePanelOnStart = uiManager.hidePanelOnStart;
-                data.enableWindowFollow = uiManager.EnableWindowFollow.isOn;
-                data.enableCameraDistanceKeep = uiManager.EnableCameraDistanceKeep.isOn;
-            }
 
             if (hipsFollower != null)
             {
-                data.enableDanceUIFollow = hipsFollower.followEnabled;
                 var rect = hipsFollower.GetComponent<RectTransform>();
                 if (rect != null)
                 {
@@ -201,30 +111,78 @@ namespace CustomDancePlayer
                 }
             }
 
-            if (shadowFollower != null)
+        }
+
+
+        void OnApplicationQuit()
+        {
+            SaveToDisk();
+        }
+
+        // Saves settings to disk
+        public void SaveToDisk()
+        {
+            try
             {
-                data.enableShadowFollow = shadowFollower.enabled;
+                SyncDataFromComponents();
+
+                string dir = Path.GetDirectoryName(FilePath);
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+
+                var settings = new JsonSerializerSettings
+                {
+                    Formatting = Formatting.Indented,
+                    Converters = new List<JsonConverter> { new Vector2Converter() },
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                };
+
+                File.WriteAllText(FilePath, JsonConvert.SerializeObject(data, settings));
             }
-            else
+            catch (Exception e)
             {
-                data.enableShadowFollow = false; // Default if component is missing
+                Debug.LogError($"[DanceSettingsHandler] Failed to save: {e}");
             }
         }
 
-        // Public method to trigger save on setting changes (call from other scripts)
+        // Loads settings from disk
+        public void LoadFromDisk()
+        {
+            if (!File.Exists(FilePath))
+            {
+                data = new DanceSettingsData();
+                return;
+            }
+
+            try
+            {
+                string json = File.ReadAllText(FilePath);
+                data = JsonConvert.DeserializeObject<DanceSettingsData>(json, new JsonSerializerSettings
+                {
+                    Converters = new List<JsonConverter> { new Vector2Converter() }
+                });
+                Debug.Log("[DanceSettingsHandler] Settings loaded.");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[DanceSettingsHandler] Failed to load: {e}");
+                data = new DanceSettingsData();
+            }
+        }
+
+
+        // Triggers save on setting changes
         public static void OnSettingChanged()
         {
-            if (Instance != null)
-            {
-                Instance.SaveToDisk();
-            }
+            //if (Instance != null)
+            //{
+            //    Instance.SaveToDisk();
+            //}
         }
 
-        [System.Serializable]
+        [Serializable]
         public class DanceSettingsData
         {
-            public string version = "1.0"; // For future migrations
-
+            public string version = "1.0";
             public DancePlayerCore.PlayMode currentPlayMode = DancePlayerCore.PlayMode.Sequence;
             public int currentPlayIndex = -1;
             public float animationStartDelay = 0.3f;
@@ -235,33 +193,25 @@ namespace CustomDancePlayer
             public bool enableCameraDistanceKeep = true;
             public bool autoPlayOnStart = false;
             public bool hidePanelOnStart = false;
-            public bool enableCameraCompensation = true;
-
-            // UI Position Persistence
-            public Vector2 uiBasePosition = Vector2.zero; // For when follow is enabled (offset)
-            public Vector2 uiRawPosition = new Vector2(300f, 0f); // For when follow is disabled (absolute)
+            public bool isPlaying = false;
+            public float audioStartTime;
+            public KeyCode toggleKey = KeyCode.H;
+            public Vector2 uiBasePosition = Vector2.zero;
+            public Vector2 uiRawPosition = new Vector2(300f, 0f);
         }
 
-        // Custom JsonConverter for Vector2 to avoid serialization issues
         private class Vector2Converter : JsonConverter<Vector2>
         {
             public override void WriteJson(JsonWriter writer, Vector2 value, JsonSerializer serializer)
             {
-                // Serialize only x and y
-                JObject jo = new JObject
-            {
-                { "x", value.x },
-                { "y", value.y }
-            };
+                JObject jo = new JObject { { "x", value.x }, { "y", value.y } };
                 jo.WriteTo(writer);
             }
 
             public override Vector2 ReadJson(JsonReader reader, Type objectType, Vector2 existingValue, bool hasExistingValue, JsonSerializer serializer)
             {
                 JObject jo = JObject.Load(reader);
-                float x = jo["x"]?.Value<float>() ?? 0f;
-                float y = jo["y"]?.Value<float>() ?? 0f;
-                return new Vector2(x, y);
+                return new Vector2(jo["x"]?.Value<float>() ?? 0f, jo["y"]?.Value<float>() ?? 0f);
             }
         }
     }

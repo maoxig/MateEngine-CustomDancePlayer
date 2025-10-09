@@ -1,129 +1,64 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using UnityEngine;
 
 namespace CustomDancePlayer
-{
-    /// <summary>
-    /// Resource Manager: Load/Unload dance resources (.unity3d, Animator Controller, Audio)
-    /// </summary>
+{ // Manages loading and unloading of dance resources
+
     public class DanceResourceManager : MonoBehaviour
     {
-        private const string DANCE_FOLDER_NAME = "CustomDances";
-
-        private AssetBundle _currentAssetBundle;
-        //public RuntimeAnimatorController CurrentAnimatorCtrl { get; private set; }
+        private const string DANCE_FOLDER_NAME = "CustomDances"; private AssetBundle _currentAssetBundle;
         public AudioClip CurrentAudioClip { get; private set; }
-
         public AnimationClip CurrentAnimationClip { get; private set; }
+
+        //public RuntimeAnimatorController CurrentAnimatorCtrl { get; private set; }
         public List<string> DanceFileList { get; private set; } = new List<string>();
 
         public DanceAvatarHelper avatarHelper;
 
-        void Start()
-        {
-            // Initialize: Load dance file list
-            RefreshDanceFileList();
-        }
 
-        /// <summary>
-        /// Refresh dance file list (read from CustomDances folder)
-        /// </summary>
+        // Refreshes dance file list from folder
         public void RefreshDanceFileList()
         {
             DanceFileList.Clear();
             string danceFolderPath = GetDanceFolderPath();
 
-            // Check if the folder exists
             if (!Directory.Exists(danceFolderPath))
             {
                 Directory.CreateDirectory(danceFolderPath);
-#if DEBUG
-            Debug.Log($"Created dance folder: {danceFolderPath}");
-#endif
                 return;
             }
 
-            // Read all .unity3d files
-            string[] unity3dFiles = Directory.GetFiles(danceFolderPath, "*.unity3d");
-            foreach (string filePath in unity3dFiles)
-            {
-                DanceFileList.Add(Path.GetFileName(filePath));
-            }
-#if DEBUG
-        Debug.Log($"Dance list refreshed: {DanceFileList.Count} files found");
-#endif
+            DanceFileList.AddRange(Directory.GetFiles(danceFolderPath, "*.unity3d").Select(Path.GetFileName));
         }
 
-        /// <summary>
-        /// Load dance resource
-        /// </summary>
-        /// <param name="fileName">.unity3d</param>
-        /// <returns>True if loaded successfully</returns>
+        // Loads dance resource by file name
         public bool LoadDanceResource(string fileName)
         {
-            if (!avatarHelper.IsAvatarAvailable())
+            if (!avatarHelper.IsAvatarAvailable() || string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".unity3d"))
             {
-#if DEBUG
-            Debug.LogError("Avatar is not available, cannot load resource.");
-#endif
-                return false;
-            }
-            if (string.IsNullOrEmpty(fileName) || !fileName.EndsWith(".unity3d"))
-            {
-#if DEBUG
-            Debug.LogError("Invalid file name: " + fileName);
-#endif
                 return false;
             }
 
-            // 2. Unload previous resources (to avoid memory leaks)
             UnloadCurrentResource();
-
-            // 3. Compose file path
             string fullPath = Path.Combine(GetDanceFolderPath(), fileName);
+
             if (!File.Exists(fullPath))
             {
-#if DEBUG
-            Debug.LogError("File does not exist: " + fullPath);
-#endif
                 return false;
             }
 
-            // 4. Load AssetBundle
             _currentAssetBundle = AssetBundle.LoadFromFile(fullPath);
             if (_currentAssetBundle == null)
             {
-#if DEBUG
-            Debug.LogError("Failed to load .unity3d (file may be corrupted or version incompatible): " + fullPath);
-#endif
                 return false;
             }
 
-            // 5. Extract resources (by convention: 'file name = resource name')
-            string baseName = Path.GetFileNameWithoutExtension(fileName);
-            //bool loadAnimatorSuccess = LoadAnimatorController(baseName);
-            bool loadAudioSuccess = LoadAudioClipByType();
-            bool loadAnimationSuccess = LoadAnimationClipByType();
-
-
-#if DEBUG
-        if (CurrentAudioClip != null)
-        {
-
-            Debug.Log($"Loaded successfully: {fileName} (animation + audio)");
-        }
-        else
-        {
-            Debug.LogWarning($"Loaded successfully: {fileName} (animation only, audio not found)");
-        }
-#endif
+            LoadAnimationClipByType();
+            LoadAudioClipByType();
             return true;
         }
-
-        /// <summary>
-        /// Load animator controller
-        /// </summary>
         //private bool LoadAnimatorController(string baseName)
         //{
         //    string ctrlPath = $"{baseName}.controller";
@@ -134,113 +69,59 @@ namespace CustomDancePlayer
         //    }
         //    return true;
         //}
+
+        // Loads animation clip from asset bundle
         private bool LoadAnimationClipByType()
         {
             AnimationClip[] clips = _currentAssetBundle.LoadAllAssets<AnimationClip>();
-            if (clips != null && clips.Length > 0)
-            {
-                CurrentAnimationClip = clips[0];
-                return true;
-            }
-            CurrentAnimationClip = null;
-            return false;
-        }
-        private bool LoadAnimationClip(string baseName)
-        {
-            string animPath = $"{baseName}.anim";
-            CurrentAnimationClip = _currentAssetBundle.LoadAsset<AnimationClip>(animPath);
-            if (CurrentAnimationClip == null)
-            {
-                return false;
-            }
-            return true;
-        }
-        /// <summary>
-        /// Load audio clip
-        /// </summary>
-        private bool LoadAudioClip(string baseName)
-        {
-            string[] audioExts = { ".wav", ".mp3", ".ogg" };
-            AudioSource avatarAudioSource = avatarHelper.CurrentAudioSource;
-
-            foreach (string ext in audioExts)
-            {
-                string audioPath = $"{baseName}{ext}";
-                CurrentAudioClip = _currentAssetBundle.LoadAsset<AudioClip>(audioPath);
-                if (CurrentAudioClip != null)
-                {
-                    avatarAudioSource.clip = CurrentAudioClip;
-                    avatarAudioSource.loop = false;
-                    return true;
-                }
-            }
-
-
-            CurrentAudioClip = null;
-            avatarAudioSource.clip = null;
-            return false;
+            CurrentAnimationClip = clips.Length > 0 ? clips[0] : null;
+            return CurrentAnimationClip != null;
         }
 
+        // Loads audio clip from asset bundle
         private bool LoadAudioClipByType()
         {
             AudioClip[] clips = _currentAssetBundle.LoadAllAssets<AudioClip>();
-            AudioSource audioSource = avatarHelper.CurrentAudioSource;
+            CurrentAudioClip = clips.Length > 0 ? clips[0] : null;
 
-            if (clips != null && clips.Length > 0)
+            if (avatarHelper.CurrentAudioSource != null)
             {
-                CurrentAudioClip = clips[0];
-                audioSource.clip = CurrentAudioClip;
-                audioSource.loop = false;
-                return true;
+                avatarHelper.CurrentAudioSource.clip = CurrentAudioClip;
+                avatarHelper.CurrentAudioSource.loop = false;
             }
 
-            CurrentAudioClip = null;
-            audioSource.clip = null;
-            return false;
+            return CurrentAudioClip != null;
         }
-        /// <summary>
-        /// Unload current dance resource
-        /// </summary>
+
+        // Unloads current resources
         public void UnloadCurrentResource()
         {
-            // 1. Stop audio playback
             if (avatarHelper.IsAvatarAvailable() && avatarHelper.CurrentAudioSource != null)
             {
                 avatarHelper.CurrentAudioSource.Stop();
                 avatarHelper.CurrentAudioSource.clip = null;
             }
 
-            // 2. Unload AssetBundle
             if (_currentAssetBundle != null)
             {
-                _currentAssetBundle.Unload(true); // true：unload all assets loaded from this bundle
+                _currentAssetBundle.Unload(true);
                 _currentAssetBundle = null;
-#if DEBUG
-            Debug.Log("Unloaded old resources");
-#endif
             }
-            // 3. Unload AnimationClip
-            CurrentAnimationClip = null;
 
-            //// 3. Clear resource references
-            //CurrentAnimatorCtrl = null;
+            CurrentAnimationClip = null;
             CurrentAudioClip = null;
         }
 
-        /// <summary>
-        /// Get dance folder path (encapsulation to avoid duplicate code)
-        /// </summary>
+        // Gets dance folder path
         private string GetDanceFolderPath()
         {
             return Path.Combine(Application.streamingAssetsPath, DANCE_FOLDER_NAME);
         }
 
-        /// <summary>
-        /// Check if resources are loaded (provide external judgment)
-        /// </summary>
+        // Checks if resources are loaded
         public bool IsResourceLoaded()
         {
-            return CurrentAnimationClip != null && CurrentAudioClip != null; // && CurrentAnimatorCtrl != null;
+            return CurrentAnimationClip != null && CurrentAudioClip != null;
         }
     }
 }

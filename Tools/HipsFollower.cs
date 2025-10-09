@@ -7,18 +7,16 @@ namespace CustomDancePlayer
         [Tooltip("The smoothness factor for following (0 = instant, 1 = no movement).")]
         [Range(0f, 1f)]
         public float smoothness = 0.9f;
-
         public Vector2 basePosition;
-        public bool followEnabled = true;
+        public DanceAvatarHelper avatarHelper;
 
         private RectTransform panelRect;
-        public DanceAvatarHelper avatarHelper;
         private Camera mainCam;
         private Vector3 initialHipsPos;
         private Vector2 currentPosition;
         private bool hasInitialSetup;
 
-        private void Awake()
+        private void Start()
         {
             panelRect = GetComponent<RectTransform>();
             mainCam = Camera.main;
@@ -26,10 +24,12 @@ namespace CustomDancePlayer
 
         private void OnEnable()
         {
-            if (followEnabled)
-            {
-                UpdateBaseAndInitial();
-            }
+            UpdateBaseAndInitial();
+        }
+
+        private void OnDisable()
+        {
+            hasInitialSetup = false;
         }
 
         public void UpdateBaseAndInitial()
@@ -39,21 +39,18 @@ namespace CustomDancePlayer
             basePosition = panelRect.anchoredPosition;
             currentPosition = basePosition;
 
-            var animator = avatarHelper?.CurrentAnimator;
-            if (animator != null)
+
+            if (avatarHelper.CurrentAvatarHips != null)
             {
-                Transform hips = animator.GetBoneTransform(HumanBodyBones.Hips);
-                if (hips != null)
-                {
-                    initialHipsPos = hips.position;
-                    hasInitialSetup = true;
-                }
+                initialHipsPos = avatarHelper.CurrentAvatarHips.position;
+                hasInitialSetup = true;
             }
+
         }
 
         private void LateUpdate()
         {
-            if (!followEnabled || !hasInitialSetup || panelRect == null || avatarHelper?.CurrentAnimator == null) return;
+            if (!hasInitialSetup || panelRect == null || avatarHelper.CurrentAvatarHips == null) return;
 
             if (mainCam == null)
             {
@@ -61,10 +58,8 @@ namespace CustomDancePlayer
                 if (mainCam == null) return;
             }
 
-            Transform hips = avatarHelper.CurrentAnimator.GetBoneTransform(HumanBodyBones.Hips);
-            if (hips == null) return;
 
-            Vector3 currentHipsPos = hips.position;
+            Vector3 currentHipsPos = avatarHelper.CurrentAvatarHips.position;
             Vector3 initialScreenPos = mainCam.WorldToScreenPoint(initialHipsPos);
             Vector3 currentScreenPos = mainCam.WorldToScreenPoint(currentHipsPos);
 

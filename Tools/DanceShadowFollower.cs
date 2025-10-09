@@ -1,88 +1,55 @@
-﻿using System.Collections;
-using UnityEngine;
+﻿using UnityEngine;
+
 namespace CustomDancePlayer
 {
     public class DanceShadowFollower : MonoBehaviour
     {
-        [Header("配置")]
-        public string shadowObjectName = "Shadow";
-
-        private Transform hips;
-        private Transform shadowPlane;
+        [Header("Shadow Settings")]
+        public string shadowName = "Shadow";
         public float initialZOffset = 2.02f;
 
+        [Header("References")]
         public DanceAvatarHelper avatarHelper;
         public DancePlayerCore dancePlayerCore;
 
-        IEnumerator EnableAfterTwoFrames(System.Action action)
-        {
-            yield return null;
-            yield return null;
-            action?.Invoke();
-        }
-
-        void Start()
-        {
-            StartCoroutine(EnableAfterTwoFrames(InitReferences));
-        }
-
-        void OnEnable()
-        {
-            StartCoroutine(EnableAfterTwoFrames(InitReferences));
-        }
-
-        private void InitReferences()
-        {
-            if (avatarHelper != null)
-            {
-                var animator = avatarHelper.CurrentAnimator;
-                if (animator != null)
-                {
-                    hips = animator.GetBoneTransform(HumanBodyBones.Hips);
-                }
-                else
-                {
-                    hips = null;
-                }
-            }
-            else
-            {
-                hips = null;
-            }
-
-            GameObject shadowObj = GameObject.Find(shadowObjectName);
-            if (shadowObj != null)
-            {
-                shadowPlane = shadowObj.transform;
-            }
-            else
-            {
-                shadowPlane = null;
-            }
-        }
+        private Transform _cachedShadowTransform;
 
         void Update()
         {
-            if (!dancePlayerCore.IsPlaying || shadowPlane == null)
+            if (dancePlayerCore == null || !dancePlayerCore.IsPlaying)
                 return;
-            if (avatarHelper != null && hips == null)
+
+            if (avatarHelper.CurrentAvatarHips == null)
+                return;
+
+            if (_cachedShadowTransform == null)
             {
-                var animator = avatarHelper.CurrentAnimator;
-                if (animator != null)
-                {
-                    hips = animator.GetBoneTransform(HumanBodyBones.Hips);
-                }
+                _cachedShadowTransform = FindShadowTransform();
+                if (_cachedShadowTransform == null)
+                    return;
             }
-            if (hips == null)
-                return;
-            Vector3 pos = shadowPlane.position;
 
-            pos.x = hips.position.x;
-            pos.y = hips.position.y;
+            Vector3 pos = _cachedShadowTransform.position;
+            pos.x = avatarHelper.CurrentAvatarHips.position.x;
+            pos.y = avatarHelper.CurrentAvatarHips.position.y;
+            pos.z = avatarHelper.CurrentAvatarHips.position.z + initialZOffset;
+            _cachedShadowTransform.position = pos;
+        }
 
-            pos.z = hips.position.z + initialZOffset;
+        private Transform FindShadowTransform()
+        {
+            GameObject shadowObj = GameObject.Find(shadowName);
 
-            shadowPlane.position = pos;
+            if (shadowObj != null && shadowObj.GetComponent<Renderer>() != null)
+            {
+                return shadowObj.transform;
+            }
+
+            return null;
+        }
+        public void ClearShadowCache()
+        {
+            _cachedShadowTransform = null;
         }
     }
 }

@@ -10,7 +10,7 @@ namespace CustomDancePlayer
         private UniversalBlendshapes ub;
         private Mesh dummyMesh;
 
-        // 日语 MMD → UniversalBlendshapes key 映射
+        // Japanese MMD-like blendshape name to UniversalBlendshapes property setter mapping
         private readonly (string mmd, System.Action<UniversalBlendshapes, float> setter)[] map;
 
         public DummyToUniversalSync()
@@ -60,7 +60,7 @@ namespace CustomDancePlayer
             for (int i = 0; i < dummyMesh.blendShapeCount; i++)
             {
                 string bsName = dummyMesh.GetBlendShapeName(i);
-                float weight01 = dummySmr.GetBlendShapeWeight(i) / 100f; // 转换到 0~1
+                float weight01 = dummySmr.GetBlendShapeWeight(i) / 100f;
 
                 foreach (var (mmd, setter) in map)
                 {

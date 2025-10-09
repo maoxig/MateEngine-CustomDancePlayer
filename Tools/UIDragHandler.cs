@@ -13,17 +13,9 @@ namespace CustomDancePlayer
         private bool isDragging;
         private bool wasFollowing;
 
-        private void Awake()
+        private void Start()
         {
             panelRect = GetComponent<RectTransform>();
-            if (hipsFollower == null)
-            {
-                hipsFollower = GetComponent<HipsFollower>();
-                if (hipsFollower == null)
-                {
-                    Debug.LogWarning("HipsFollower component not found on " + gameObject.name);
-                }
-            }
         }
 
         public void OnBeginDrag(PointerEventData eventData)
@@ -33,8 +25,8 @@ namespace CustomDancePlayer
             isDragging = true;
             if (hipsFollower != null)
             {
-                wasFollowing = hipsFollower.followEnabled;
-                hipsFollower.followEnabled = false; // Explicitly disable following during drag
+                wasFollowing = hipsFollower.enabled;
+                hipsFollower.enabled = false;
             }
         }
 
@@ -53,7 +45,7 @@ namespace CustomDancePlayer
                 isDragging = false;
                 if (hipsFollower != null && wasFollowing)
                 {
-                    hipsFollower.followEnabled = true; // Re-enable following only if it was enabled before
+                    hipsFollower.enabled = true; // Re-enable following only if it was enabled before
                     hipsFollower.UpdateBaseAndInitial(); // Update base position for new follow start
                 }
             }
