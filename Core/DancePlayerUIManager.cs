@@ -45,7 +45,7 @@ namespace CustomDancePlayer
         public TMP_Text AnimationStartDelayValueText;
 
         // Core Components
-        
+        [Header("Core Components")]
         public DancePlayerCore playerCore;
         public DanceAvatarHelper avatarHelper;
         public DanceResourceManager resourceManager;
@@ -116,14 +116,7 @@ namespace CustomDancePlayer
             CurrentPlayText.text = playerCore.GetCurrentPlayFileName();
             PlayModeText.text = GetPlayModeText();
             AvatarStatusText.text = "Avatar Status: Not Connected";
-
-
-            if (DanceFileDropdown != null)
-            {
-                DanceFileDropdown.value = _settingsHandler.data.currentPlayIndex >= 0 && _settingsHandler.data.currentPlayIndex < DanceFileDropdown.options.Count
-                    ? _settingsHandler.data.currentPlayIndex : 0;
-                DanceFileDropdown.captionText.text = DanceFileDropdown.options.Count > 0 ? playerCore.GetCurrentPlayFileName() : "None";
-            }
+            UpdateDropdownValue();
         }
 
         // Binds UI events to handlers
@@ -262,11 +255,6 @@ namespace CustomDancePlayer
             DanceFileDropdown.interactable = isPlayerReady && !_settingsHandler.data.isPlaying;
             RefreshBtn.interactable = !_settingsHandler.data.isPlaying;
 
-            if (_settingsHandler.data.isPlaying && _settingsHandler.data.currentPlayIndex >= 0 &&
-                _settingsHandler.data.currentPlayIndex < resourceManager.DanceFileList.Count)
-            {
-                DanceFileDropdown.captionText.text = playerCore.GetCurrentPlayFileName();
-            }
 
             if (_settingsHandler.data.isPlaying && resourceManager.CurrentAudioClip != null)
             {
@@ -316,7 +304,6 @@ namespace CustomDancePlayer
                 _settingsHandler.data.currentPlayIndex >= 0 && DanceFileDropdown.options.Count > 0 &&
                 _settingsHandler.data.currentPlayIndex < DanceFileDropdown.options.Count)
             {
-                DanceFileDropdown.value = _settingsHandler.data.currentPlayIndex;
                 OnPlayPauseBtnClick();
             }
         }
@@ -348,7 +335,25 @@ namespace CustomDancePlayer
                 _ => "Sequence"
             };
         }
+        public void UpdateDropdownValue()
+        {
+            if (DanceFileDropdown == null || DanceFileDropdown.options.Count == 0)
+                return; 
 
+            int targetIndex = _settingsHandler.data.currentPlayIndex;
+            if (targetIndex < 0 || targetIndex >= DanceFileDropdown.options.Count)
+            {
+                targetIndex = 0;
+                _settingsHandler.data.currentPlayIndex = targetIndex; 
+                DanceSettingsHandler.OnSettingChanged();
+            }
+
+            if (DanceFileDropdown.value != targetIndex)
+            {
+                DanceFileDropdown.value = targetIndex;
+                DanceFileDropdown.captionText.text = DanceFileDropdown.options[targetIndex].text;
+            }
+        }
         // Refreshes dropdown with dance files
         public void RefreshDropdown()
         {

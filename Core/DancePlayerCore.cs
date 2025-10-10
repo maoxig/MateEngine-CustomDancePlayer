@@ -11,7 +11,7 @@ namespace CustomDancePlayer
         [Header("Dependency References")]
         public DanceAvatarHelper avatarHelper;
         public DanceResourceManager resourceManager;
-
+        public DancePlayerUIManager uiManager;
         public enum PlayMode { Sequence, Loop, Random }
 
 
@@ -100,7 +100,10 @@ namespace CustomDancePlayer
             {
                 _startAnimationCoroutine = StartCoroutine(StartAnimationAfterDelay(avatarHelper.CurrentAnimator, resourceManager.CurrentAnimationClip, delay));
             }
-
+            if (uiManager != null)
+            {
+                uiManager.UpdateDropdownValue();
+            }
             DanceSettingsHandler.OnSettingChanged();
             return true;
         }
