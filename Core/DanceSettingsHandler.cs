@@ -56,7 +56,7 @@ namespace CustomDancePlayer
                 Destroy(gameObject);
                 return;
             }
-            
+
             Instance = this;
             CacheComponents();
             LoadFromDisk();
@@ -72,7 +72,7 @@ namespace CustomDancePlayer
             if (Instance == null) return;
             var data = Instance.data;
 
-          
+
             if (Instance.hipsFollower != null)
             {
                 var rect = Instance.hipsFollower.GetComponent<RectTransform>();
@@ -191,6 +191,7 @@ namespace CustomDancePlayer
             public bool enableShadowFollow = true;
             public bool enableWindowFollow = true;
             public bool enableCameraDistanceKeep = true;
+            public bool enableGlobalHotkey = false;
             public bool autoPlayOnStart = false;
             public bool hidePanelOnStart = false;
             public bool isPlaying = false;

@@ -35,14 +35,18 @@ namespace CustomDancePlayer
         [Header("Advanced Settings")]
         public Slider VolumeSlider;
         public TMP_Text VolumeValueText;
-        public Toggle AutoPlayOnStartToggle;
-        public Toggle HidePanelOnStartToggle;
+        public Slider AnimationStartDelaySlider;
+        public TMP_Text AnimationStartDelayValueText;
+
         public Toggle EnableUIPanelFollow;
         public Toggle EnableShadowFollow;
         public Toggle EnableWindowFollow;
         public Toggle EnableCameraDistanceKeep;
-        public Slider AnimationStartDelaySlider;
-        public TMP_Text AnimationStartDelayValueText;
+        public Toggle AutoPlayOnStartToggle;
+        public Toggle HidePanelOnStartToggle;
+        public Toggle EnableGlobalHotkey;
+
+
 
         // Core Components
         [Header("Core Components")]
@@ -56,6 +60,7 @@ namespace CustomDancePlayer
         private DanceShadowFollower _shadowFollower;
         private DanceWindowFollower _danceWindowFollower;
         private DanceCameraDistKeeper _danceCameraDistKeeper;
+        private GlobalHotkeyListener _globalHotkeyListener;
 
 
         private bool _isAdvancedOpen;
@@ -73,6 +78,7 @@ namespace CustomDancePlayer
             _danceCameraDistKeeper = FindFirstObjectByType<DanceCameraDistKeeper>();
             _hipsFollower = FindFirstObjectByType<HipsFollower>();
             _shadowFollower = FindFirstObjectByType<DanceShadowFollower>();
+            _globalHotkeyListener = FindFirstObjectByType<GlobalHotkeyListener>();
 
             _settingsHandler = DanceSettingsHandler.Instance;
             RefreshDropdown();
@@ -117,6 +123,45 @@ namespace CustomDancePlayer
             PlayModeText.text = GetPlayModeText();
             AvatarStatusText.text = "Avatar Status: Not Connected";
             UpdateDropdownValue();
+        }
+
+        // Public method to set panel visibility
+        public void SetPanelVisible(bool visible)
+        {
+            if (TargetCanvas == null)
+            {
+                return;
+            }
+
+            GameObject targetCanvasObject = TargetCanvas.gameObject;
+            if (targetCanvasObject.activeSelf != visible)
+            {
+                targetCanvasObject.SetActive(visible);
+
+                if (visible)
+                {
+                    AddMyUIToGameMenuList();
+                }
+            }
+        }
+
+        // Handles UI toggle key press
+        private void HandleKeyToggleUI()
+        {
+            if (TargetCanvas == null) return;
+            if (IsInTextInputState())
+                return;
+            if (Input.GetKeyDown(_settingsHandler.data.toggleKey))
+            {
+                GameObject targetCanvasObject = TargetCanvas.gameObject;
+                bool newVisibleState = !targetCanvasObject.activeSelf;
+                targetCanvasObject.SetActive(newVisibleState);
+
+                if (newVisibleState)
+                {
+                    AddMyUIToGameMenuList();
+                }
+            }
         }
 
         // Binds UI events to handlers
@@ -238,6 +283,18 @@ namespace CustomDancePlayer
                     DanceSettingsHandler.OnSettingChanged();
                 });
             }
+
+            if (EnableGlobalHotkey != null && _globalHotkeyListener != null)
+            {
+                EnableGlobalHotkey.isOn = _settingsHandler.data.enableGlobalHotkey;
+                _globalHotkeyListener.enabled = _settingsHandler.data.enableGlobalHotkey;
+                EnableGlobalHotkey.onValueChanged.AddListener(isOn =>
+                {
+                    _settingsHandler.data.enableGlobalHotkey = isOn;
+                    _globalHotkeyListener.enabled = isOn;
+                    DanceSettingsHandler.OnSettingChanged();
+                });
+            }
         }
 
         // Updates UI elements in real-time
@@ -268,27 +325,10 @@ namespace CustomDancePlayer
             }
         }
 
-        // Handles UI toggle key press
-        private void HandleKeyToggleUI()
-        {
-            if (TargetCanvas == null) return;
-            if (IsInTextInputState())
-                return;
-            if (Input.GetKeyDown(_settingsHandler.data.toggleKey))
-            {
-                GameObject targetCanvasObject = TargetCanvas.gameObject;
-                bool newVisibleState = !targetCanvasObject.activeSelf;
-                targetCanvasObject.SetActive(newVisibleState);
 
-                if (newVisibleState)
-                {
-                    AddMyUIToGameMenuList();
-                }
-            }
-        }
 
         // Attempts auto-play with timeout
-        private IEnumerator TryAutoPlay()
+        public IEnumerator TryAutoPlay()
         {
             yield return new WaitForSeconds(3f);
             float timeout = 10f;
@@ -308,23 +348,24 @@ namespace CustomDancePlayer
             }
         }
 
-        // Handles play/pause button click
-        private void OnPlayPauseBtnClick()
+        public void OnPlayPauseBtnClick()
         {
             if (!_settingsHandler.data.isPlaying && DanceFileDropdown.value >= 0)
             {
                 playerCore.PlayDanceByIndex(DanceFileDropdown.value);
             }
+            else if (_settingsHandler.data.isPlaying)
+            {
+                playerCore.StopPlay();
+            }
         }
 
-        // Toggles play mode
         private void OnPlayModeBtnClick()
         {
             _settingsHandler.data.currentPlayMode = (DancePlayerCore.PlayMode)(((int)_settingsHandler.data.currentPlayMode + 1) % Enum.GetValues(typeof(DancePlayerCore.PlayMode)).Length);
             DanceSettingsHandler.OnSettingChanged();
         }
 
-        // Gets play mode text for display
         private string GetPlayModeText()
         {
             return _settingsHandler.data.currentPlayMode switch
@@ -338,13 +379,13 @@ namespace CustomDancePlayer
         public void UpdateDropdownValue()
         {
             if (DanceFileDropdown == null || DanceFileDropdown.options.Count == 0)
-                return; 
+                return;
 
             int targetIndex = _settingsHandler.data.currentPlayIndex;
             if (targetIndex < 0 || targetIndex >= DanceFileDropdown.options.Count)
             {
                 targetIndex = 0;
-                _settingsHandler.data.currentPlayIndex = targetIndex; 
+                _settingsHandler.data.currentPlayIndex = targetIndex;
                 DanceSettingsHandler.OnSettingChanged();
             }
 
@@ -420,4 +461,3 @@ namespace CustomDancePlayer
 
     }
 }
-

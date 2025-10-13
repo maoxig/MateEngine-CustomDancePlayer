@@ -3,7 +3,8 @@ using System.Linq;
 using UnityEngine;
 
 namespace CustomDancePlayer
-{ // Manages avatar-related components and audio setup
+{
+    // Manages avatar-related components and audio setup
     public class DanceAvatarHelper : MonoBehaviour
     {
         private const string MODEL_PARENT_NAME = "Model"; private const string CUSTOM_DANCE_AUDIO_NAME = "CustomDanceAudio"; private const string BODY_NAME = "Body";
@@ -30,7 +31,7 @@ namespace CustomDancePlayer
         private Transform _originalBodyTransform;
         private Transform _dummyBodyTransform;
         private string _oldBodyName;
-        
+
 
         void Start()
         {
@@ -130,7 +131,6 @@ namespace CustomDancePlayer
 
             CurrentAvatar = newAvatar;
             CurrentAnimator = newAvatar.GetComponentInChildren<Animator>();
-           
             if (CurrentAnimator == null)
             {
                 CurrentAvatar = null;
@@ -146,6 +146,10 @@ namespace CustomDancePlayer
                 playerCore.StopPlay();
             }
             SMRHandler.SetUpdateWhenOffscreen(CurrentAvatar, true);
+
+            var proxy = CurrentAvatar.AddComponent<DancePlayerAvatarProxy>();
+            proxy.playerCore = playerCore;
+
         }
 
         // Sets up SkinnedMeshRenderer for MMD blendshapes

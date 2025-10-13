@@ -13,7 +13,6 @@ namespace CustomDancePlayer
 
         public void OnAnimationEnd()
         {
-            Debug.Log("SceneAvatarProxy: OnAnimationEnd called");
             if (playerCore != null)
             {
                 playerCore.PlayNext();
