@@ -16,8 +16,6 @@ namespace CustomDancePlayer
 
         void Update()
         {
-            if (dancePlayerCore == null || !dancePlayerCore.IsPlaying)
-                return;
 
             if (avatarHelper.CurrentAvatarHips == null)
                 return;
