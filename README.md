@@ -2,6 +2,25 @@
 
 **Other Language Versions: [English](README.md), [中文](README_zh.md)**
 
+## **IMPORTANT**
+
+a unified clarification here:
+- This mod is released at here. Specifically, it can load and play dance .unity3d files compatible with the 7 Days to Die's VRoidMod. All 250+ dance files are available for download from my cloud drive: https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing. Detailed instructions on how to create dance files are also provided on the mod’s release page.
+- After the release of MateEngine 2.4, through the joint efforts of Shiny and me, this mod has been integrated into the official features. The official dance player will be more comprehensive and polished in the future, and it can still load and use the old dance .unity3d files (even when placed in the original dance folder).
+- However, this doesn’t mean the mod is unusable — you can still continue using it, but no additional support or updates will be provided afterward, and it won’t be able to load dance files made with the official mod exporter.
+- If you have suggestions or bug reports for the official dance player, you can submit them in the official GitHub Issues section or the corresponding post.
+- If you encounter issues with some .unity3d files, since these files were created by my friend and me, you can report them via issue, and please include detailed information.
+- I’ve consulted a friend (he was the one who first taught us to make these files and converted most of the dances in the cloud drive; everyone in our community respects him deeply), and he disagrees with uploading the dance files to the Steam Workshop, so I won’t upload them either. However, you can still download them from my Google Drive — please do not upload the old .unity3d files to the Workshop. Additionally, I recommend that every user abide by the rules of the MMD community.
+
+在这里做一个统一澄清：
+
+- 这个 mod 发布于这里。具体来说，它能加载并播放可用于 7 日杀（7dtd）VRoidMod 的舞蹈.unity3d 文件，所有 250 + 个舞蹈文件可从我的谷歌云盘下载：https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing  舞蹈文件的制作方法，在 mod 发布页也有详细说明。
+- MateEngine 2.4 版本之后，经过 Shiny 和我的共同努力，这个 mod 已整合为官方功能。官方舞蹈播放器未来会更全面、更完善，且仍能加载使用旧的舞蹈.unity3d 文件（甚至可放在原舞蹈文件夹中）。
+- 但这并不代表该 mod 无法使用 —— 你依然可以继续使用它，只是后续不会再提供额外支持与更新，也无法加载官方 mod 导出器制作的舞蹈文件。
+- 若你对官方舞蹈播放器有建议或 bug 反馈，可在官方 GitHub 的 issue 板块或对应帖子中提交。
+- 若发现部分.unity3d 文件存在问题，由于这些文件由我和朋友制作，可通过issue反馈，务必附带详细信息。
+- 我已询问过一位朋友（他最早教会我们制作这类文件，还转换了云盘中的大部分舞蹈，社区里每个人都很尊敬他），他不同意将舞蹈文件上传至 Steam 创意工坊，因此我也不会上传。不过你们仍可从我的谷歌云盘下载，请不要将旧的.unity3d 文件上传至创意工坊。此外，建议每位使用者都遵循 MMD 社区的相关规则。
+
 
 ## Preview
 <div style="display: flex; gap: 16px;">
