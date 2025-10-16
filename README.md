@@ -10,7 +10,7 @@ a unified clarification here:
 - However, this doesn’t mean the mod is unusable — you can still continue using it, but no additional support or updates will be provided afterward, and it won’t be able to load dance files made with the official mod exporter.
 - If you have suggestions or bug reports for the official dance player, you can submit them in the official GitHub Issues section or the corresponding post.
 - If you encounter issues with some .unity3d files, since these files were created by my friend and me, you can report them via issue, and please include detailed information.
-- I’ve consulted a friend (he was the one who first taught us to make these files and converted most of the dances in the cloud drive; everyone in our community respects him deeply), and he disagrees with uploading the dance files to the Steam Workshop, so I won’t upload them either. However, you can still download them from my Google Drive — please do not upload the old .unity3d files to the Workshop. Additionally, I recommend that every user abide by the rules of the MMD community.
+- I’ve consulted a friend (he was the one who first taught us to make these files and converted most of the dances in the cloud drive; everyone in our community respects him deeply), and **he disagrees with uploading the dance files to the Steam Workshop, so I won’t upload them either. However, you can still download them from my Google Drive — please do not upload the old .unity3d files to the Workshop. Additionally, I recommend that every user abide by the rules of the MMD community.**
 
 在这里做一个统一澄清：
 
@@ -19,7 +19,7 @@ a unified clarification here:
 - 但这并不代表该 mod 无法使用 —— 你依然可以继续使用它，只是后续不会再提供额外支持与更新，也无法加载官方 mod 导出器制作的舞蹈文件。
 - 若你对官方舞蹈播放器有建议或 bug 反馈，可在官方 GitHub 的 issue 板块或对应帖子中提交。
 - 若发现部分.unity3d 文件存在问题，由于这些文件由我和朋友制作，可通过issue反馈，务必附带详细信息。
-- 我已询问过一位朋友（他最早教会我们制作这类文件，还转换了云盘中的大部分舞蹈，社区里每个人都很尊敬他），他不同意将舞蹈文件上传至 Steam 创意工坊，因此我也不会上传。不过你们仍可从我的谷歌云盘下载，请不要将旧的.unity3d 文件上传至创意工坊。此外，建议每位使用者都遵循 MMD 社区的相关规则。
+- 我已询问过一位朋友（他最早教会我们制作这类文件，还转换了云盘中的大部分舞蹈，社区里每个人都很尊敬他），**他不同意将舞蹈文件上传至 Steam 创意工坊，因此我也不会上传。不过你们仍可从我的谷歌云盘下载，请不要将旧的.unity3d 文件上传至创意工坊。此外，建议每位使用者都遵循 MMD 社区的相关规则。**
 
 
 ## Preview
