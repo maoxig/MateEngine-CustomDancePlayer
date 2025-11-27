@@ -155,7 +155,7 @@ b. 修改`MateEngineX_Data\ScriptingAssemblies.json`引用新增的dll。具体�
 
 ## 自定义舞蹈文件
 舞蹈资源需按以下规范制作，否则可能加载失败，此外我提供了一个我自己的工具箱，你可以在其中方便快速地（~3min）将一个MMD动作、表情、镜头转换为可使用的舞蹈文件。
-https://github.com/maoxig/VroidMMDTools
+https://github.com/maoxig/UnityMMDConverter/
 
 
 #### 舞蹈文件结构（.unity3d AssetBundle）

@@ -157,7 +157,7 @@ The mod works just like a standard music player—controls are intuitive and req
 
 ## Custom Dance File Specifications
 Dance resources must follow these rules to load correctly. I also provide a toolbox to help you quickly convert MMD motions, expressions, and camera data into compatible dance files (takes ~3 minutes per file):  
-https://github.com/maoxig/VroidMMDTools  
+https://github.com/maoxig/UnityMMDConverter/
 
 
 ### Dance File Structure (.unity3d AssetBundle)
