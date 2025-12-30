@@ -1,16 +1,10 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{4A3A48B6-4277-4A80-914E-AC88C3A74F1E}</ProjectGuid>
+    <TargetFramework>net472</TargetFramework>
     <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>CustomDancePlayer</RootNamespace>
     <AssemblyName>CustomDancePlayer</AssemblyName>
-    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Deterministic>true</Deterministic>
     <LangVersion>9.0</LangVersion>
   </PropertyGroup>
@@ -101,23 +95,4 @@
       <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.UIModule.dll</HintPath>
     </Reference>
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Core\DancePlayerAvatarProxy.cs" />
-    <Compile Include="Tools\DanceCameraDistKeeper.cs" />
-    <Compile Include="Core\DanceAvatarHelper.cs" />
-    <Compile Include="Core\DancePlayerCore.cs" />
-    <Compile Include="Core\DancePlayerUIManager.cs" />
-    <Compile Include="Core\DanceResourceManager.cs" />
-    <Compile Include="Core\DanceSettingsHandler.cs" />
-    <Compile Include="Tools\DanceShadowFollower.cs" />
-    <Compile Include="Tools\DummyToUniversalSync.cs" />
-    <Compile Include="Tools\GlobalHotkeyListener.cs" />
-    <Compile Include="Tools\HipsFollower.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Tools\DanceWindowFollower.cs" />
-    <Compile Include="Tools\SMRHandler.cs" />
-    <Compile Include="Tools\UIDragHandler.cs" />
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

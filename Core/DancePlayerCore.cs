@@ -37,7 +37,7 @@ namespace CustomDancePlayer
         // Initializes player with playlist
         public void InitPlayer()
         {
-            if (_settingsHandler  == null)
+            if (_settingsHandler == null)
             {
                 _settingsHandler = DanceSettingsHandler.Instance;
             }
@@ -87,19 +87,11 @@ namespace CustomDancePlayer
                 avatarHelper.SetupDummyForDance();
             }
 
-            _settingsHandler.data.audioStartTime = Time.time;
-            avatarHelper.CurrentAudioSource.Play();
             _settingsHandler.data.isPlaying = true;
 
             float delay = Mathf.Clamp(_settingsHandler.data.animationStartDelay, 0f, 1f);
-            if (delay <= 0.0001f)
-            {
-                ApplyAnimationImmediately(avatarHelper.CurrentAnimator, resourceManager.CurrentAnimationClip);
-            }
-            else
-            {
-                _startAnimationCoroutine = StartCoroutine(StartAnimationAfterDelay(avatarHelper.CurrentAnimator, resourceManager.CurrentAnimationClip, delay));
-            }
+            _startAnimationCoroutine = StartCoroutine(StartDanceSequence(avatarHelper.CurrentAnimator, resourceManager.CurrentAnimationClip, delay));
+
             if (uiManager != null)
             {
                 uiManager.UpdateDropdownValue();
@@ -108,26 +100,54 @@ namespace CustomDancePlayer
             return true;
         }
 
-        // Applies animation immediately
-        private void ApplyAnimationImmediately(Animator animator, AnimationClip clip)
+        // Starts dance sequence with audio warm-up for synchronization
+        private IEnumerator StartDanceSequence(Animator animator, AnimationClip clip, float delay)
         {
-            if (animator == null || clip == null) return;
-
-            avatarHelper.SetupAnimation(clip);
-        }
-
-        // Starts animation after delay
-        private IEnumerator StartAnimationAfterDelay(Animator animator, AnimationClip clip, float delay)
-        {
-            yield return new WaitForSeconds(delay);
-
-            if (!_settingsHandler.data.isPlaying || animator == null || clip == null)
+            if (animator == null || clip == null || avatarHelper.CurrentAudioSource == null)
             {
                 _startAnimationCoroutine = null;
                 yield break;
             }
 
-            ApplyAnimationImmediately(animator, clip);
+            // 1. Setup Animation immediately but pause it
+            avatarHelper.SetupAnimation(clip);
+            animator.speed = 0f;
+
+            // 2. Warm up audio to ensure DSP buffer is ready
+            AudioSource audio = avatarHelper.CurrentAudioSource;
+            audio.volume = 0f; // Mute for warm-up
+            audio.Play();
+
+            float timeout = Time.time + 1f;
+            // Wait for audio to actually start processing
+            while (audio.time < 0.05f && Time.time < timeout)
+            {
+                yield return null;
+            }
+
+            // 3. Reset and prepare for actual playback
+            audio.Pause();
+            audio.time = 0f;
+            avatarHelper.UpdateAudioVolume(); // Restore volume
+
+            // 4. Handle user-defined delay
+            if (delay > 0.0001f)
+            {
+                yield return new WaitForSeconds(delay);
+            }
+
+            // Check if we should still be playing
+            if (!_settingsHandler.data.isPlaying)
+            {
+                _startAnimationCoroutine = null;
+                yield break;
+            }
+
+            // 5. Start playback synchronized
+            _settingsHandler.data.audioStartTime = Time.time;
+            audio.Play();
+            animator.speed = 1f;
+
             _startAnimationCoroutine = null;
         }
 
@@ -181,6 +201,7 @@ namespace CustomDancePlayer
                 _startAnimationCoroutine = null;
             }
 
+            avatarHelper.CurrentAnimator.speed = 1f;
             avatarHelper.CurrentAudioSource.Stop();
             avatarHelper.CurrentAnimator.SetBool("isDancing", false);
 

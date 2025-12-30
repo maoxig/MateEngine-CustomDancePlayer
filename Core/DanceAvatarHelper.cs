@@ -253,6 +253,7 @@ namespace CustomDancePlayer
             CurrentOverrideController["CUSTOM_DANCE"] = clip;
             CurrentAnimator.runtimeAnimatorController = CurrentOverrideController;
             CurrentAnimator.SetBool("isDancing", true);
+            CurrentAnimator.Update(0f);
         }
     }
 }
