@@ -86,12 +86,11 @@ namespace CustomDancePlayer
             {
                 avatarHelper.SetupDummyForDance();
             }
-
-            _settingsHandler.data.isPlaying = true;
+            avatarHelper.ResetMMDCameraHierarchy();
 
             float delay = Mathf.Clamp(_settingsHandler.data.animationStartDelay, 0f, 1f);
             _startAnimationCoroutine = StartCoroutine(StartDanceSequence(avatarHelper.CurrentAnimator, resourceManager.CurrentAnimationClip, delay));
-
+            _settingsHandler.data.isPlaying = true;
             if (uiManager != null)
             {
                 uiManager.UpdateDropdownValue();
@@ -219,7 +218,7 @@ namespace CustomDancePlayer
             {
                 avatarHelper.RestoreOriginalBody();
             }
-
+            avatarHelper.ResetMMDCameraHierarchy();
             resourceManager.UnloadCurrentResource();
             _settingsHandler.data.isPlaying = false;
             DanceSettingsHandler.OnSettingChanged();

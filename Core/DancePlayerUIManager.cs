@@ -37,7 +37,7 @@ namespace CustomDancePlayer
         public TMP_Text VolumeValueText;
         public Slider AnimationStartDelaySlider;
         public TMP_Text AnimationStartDelayValueText;
-
+        public Toggle EnableDanceCinematicCamera;
         public Toggle EnableUIPanelFollow;
         public Toggle EnableShadowFollow;
         public Toggle EnableWindowFollow;
@@ -45,8 +45,9 @@ namespace CustomDancePlayer
         public Toggle AutoPlayOnStartToggle;
         public Toggle HidePanelOnStartToggle;
         public Toggle EnableGlobalHotkey;
-
-
+        public Toggle EnableMMDCamera;
+        public Slider MMDCameraScaleSlider;
+        public TMP_Text MMDCameraScaleValueText;
 
         // Core Components
         [Header("Core Components")]
@@ -61,6 +62,8 @@ namespace CustomDancePlayer
         private DanceWindowFollower _danceWindowFollower;
         private DanceCameraDistKeeper _danceCameraDistKeeper;
         private GlobalHotkeyListener _globalHotkeyListener;
+
+        private DanceCameraSync _danceCameraSync;
 
 
         private bool _isAdvancedOpen;
@@ -79,6 +82,7 @@ namespace CustomDancePlayer
             _hipsFollower = FindFirstObjectByType<HipsFollower>();
             _shadowFollower = FindFirstObjectByType<DanceShadowFollower>();
             _globalHotkeyListener = FindFirstObjectByType<GlobalHotkeyListener>();
+            _danceCameraSync = FindFirstObjectByType<DanceCameraSync>();
 
             _settingsHandler = DanceSettingsHandler.Instance;
             RefreshDropdown();
@@ -295,6 +299,30 @@ namespace CustomDancePlayer
                     DanceSettingsHandler.OnSettingChanged();
                 });
             }
+
+            if (EnableMMDCamera != null)
+            {
+                EnableMMDCamera.isOn = _settingsHandler.data.enableMMDCamera;
+                EnableMMDCamera.onValueChanged.AddListener(isOn =>
+                {
+                    _settingsHandler.data.enableMMDCamera = isOn;
+                    _danceCameraSync.enabled = isOn;
+                    DanceSettingsHandler.OnSettingChanged();
+                });
+            }
+
+            if (MMDCameraScaleSlider != null)
+            {
+                MMDCameraScaleSlider.value = _settingsHandler.data.mmdCameraScale;
+                if (MMDCameraScaleValueText != null) MMDCameraScaleValueText.text = $"{_settingsHandler.data.mmdCameraScale:0.0}x";
+                MMDCameraScaleSlider.onValueChanged.AddListener(value =>
+                {
+                    _settingsHandler.data.mmdCameraScale = value;
+                    if (MMDCameraScaleValueText != null) MMDCameraScaleValueText.text = $"{value:0.0}x";
+                    DanceSettingsHandler.OnSettingChanged();
+                });
+            }
+
         }
 
         // Updates UI elements in real-time

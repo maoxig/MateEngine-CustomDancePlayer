@@ -14,7 +14,7 @@ namespace CustomDancePlayer
         public RuntimeAnimatorController CustomDanceAvatarController;
         public DancePlayerCore playerCore;
 
-
+        public Camera RenderCamera;
 
         public GameObject CurrentAvatar { get; private set; }
         public Animator CurrentAnimator { get; private set; }
@@ -45,7 +45,6 @@ namespace CustomDancePlayer
             {
                 DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
             }
-            SetupMMDBlendshapeSMR();
             UpdateAudioVolume();
         }
 
@@ -139,7 +138,7 @@ namespace CustomDancePlayer
             }
             CurrentAvatarHips = CurrentAnimator.GetBoneTransform(HumanBodyBones.Hips);
             SetupMMDBlendshapeSMR();
-
+            SetupMMDCameraHierarchy();
             DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
             if (playerCore != null)
             {
@@ -150,6 +149,67 @@ namespace CustomDancePlayer
             var proxy = CurrentAvatar.AddComponent<DancePlayerAvatarProxy>();
             proxy.playerCore = playerCore;
 
+        }
+
+        // Sets up MMD Camera Hierarchy
+        public void SetupMMDCameraHierarchy()
+        {
+            if (CurrentAvatar == null) return;
+
+            Transform camRootInAvatar = CurrentAvatar.transform.Find("Camera_root");
+            if (camRootInAvatar) Destroy(camRootInAvatar.gameObject);
+
+
+            Transform root = new GameObject("Camera_root").transform;
+            root.SetParent(CurrentAvatar.transform, false);
+            root.localPosition = Vector3.zero;
+            root.localRotation = Quaternion.Euler(0, 180, 0);
+
+            Transform child1 = new GameObject("Camera_root_1").transform;
+            child1.SetParent(root, false);
+            child1.localPosition = Vector3.zero;
+            child1.localRotation = Quaternion.identity;
+
+            Transform cameraNode = new GameObject("Camera").transform;
+            cameraNode.SetParent(child1, false);
+            cameraNode.localPosition = Vector3.zero;
+            cameraNode.localRotation = Quaternion.identity;
+
+            Camera cameraComponent = cameraNode.gameObject.AddComponent<Camera>();
+            cameraComponent.enabled = false; // Animation will enable it if needed
+        }
+
+        public void ResetMMDCameraHierarchy()
+        {
+            if (CurrentAvatar == null) return;
+
+            Transform camRootInAvatar = CurrentAvatar.transform.Find("Camera_root");
+            if (camRootInAvatar)
+            {
+                camRootInAvatar.localPosition = Vector3.zero;
+                camRootInAvatar.localRotation = Quaternion.Euler(0, 180, 0);
+
+                Transform cameraRoot1 = camRootInAvatar.Find("Camera_root_1");
+                if (cameraRoot1)
+                {
+                    cameraRoot1.localPosition = Vector3.zero;
+                    cameraRoot1.localRotation = Quaternion.identity;
+
+                    Transform cameraNode = cameraRoot1.Find("Camera");
+                    if (cameraNode)
+                    {
+                        cameraNode.localPosition = Vector3.zero;
+                        cameraNode.localRotation = Quaternion.identity;
+                    }
+                }
+            }
+        }
+        public void ClearMMDCameraHierarchy()
+        {
+            if (CurrentAvatar == null) return;
+
+            Transform camRootInAvatar = CurrentAvatar.transform.Find("Camera_root");
+            if (camRootInAvatar) Destroy(camRootInAvatar.gameObject);
         }
 
         // Sets up SkinnedMeshRenderer for MMD blendshapes
@@ -207,6 +267,7 @@ namespace CustomDancePlayer
 
             GameObject dummyObj = new GameObject(BODY_NAME);
             dummyObj.transform.SetParent(CurrentAvatar.transform, false);
+            dummyObj.transform.localScale = Vector3.zero;
             var dummySmr = dummyObj.AddComponent<SkinnedMeshRenderer>();
             dummySmr.sharedMesh = DummyBlendshapeMesh;
             dummySmr.updateWhenOffscreen = true;

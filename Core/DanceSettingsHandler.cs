@@ -192,6 +192,8 @@ namespace CustomDancePlayer
             public bool enableWindowFollow = true;
             public bool enableCameraDistanceKeep = true;
             public bool enableGlobalHotkey = false;
+            public bool enableMMDCamera = false;
+            public float mmdCameraScale = 1.0f;
             public bool autoPlayOnStart = false;
             public bool hidePanelOnStart = false;
             public bool isPlaying = false;
