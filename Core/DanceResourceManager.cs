@@ -30,7 +30,15 @@ namespace CustomDancePlayer
                 return;
             }
 
-            DanceFileList.AddRange(Directory.GetFiles(danceFolderPath, "*.unity3d").Select(Path.GetFileName));
+            // Search recursively for all .unity3d files
+            string[] files = Directory.GetFiles(danceFolderPath, "*.unity3d", SearchOption.AllDirectories);
+
+            // Store relative paths so LoadDanceResource can locate them
+            DanceFileList.AddRange(files.Select(fullPath =>
+            {
+                string relativePath = fullPath.Substring(danceFolderPath.Length);
+                return relativePath.TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            }));
         }
 
         // Loads dance resource by file name

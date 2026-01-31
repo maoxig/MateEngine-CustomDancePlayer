@@ -303,6 +303,7 @@ namespace CustomDancePlayer
             if (EnableMMDCamera != null)
             {
                 EnableMMDCamera.isOn = _settingsHandler.data.enableMMDCamera;
+                _danceCameraSync.enabled = _settingsHandler.data.enableMMDCamera;
                 EnableMMDCamera.onValueChanged.AddListener(isOn =>
                 {
                     _settingsHandler.data.enableMMDCamera = isOn;
