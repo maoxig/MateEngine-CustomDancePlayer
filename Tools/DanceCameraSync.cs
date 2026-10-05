@@ -10,30 +10,45 @@ namespace CustomDancePlayer
         public Camera RenderCamera;
 
         public DanceAvatarHelper AvatarHelper;
+        public GameObject PreviewRoot;
+        public UnityEngine.UI.RawImage PreviewImage;
+        public UnityEngine.UI.Text PreviewStatus;
+        public RenderTexture OwnedPreviewTexture;
 
         private Camera _danceCamera;
+        private GameObject _cameraAvatar;
 
         void OnEnable()
         {
-
-            _danceCamera = AvatarHelper.CurrentAvatar.transform.Find("Camera_root/Camera_root_1/Camera").GetComponent<Camera>();
-            // Camera (Camera_root/Camera_root_1/Camera)
+            _danceCamera = null;
+            _cameraAvatar = null;
+            if (PreviewRoot != null) PreviewRoot.SetActive(true);
         }
 
         void OnDisable()
         {
-            RenderCamera.enabled = false;
+            if (RenderCamera != null) RenderCamera.enabled = false;
+            if (PreviewRoot != null) PreviewRoot.SetActive(false);
 
         }
 
         void LateUpdate()
         {
-            if (AvatarHelper == null || AvatarHelper.CurrentAvatar == null || RenderCamera == null || DanceSettingsHandler.Instance.data.isPlaying == false)
+            if (RenderCamera == null) return;
+            // No stale image while idle, paused, or waiting for a camera track.
+            if (PreviewImage != null) PreviewImage.enabled = false;
+            if (PreviewStatus != null) PreviewStatus.gameObject.SetActive(true);
+            if (AvatarHelper == null || AvatarHelper.CurrentAvatar == null || DanceSettingsHandler.Instance.data.isPlaying == false)
             {
                 RenderCamera.enabled = false;
                 return;
             }
 
+            if (_cameraAvatar != AvatarHelper.CurrentAvatar)
+            {
+                _cameraAvatar = AvatarHelper.CurrentAvatar;
+                _danceCamera = null;
+            }
             if (_danceCamera == null)
             {
                 Transform cameraTransform = AvatarHelper.CurrentAvatar.transform.Find("Camera_root/Camera_root_1/Camera");
@@ -73,8 +88,10 @@ namespace CustomDancePlayer
                 return;
             }
             RenderCamera.enabled = true;
+            if (PreviewImage != null) PreviewImage.enabled = true;
+            if (PreviewStatus != null) PreviewStatus.gameObject.SetActive(false);
 
-            float scale = 1;
+            float scale = Mathf.Clamp(DanceSettingsHandler.Instance.data.mmdCameraScale, 0.1f, 10f);
             Vector3 referencePos = AvatarHelper.CurrentAvatar.transform.position;
             Vector3 localOffset = cameraNode.position - referencePos;
             Vector3 scaledOffset = localOffset * scale;
@@ -82,6 +99,16 @@ namespace CustomDancePlayer
             Quaternion finalCameraRot = cameraNode.rotation;
             RenderCamera.fieldOfView = _danceCamera.fieldOfView;
             RenderCamera.transform.SetPositionAndRotation(finalCameraPos, finalCameraRot);
+        }
+
+        void OnDestroy()
+        {
+            if (RenderCamera != null) RenderCamera.targetTexture = null;
+            if (OwnedPreviewTexture != null)
+            {
+                OwnedPreviewTexture.Release();
+                Destroy(OwnedPreviewTexture);
+            }
         }
     }
 }

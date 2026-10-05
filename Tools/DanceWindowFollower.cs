@@ -40,7 +40,7 @@ namespace CustomDancePlayer
 
         [Header("Additional Objects to Move")]
         [Tooltip("Names of other objects that must move with the main camera")]
-        public string[] additionalObjectNames;
+        public string[] additionalObjectNames = new string[0];
 
         // Internal state
         private Vector3 cameraOriginalPos;
@@ -118,7 +118,7 @@ namespace CustomDancePlayer
             }
 
             // Find additional objects
-            foreach (var name in additionalObjectNames)
+            foreach (var name in additionalObjectNames ?? new string[0])
             {
                 var go = GameObject.Find(name);
                 if (go != null)

@@ -2,12 +2,28 @@
 
 **其他语言版本: [English](README.md), [中文](README_zh.md)**
 
+## v0.1.2：同步已提交的更新
+
+本版本更新发行 DLL，补上 v0.1.1 之后已提交的子目录舞蹈扫描、音频预热同步、窗口跟随改进与 **MMD 镜头演示**。沿用现有 UI 和安装方式，启动时自动接入镜头组件和设置控件；无需手动配置。请使用同一 Release 的 DLL 与 `.me`，不要混用本地开发 DLL。详情见 [v0.1.2 发布说明](.github/releases/v0.1.2.md)。
+
+v0.1.2 仍播放旧 `.unity3d` 舞蹈；发行 `.me` 是播放器 UI 资源，不代表能够播放官方 `.me` 舞蹈。VMD / `.vmdance`、统一 BepInEx 加载、本地化、新 UI 与播放列表等大更新计划进入 **0.2**。
+
+## 旧舞蹈卡顿修复：DanceBundleAudioFixer
+
+已加入工具 **DanceBundleAudioFixer**，用于修复部分旧 `.unity3d` 舞蹈包的音频加载卡顿。从 [Release 附件](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases/tag/v0.1.2) 下载可选的 `DanceBundleAudioFixer.rar`，解压后运行 EXE；播放器本身不依赖这个工具。
+
+1. 关闭游戏，在工具界面选择 `MateEngineX_Data\StreamingAssets\CustomDances` 文件夹，点击“扫描”。工具默认寻找七日杀的 `Dances`，MateEngine 用户需要手动选择自己的目录。
+2. 选择“修复并保留备份（推荐）”，然后在游戏中验证播放。
+3. 原文件备份为 `*.unity3d.vroidaudio.bak`；异常时使用“从备份恢复”，确认正常后再清理备份。
+
+工具仅修改可安全匹配的 Vorbis + FSB5 AudioClip：由 Decompress On Load 改为 Streaming，关闭 Preload Audio Data、开启 Load In Background，并重新封装为 LZ4。音频不重新编码，动画和控制器保持不变；写回前检查音频 payload 与其他对象哈希。未知、损坏或不符合条件的包会跳过。它不处理官方 `.me` / `.vmdance`，也不是所有卡顿问题的通用修复。界面支持中文／English。详见 [工具使用说明](docs/DANCE_BUNDLE_AUDIO_FIXER.md)。
+
 ## 重要
 在这里做一个统一澄清：
 
 - 这个 mod 发布于这里。具体来说，它能加载并播放可用于 7 日杀（7dtd）VRoidMod 的舞蹈.unity3d 文件，所有 250 + 个舞蹈文件可从我的谷歌云盘下载：https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing  舞蹈文件的制作方法，在 mod 发布页也有详细说明。
 - MateEngine 2.4 版本之后，经过 Shiny 和我的共同努力，这个 mod 已整合为官方功能。官方舞蹈播放器未来会更全面、更完善，且仍能加载使用旧的舞蹈.unity3d 文件（甚至可放在原舞蹈文件夹中）。
-- 但这并不代表该 mod 无法使用 —— 你依然可以继续使用它，只是后续不会再提供额外支持与更新，也无法加载官方 mod 导出器制作的舞蹈文件。
+- 独立 Mod 仍可使用，并恢复维护；当前 v0.1.2 无法加载官方 mod 导出器制作的舞蹈文件，格式扩展计划在 0.2 实现。
 - 若你对官方舞蹈播放器有建议或 bug 反馈，可在官方 GitHub 的 issue 板块或对应帖子中提交。
 - 若发现部分.unity3d 文件存在问题，由于这些文件由我和朋友制作，可通过issue反馈，务必附带详细信息。
 - 我已询问过一位朋友（他最早教会我们制作这类文件，还转换了云盘中的大部分舞蹈，社区里每个人都很尊敬他），**他不同意将舞蹈文件上传至 Steam 创意工坊，因此我也不会上传。不过你们仍可从我的谷歌云盘下载，请不要将旧的.unity3d 文件上传至创意工坊。此外，建议每位使用者都遵循 MMD 社区的相关规则。**
@@ -145,9 +161,9 @@ b. 修改`MateEngineX_Data\ScriptingAssemblies.json`引用新增的dll。具体�
 
 如果是其他类型，最通用的方法是使用Blender修改、调整以符合上述约定。
 
-### 镜头支持（？）
+### MMD 镜头演示（v0.1.2）
 
-我们在七日杀这款游戏实现了MMD的运镜，但是也许MATE-ENGINE并不需要镜头？
+在 Settings 中开启 **MMD camera demo**，即可显示独立镜头预览。舞蹈 `.unity3d` 内的动画需要包含 `Camera_root/Camera_root_1/Camera` 轨迹；没有轨迹或未播放时会显示等待提示。**Camera scale** 控制镜头相对角色的位置比例，预览右上角按钮可关闭。该功能保留桌面主镜头，不是裸 VMD 镜头文件加载器。
 
 ## 使用指南
 

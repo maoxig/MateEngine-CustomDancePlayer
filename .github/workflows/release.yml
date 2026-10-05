@@ -33,14 +33,16 @@ jobs:
             RANGE="$PREV_TAG..HEAD"
           fi
 
-          # 生成 Changelog
-          echo "## Changelog" > RELEASE_NOTE.md
-          git-cliff $RANGE --tag ${{ github.ref_name }} >> RELEASE_NOTE.md
-          echo "" >> RELEASE_NOTE.md
-
-          # 拼接固定说明
-          if [ -f ".github/RELEASE_FOOTER.md" ]; then
-            cat .github/RELEASE_FOOTER.md >> RELEASE_NOTE.md
+          NOTES=".github/releases/${{ github.ref_name }}.md"
+          if [ -f "$NOTES" ]; then
+            cp "$NOTES" RELEASE_NOTE.md
+          else
+            echo "## Changelog" > RELEASE_NOTE.md
+            git-cliff $RANGE --tag ${{ github.ref_name }} >> RELEASE_NOTE.md
+            echo "" >> RELEASE_NOTE.md
+            if [ -f ".github/RELEASE_FOOTER.md" ]; then
+              cat .github/RELEASE_FOOTER.md >> RELEASE_NOTE.md
+            fi
           fi
 
           # 设置输出变量（给后续 step 用）
@@ -60,5 +62,8 @@ jobs:
             dist/*.dll
             dist/*.me
             dist/*.rar
+            dist/*.zip
+            dist/SHA256SUMS.txt
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

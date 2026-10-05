@@ -76,6 +76,7 @@ namespace CustomDancePlayer
 
         void Start()
         {
+            DanceCameraDemo.EnsureCreated(this);
             // Other Components
             _danceWindowFollower = FindFirstObjectByType<DanceWindowFollower>();
             _danceCameraDistKeeper = FindFirstObjectByType<DanceCameraDistKeeper>();
@@ -300,7 +301,7 @@ namespace CustomDancePlayer
                 });
             }
 
-            if (EnableMMDCamera != null)
+            if (EnableMMDCamera != null && _danceCameraSync != null)
             {
                 EnableMMDCamera.isOn = _settingsHandler.data.enableMMDCamera;
                 _danceCameraSync.enabled = _settingsHandler.data.enableMMDCamera;

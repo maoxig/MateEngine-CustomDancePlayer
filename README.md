@@ -2,12 +2,28 @@
 
 **Other Language Versions: [English](README.md), [中文](README_zh.md)**
 
+## v0.1.2: catch up with committed changes
+
+This release rebuilds the DLL to include changes committed after v0.1.1: recursive dance discovery, audio warm-up synchronization, window-follow improvements, and the **MMD camera demo**. It keeps the existing UI/installation method and creates the camera components and controls at startup; no manual setup is required. Install the DLL and `.me` from the same release; do not mix in development DLLs. See the [v0.1.2 release notes](.github/releases/v0.1.2.md).
+
+v0.1.2 plays legacy `.unity3d` dances. Its `.me` attachment contains the player UI; it does not add playback of official `.me` dance packages. VMD / `.vmdance`, a unified BepInEx loader, localization, new UI, and playlist changes are planned for **0.2**.
+
+## Fixing old dance bundle lag: DanceBundleAudioFixer
+
+Added **DanceBundleAudioFixer**, an optional offline tool that can fix audio-loading lag caused by some old `.unity3d` dance files. Download `DanceBundleAudioFixer.rar` from the [release assets](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases/tag/v0.1.2), extract it, and run the EXE. The player does not require this tool.
+
+1. Close the game. In the tool, select `MateEngineX_Data\StreamingAssets\CustomDances` and click **Scan**. Its default folder is the 7 Days to Die `Dances` directory; MateEngine users should select their folder manually.
+2. Choose **Fix and keep backups (recommended)**, then test playback in game.
+3. Backups use `*.unity3d.vroidaudio.bak`. Use **Restore from backups** if necessary, and delete backups only after verification.
+
+The tool changes safely matched Vorbis + FSB5 AudioClips from Decompress On Load to Streaming, disables Preload Audio Data, enables Load In Background, and repacks the bundle with LZ4. It preserves encoded audio, animations, and controllers, and verifies payload/object hashes before replacing the original. Unsupported or damaged bundles are skipped. It does not repair official `.me` / `.vmdance` packages or every cause of lag. The UI supports Chinese and English. See the [tool guide](docs/DANCE_BUNDLE_AUDIO_FIXER.md).
+
 ## **IMPORTANT**
 
 a unified clarification here:
 - This mod is released at here. Specifically, it can load and play dance .unity3d files compatible with the 7 Days to Die's VRoidMod. All 250+ dance files are available for download from my cloud drive: https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing. Detailed instructions on how to create dance files are also provided on the mod’s release page.
 - After the release of MateEngine 2.4, through the joint efforts of Shiny and me, this mod has been integrated into the official features. The official dance player will be more comprehensive and polished in the future, and it can still load and use the old dance .unity3d files (even when placed in the original dance folder).
-- However, this doesn’t mean the mod is unusable — you can still continue using it, but no additional support or updates will be provided afterward, and it won’t be able to load dance files made with the official mod exporter.
+- The standalone mod remains usable and maintenance has resumed. v0.1.2 cannot play dance packages created by the official mod exporter; additional formats are planned for 0.2.
 - If you have suggestions or bug reports for the official dance player, you can submit them in the official GitHub Issues section or the corresponding post.
 - If you encounter issues with some .unity3d files, since these files were created by my friend and me, you can report them via issue, and please include detailed information.
 - I’ve consulted a friend (he was the one who first taught us to make these files and converted most of the dances in the cloud drive; everyone in our community respects him deeply), and **he disagrees with uploading the dance files to the Steam Workshop, so I won’t upload them either. However, you can still download them from my Google Drive — please do not upload the old .unity3d files to the Workshop. Additionally, I recommend that every user abide by the rules of the MMD community.**
@@ -129,8 +145,9 @@ If you convert a PMX model to FBX/VRM using Unity’s MMD4Mecanim + uniVRM plugi
 
 For other model types, the most universal solution is to modify and adjust the model in Blender to meet the above conventions.
 
-### Camera Support (?)
-We implemented MMD-style camera movement in *7 Days to Die*, but MATE-ENGINE may not require camera functionality. 
+### MMD camera demo (v0.1.2)
+
+Enable **MMD camera demo** in Settings to open an independent preview. The `.unity3d` animation needs camera tracks under `Camera_root/Camera_root_1/Camera`; the preview shows a waiting message when idle or without a track. **Camera scale** adjusts the camera position relative to the avatar. Use the preview's close button to disable it. This keeps the main desktop camera unchanged and is not a loader for loose VMD camera files.
 
 
 ## Usage Guide

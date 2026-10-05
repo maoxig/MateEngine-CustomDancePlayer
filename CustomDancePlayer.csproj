@@ -7,6 +7,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <Deterministic>true</Deterministic>
     <LangVersion>9.0</LangVersion>
+    <GameManagedDir Condition="'$(GameManagedDir)' == ''">E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed</GameManagedDir>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -26,22 +27,23 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="Tests~\**\*.cs" />
     <Reference Include="Assembly-CSharp">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\Assembly-CSharp.dll</HintPath>
+      <HintPath>$(GameManagedDir)\Assembly-CSharp.dll</HintPath>
     </Reference>
     <Reference Include="Kirurobo.UniWindowController, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\Kirurobo.UniWindowController.dll</HintPath>
+      <HintPath>$(GameManagedDir)\Kirurobo.UniWindowController.dll</HintPath>
     </Reference>
     <Reference Include="NAudio.Core">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\NAudio.Core.dll</HintPath>
+      <HintPath>$(GameManagedDir)\NAudio.Core.dll</HintPath>
     </Reference>
     <Reference Include="NAudio.Wasapi">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\NAudio.Wasapi.dll</HintPath>
+      <HintPath>$(GameManagedDir)\NAudio.Wasapi.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=13.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\Newtonsoft.Json.dll</HintPath>
+      <HintPath>$(GameManagedDir)\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -52,47 +54,47 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Unity.TextMeshPro">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\Unity.TextMeshPro.dll</HintPath>
+      <HintPath>$(GameManagedDir)\Unity.TextMeshPro.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AnimationModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.AnimationModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AssetBundleModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.AssetBundleModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.AssetBundleModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.AudioModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.AudioModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.AudioModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.CoreModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.CoreModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.CoreModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputForUIModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.InputForUIModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.InputForUIModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputLegacyModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.InputLegacyModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.InputLegacyModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.InputModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.InputModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.InputModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.SharedInternalsModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.SharedInternalsModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.SharedInternalsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.TextRenderingModule, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.TextRenderingModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.TextRenderingModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UI">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.UI.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.UI.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIElementsModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.UIElementsModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.UIElementsModule.dll</HintPath>
     </Reference>
     <Reference Include="UnityEngine.UIModule">
-      <HintPath>E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed\UnityEngine.UIModule.dll</HintPath>
+      <HintPath>$(GameManagedDir)\UnityEngine.UIModule.dll</HintPath>
     </Reference>
   </ItemGroup>
 </Project>
