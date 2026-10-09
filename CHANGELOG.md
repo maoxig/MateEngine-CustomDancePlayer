@@ -19,6 +19,8 @@
 
 ### VMD playback and creation
 
+VMD playback is new in this update, and some motions still need improvement. If you encounter a problem, please [open an issue on GitHub](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues), preferably with the relevant VMD, model and reproduction steps. I will continue investigating and fixing these issues.
+
 - `.vmdance` packages for motion, expressions, lip sync, cameras, audio and additional layers; direct `.vmd` previews.
 - Embedded expressions and cameras retained from body VMDs, with separate files and folder matching supported.
 - Open existing packages, restore fields, save edits with backups, or export copies.
