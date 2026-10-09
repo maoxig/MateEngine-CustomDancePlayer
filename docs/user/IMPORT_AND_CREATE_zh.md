@@ -65,3 +65,9 @@ Model: XXX
 ```
 
 换行和文字随 `.vmdance` 保存，打开已有包时恢复；保存修改或导出副本也会保留。
+
+## 制作 `.unity3d` 舞蹈
+
+制作页用于 `.vmdance`。如果希望把 VMD 转成以前的 `.unity3d` 动画包，可以使用我的 [UnityMMDConverter](https://github.com/maoxig/UnityMMDConverter)，在 Unity 工程中完成转换、表情／镜头处理和打包。具体步骤见工具仓库的教程；导出后放入 `CustomDances` 即可。
+
+使用、转换、打包或分享 MMD 素材前，请查看动作、镜头、模型、音乐等原作者的规定，遵守 MMD 社区约定。制作 `.vmdance` 时，也可以在借物表中记录作者与来源链接。

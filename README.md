@@ -71,6 +71,25 @@ Exit the game, select your `CustomDances` folder in the tool, scan, and repair w
 
 ## Dance resources and feedback
 
-Previously converted dances are available on [Google Drive](https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing). **The converter does not permit uploading these dances to Steam Workshop. Please respect this restriction and each work's usage rules.**
+### Download `.unity3d` dances
+
+Collections available through Baidu Netdisk for users in mainland China:
+
+| Collection | Download | Access code |
+| --- | --- | --- |
+| Xenoph | [Baidu Netdisk](https://pan.baidu.com/s/1mLFdJne7RW5RJSs2UAFaHA?pwd=a77p) | a77p |
+| 勇气佬 | [Baidu Netdisk](https://pan.baidu.com/s/156ytXmLIRT7oxB4qI57IvA) | knsl |
+| tanito | [Baidu Netdisk](https://pan.baidu.com/s/12NNLm-7jedz5eRZylhYNoQ) | gzdv |
+| [散歩猫](https://space.bilibili.com/95425983) | [Baidu Netdisk](https://pan.baidu.com/s/5EFJmm1QsKi-GrGlufjj38g) | — |
+
+Outside mainland China, use [Google Drive](https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing). The collection may be incomplete.
+
+Please follow the asset authors' usage rules and MMD community conventions when downloading, using or sharing dances. Previously converted dances in the Google Drive collection must not be uploaded to Steam Workshop. Follow each author's rules for sharing the other collections.
+
+### Create `.unity3d` dances
+
+Use my [UnityMMDConverter](https://github.com/maoxig/UnityMMDConverter) in a Unity project to convert VMD motion, include expressions and camera curves, and export `.unity3d`. Installation and production steps are in the tool's repository. Place exported bundles in `CustomDances` and refresh the library to play them.
+
+Before creating or sharing a dance, check the usage and redistribution rules for its motion, camera, model, music and other assets, and provide the required credits.
 
 The [demo video](https://www.bilibili.com/video/BV1Yge6zqETU/) and [0.1.2 instructions](docs/legacy/LEGACY_0.1.2_README.md) remain available. When reporting an issue, include the game version, dance file, model, reproduction steps and relevant errors from `BepInEx/LogOutput.log`.

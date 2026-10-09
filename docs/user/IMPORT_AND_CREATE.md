@@ -59,3 +59,9 @@ Model: XXX
 ```
 
 Text and line breaks are saved in `.vmdance` and restored when opening a package. Edits and exported copies retain them.
+
+## Create `.unity3d` dances
+
+The creation page produces `.vmdance`. To convert VMD into legacy `.unity3d` animation bundles, use my [UnityMMDConverter](https://github.com/maoxig/UnityMMDConverter) in a Unity project, including expression and camera processing and packaging. Follow the tool's repository tutorial, then place the exported bundle in `CustomDances`.
+
+Before using, converting, packaging or sharing MMD assets, check the original authors' rules for motions, cameras, models, music and other materials, and follow MMD community conventions. For `.vmdance`, you can record authors and source links in the Credits field.

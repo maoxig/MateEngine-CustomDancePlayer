@@ -73,6 +73,25 @@ v0.2.0 加入了 VMD 舞蹈包、导入与制作页面，以及完整／迷你�
 
 ## 舞蹈资源与反馈
 
-以前转换的舞蹈仍可从 [谷歌云盘](https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing) 下载。**转换作者不同意将这些旧舞蹈上传 Steam 创意工坊，请不要上传，并遵循各作品和 MMD 社区的使用规定。**
+### `.unity3d` 舞蹈下载
+
+中国大陆用户可从以下百度网盘下载合集：
+
+| 合集 | 下载链接 | 提取码 |
+| --- | --- | --- |
+| Xenoph | [百度网盘](https://pan.baidu.com/s/1mLFdJne7RW5RJSs2UAFaHA?pwd=a77p) | a77p |
+| 勇气佬 | [百度网盘](https://pan.baidu.com/s/156ytXmLIRT7oxB4qI57IvA) | knsl |
+| tanito | [百度网盘](https://pan.baidu.com/s/12NNLm-7jedz5eRZylhYNoQ) | gzdv |
+| [散歩猫](https://space.bilibili.com/95425983) | [百度网盘](https://pan.baidu.com/s/5EFJmm1QsKi-GrGlufjj38g) | — |
+
+中国大陆以外可从 [Google Drive](https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing) 下载，内容不一定齐全。
+
+下载、使用和分享舞蹈时，请遵守素材作者的使用规定和 MMD 社区约定。Google Drive 中此前转换的旧舞蹈不允许上传 Steam 创意工坊；其他合集的分享范围以各自作者的规定为准。
+
+### 制作 `.unity3d` 舞蹈
+
+可以使用我的 [UnityMMDConverter](https://github.com/maoxig/UnityMMDConverter)，在 Unity 工程中转换 VMD、处理表情与镜头，再导出 `.unity3d`。安装和制作步骤见工具仓库的教程。导出后放入 `CustomDances`，刷新舞蹈库即可播放。
+
+制作和分享前，请确认动作、镜头、模型、音乐等素材的使用及再分发规定，并按作者要求注明来源。
 
 [演示视频](https://www.bilibili.com/video/BV1Yge6zqETU/) 与 [0.1.2 使用说明](docs/legacy/LEGACY_0.1.2_README_zh.md) 保留供参考。反馈问题时，请附上游戏版本、舞蹈文件、模型、复现步骤，以及 `BepInEx/LogOutput.log` 中相关的报错。
