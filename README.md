@@ -51,6 +51,8 @@ For dances with a camera, the creator captures the current character's reference
 
 See the [creation guide](docs/user/IMPORT_AND_CREATE.md) for steps and field descriptions.
 
+VMD playback is new in this update, and some motions still need improvement. If you encounter a problem, please [open an issue on GitHub](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues), preferably with the relevant VMD, model and reproduction steps. I will continue investigating and fixing these issues.
+
 ### Settings
 
 ![Settings](docs/images/settings-en.png)

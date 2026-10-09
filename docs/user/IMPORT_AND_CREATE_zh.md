@@ -2,6 +2,8 @@
 
 ![制作页面](../images/composer-zh-CN.png)
 
+VMD 播放是这次新加的功能，还有一些动作需要继续完善。如果遇到问题，请在 [GitHub 提交 Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)，最好附上对应的 VMD、模型和复现步骤，我会继续检查和修复。
+
 ## 制作一首舞蹈
 
 1. 选择身体动作 `.vmd`，再选择音频。手上有一整套 MMD 素材时，也可以选择目录自动配对。

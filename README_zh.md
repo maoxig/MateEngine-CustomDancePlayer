@@ -53,6 +53,8 @@ v0.2.0 加入了 VMD 舞蹈包、导入与制作页面，以及完整／迷你�
 
 制作步骤与字段说明见 [导入与制作](docs/user/IMPORT_AND_CREATE_zh.md)。
 
+VMD 播放是这次新加的功能，还有一些动作需要继续完善。如果遇到问题，请在 [GitHub 提交 Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)，最好附上对应的 VMD、模型和复现步骤，我会继续检查和修复。
+
 ### 设置页面
 
 ![设置](docs/images/settings-zh-CN.png)

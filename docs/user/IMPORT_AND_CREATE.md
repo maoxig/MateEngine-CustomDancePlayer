@@ -2,6 +2,8 @@
 
 ![Creation page](../images/composer-en.png)
 
+VMD playback is new in this update, and some motions still need improvement. If you encounter a problem, please [open an issue on GitHub](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues), preferably with the relevant VMD, model and reproduction steps. I will continue investigating and fixing these issues.
+
 ## Create a dance
 
 1. Select a body motion `.vmd` and optional audio. Folder matching can fill in a set of MMD files.
