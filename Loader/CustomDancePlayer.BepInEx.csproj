@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>CustomDancePlayer.BepInEx</AssemblyName>
+    <LangVersion>9.0</LangVersion>
+    <Version>0.2.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>0.2.0.0</FileVersion>
+    <InformationalVersion>0.2.0</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <GameManagedDir Condition="'$(GameManagedDir)'==''">E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed</GameManagedDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="UnityEngine"><HintPath>$(GameManagedDir)\UnityEngine.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="BepInEx"><HintPath>$(BepInExCoreDir)\BepInEx.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="0Harmony"><HintPath>$(BepInExCoreDir)\0Harmony.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="UnityEngine.CoreModule"><HintPath>$(GameManagedDir)\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>
+  </ItemGroup>
+</Project>

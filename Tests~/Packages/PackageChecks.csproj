@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <GameManagedDir Condition="'$(GameManagedDir)'==''">F:\Program Files\ME\.audit\official-3.3-managed</GameManagedDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../Core/DanceDescriptor.cs" Link="DanceDescriptor.cs" />
+    <Reference Include="Newtonsoft.Json"><HintPath>$(GameManagedDir)/Newtonsoft.Json.dll</HintPath></Reference>
+  </ItemGroup>
+</Project>

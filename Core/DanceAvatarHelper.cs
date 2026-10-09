@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace CustomDancePlayer
@@ -31,6 +32,29 @@ namespace CustomDancePlayer
         private Transform _originalBodyTransform;
         private Transform _dummyBodyTransform;
         private string _oldBodyName;
+        private Transform smrParent;
+        private string smrName;
+        private Vector3 smrPosition,smrScale;
+        private Quaternion smrRotation;
+        private bool smrLeased;
+        private float currentAvatarHeight;
+        private float currentAvatarEyeHeight;
+        private bool eyeHeightMeasured;
+        private float currentAvatarGroundHeight;
+        private float nextVisibilityCheck;
+        public void PrepareBodyForDance()
+        {
+            if(TargetSMR!=null&&TargetSMR.sharedMesh!=null)
+            {
+                var bindings=Maoxig.RuntimeVmd.VmdExpressionBindings.Create(CurrentAnimator,Enumerable.Range(0,TargetSMR.sharedMesh.blendShapeCount).Select(TargetSMR.sharedMesh.GetBlendShapeName));
+                var expressions=CurrentAvatar.GetComponent<DanceLegacyExpressionDriver>()??CurrentAvatar.AddComponent<DanceLegacyExpressionDriver>();expressions.Bind(TargetSMR,bindings);
+            }
+            if (TargetSMR==null || smrLeased) return;
+            var existing = CurrentAvatar.transform.Find(BODY_NAME);
+            if (existing != null && existing != TargetSMR.transform) { _originalBodyTransform = existing; _oldBodyName = existing.name; existing.name = "Body_DanceBackup"; }
+            var t=TargetSMR.transform;smrParent=t.parent;smrName=t.name;smrPosition=t.localPosition;smrRotation=t.localRotation;smrScale=t.localScale;
+            t.SetParent(CurrentAvatar.transform,true);t.name=BODY_NAME;smrLeased=true;
+        }
 
 
         void Start()
@@ -41,6 +65,11 @@ namespace CustomDancePlayer
 
             _settingsHandler = DanceSettingsHandler.Instance;
             CheckAndUpdateCurrentAvatar();
+            if(CurrentAvatar!=null&&Time.unscaledTime>=nextVisibilityCheck)
+            {
+                nextVisibilityCheck=Time.unscaledTime+1f;
+                SMRHandler.SetUpdateWhenOffscreen(CurrentAvatar,true);
+            }
             if (CurrentAnimator != null)
             {
                 DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
@@ -50,7 +79,13 @@ namespace CustomDancePlayer
 
         void Update()
         {
+            if (CurrentAudioSource == null) SetupAudioSource();
             CheckAndUpdateCurrentAvatar();
+            if(CurrentAvatar!=null&&Time.unscaledTime>=nextVisibilityCheck)
+            {
+                nextVisibilityCheck=Time.unscaledTime+1f;
+                SMRHandler.SetUpdateWhenOffscreen(CurrentAvatar,true);
+            }
         }
 
         void OnDestroy()
@@ -92,13 +127,14 @@ namespace CustomDancePlayer
         {
             if (CurrentAudioSource != null)
             {
-                CurrentAudioSource.volume = _settingsHandler.data.danceVolume;
+                CurrentAudioSource.volume = DanceSettingsHandler.Instance.data.danceVolume;
             }
         }
 
         // Checks and updates the active avatar
         private void CheckAndUpdateCurrentAvatar()
         {
+            if (_modelParent == null) _modelParent = GameObject.Find(MODEL_PARENT_NAME);
             if (_modelParent == null)
             {
                 ClearCurrentAvatar();
@@ -124,7 +160,11 @@ namespace CustomDancePlayer
         // Updates avatar components and notifies core
         private void UpdateAvatarComponents(GameObject newAvatar)
         {
+            if (playerCore != null) playerCore.StopPlay();
             ClearCurrentAvatar();
+
+            CurrentAvatar = null; CurrentAnimator = null; CurrentAvatarHips = null; TargetSMR = null;
+            currentAvatarHeight = 0f;currentAvatarEyeHeight=0f;eyeHeightMeasured=false;currentAvatarGroundHeight=0f;
 
             if (newAvatar == null) return;
 
@@ -136,9 +176,11 @@ namespace CustomDancePlayer
                 CurrentAvatarHips = null;
                 return;
             }
-            CurrentAvatarHips = CurrentAnimator.GetBoneTransform(HumanBodyBones.Hips);
+            Maoxig.RuntimeVmd.VmdRigScaleSnapshot.Capture(CurrentAnimator);
+            CurrentAvatarHips = CurrentAnimator.isHuman ? CurrentAnimator.GetBoneTransform(HumanBodyBones.Hips) : null;
             SetupMMDBlendshapeSMR();
             SetupMMDCameraHierarchy();
+            currentAvatarHeight = CalculateAvatarHeight();currentAvatarEyeHeight=CalculateAvatarEyeHeight();eyeHeightMeasured=currentAvatarHeight>0f;
             DefaultAnimatorController = CurrentAnimator.runtimeAnimatorController;
             if (playerCore != null)
             {
@@ -146,7 +188,7 @@ namespace CustomDancePlayer
             }
             SMRHandler.SetUpdateWhenOffscreen(CurrentAvatar, true);
 
-            var proxy = CurrentAvatar.AddComponent<DancePlayerAvatarProxy>();
+            var proxy = CurrentAvatar.GetComponent<DancePlayerAvatarProxy>() ?? CurrentAvatar.AddComponent<DancePlayerAvatarProxy>();
             proxy.playerCore = playerCore;
 
         }
@@ -223,11 +265,6 @@ namespace CustomDancePlayer
                 MMDBlendshapeKeywords.All(keyword => Enumerable.Range(0, smr.sharedMesh.blendShapeCount)
                     .Any(i => smr.sharedMesh.GetBlendShapeName(i) == keyword)));
 
-            if (TargetSMR != null && TargetSMR.transform.parent != CurrentAvatar.transform)
-            {
-                TargetSMR.transform.SetParent(CurrentAvatar.transform, false);
-                TargetSMR.gameObject.name = BODY_NAME;
-            }
         }
 
         // Clears current avatar state
@@ -246,10 +283,135 @@ namespace CustomDancePlayer
             return CurrentAvatar != null && CurrentAnimator != null;
         }
 
+        /// <summary>
+        /// Measures intrinsic standing height from immutable Avatar skeleton data.
+        /// Display scale, animations and renderer culling bounds are excluded.
+        /// The result is cached separately for each selected avatar.
+        /// </summary>
+        public float MeasureAvatarHeight()
+        {
+            if (currentAvatarHeight <= 0f && CurrentAvatar != null) currentAvatarHeight = CalculateAvatarHeight();
+            if(!eyeHeightMeasured && currentAvatarHeight>0f){currentAvatarEyeHeight=CalculateAvatarEyeHeight();eyeHeightMeasured=true;}
+            return currentAvatarHeight;
+        }
+
+        public float MeasureAvatarGroundHeight(){MeasureAvatarHeight();return currentAvatarGroundHeight;}
+        public float MeasureAvatarEyeHeight() {MeasureAvatarHeight();return currentAvatarEyeHeight;}
+        private float CalculateAvatarEyeHeight()
+        {
+            if(CurrentAnimator==null||CurrentAnimator.avatar==null||!CurrentAnimator.isHuman)return 0f;
+            var skeleton=new Dictionary<string,SkeletonBone>(StringComparer.Ordinal);
+            foreach(var rest in CurrentAnimator.avatar.humanDescription.skeleton)if(!string.IsNullOrEmpty(rest.name)&&!skeleton.ContainsKey(rest.name))skeleton.Add(rest.name,rest);
+            float sum=0f;int count=0;
+            foreach(var role in new[]{HumanBodyBones.LeftEye,HumanBodyBones.RightEye}) {
+                var bone=CurrentAnimator.GetBoneTransform(role);Vector3 position;
+                if(bone!=null&&TryRestPosition(bone,skeleton,out position)){sum+=position.y;count++;}
+            }
+            float height=count>0?sum/count-currentAvatarGroundHeight:0f;
+            return IsFinite(height)&&height>.1f?height:0f;
+        }
+
+        private float CalculateAvatarHeight()
+        {
+            if(CurrentAvatar==null||CurrentAnimator==null||!CurrentAnimator.isHuman||CurrentAnimator.avatar==null) return 0f;
+            var skeleton=new Dictionary<string,SkeletonBone>(StringComparer.Ordinal);
+            foreach(var rest in CurrentAnimator.avatar.humanDescription.skeleton)
+                if(!string.IsNullOrEmpty(rest.name)&&!skeleton.ContainsKey(rest.name))skeleton.Add(rest.name,rest);
+            var head=CurrentAnimator.GetBoneTransform(HumanBodyBones.Head);
+            var left=CurrentAnimator.GetBoneTransform(HumanBodyBones.LeftFoot);
+            var right=CurrentAnimator.GetBoneTransform(HumanBodyBones.RightFoot);
+            Vector3 h,l,r;
+            if(head==null||(left==null&&right==null)||!TryRestPosition(head,skeleton,out h)||
+                !TryRestPosition(left??right,skeleton,out l)||!TryRestPosition(right??left,skeleton,out r))return 0f;
+            float height=Mathf.Abs(h.y-(l.y+r.y)*0.5f);
+            if(!IsFinite(height)||height<0.2f)return 0f;
+            float min=float.PositiveInfinity,max=float.NegativeInfinity,faceTop=float.NegativeInfinity;
+            var faceBindings=Maoxig.RuntimeVmd.VmdExpressionBindings.Create(CurrentAnimator,new[]{"あ","い","う","え","お","まばたき"});
+            foreach(var renderer in CurrentAvatar.GetComponentsInChildren<SkinnedMeshRenderer>(false))
+            {
+                if(!renderer.enabled||renderer.sharedMesh==null)continue;
+                var mesh=renderer.sharedMesh;var bones=renderer.bones;var binds=mesh.bindposes;
+                Matrix4x4 meshRest=Matrix4x4.identity;bool found=false;
+                for(int i=0;i<Math.Min(bones.Length,binds.Length);i++)
+                {
+                    Matrix4x4 boneRest;
+                    if(bones[i]!=null&&TryRestMatrix(bones[i],skeleton,out boneRest)){meshRest=boneRest*binds[i];found=true;break;}
+                }
+                if(!found)continue;
+                var bounds=mesh.bounds;float meshMin=float.PositiveInfinity,meshMax=float.NegativeInfinity;
+                for(int corner=0;corner<8;corner++)
+                {
+                    var p=meshRest.MultiplyPoint3x4(new Vector3((corner&1)==0?bounds.min.x:bounds.max.x,(corner&2)==0?bounds.min.y:bounds.max.y,(corner&4)==0?bounds.min.z:bounds.max.z));
+                    meshMin=Mathf.Min(meshMin,p.y);meshMax=Mathf.Max(meshMax,p.y);
+                }
+                // Reject auxiliary or deliberately inflated culling extents.
+                if(!IsFinite(meshMin)||!IsFinite(meshMax)||meshMax>h.y+height*0.5f||meshMin<Mathf.Min(l.y,r.y)-height*0.25f)continue;
+                min=Mathf.Min(min,meshMin);max=Mathf.Max(max,meshMax);
+                // The renderer actually bound to mouth/blink expressions gives
+                // the anatomical crown, rather than hats and tall hair meshes.
+                if(faceBindings.HasRenderer(renderer) && meshMax>h.y && meshMax-h.y<height*.5f)
+                    faceTop=Mathf.Max(faceTop,meshMax);
+            }
+            currentAvatarGroundHeight=IsFinite(min)?min:Mathf.Min(l.y,r.y);
+            if(IsFinite(faceTop))max=faceTop;
+            float meshHeight=max-min;
+            return IsFinite(meshHeight)&&meshHeight>=height&&meshHeight<=height*1.5f?meshHeight:height*1.12f;
+        }
+
+        private bool TryRestPosition(Transform bone,Dictionary<string,SkeletonBone> skeleton,out Vector3 position)
+        {
+            Matrix4x4 matrix;
+            if(!TryRestMatrix(bone,skeleton,out matrix)){position=Vector3.zero;return false;}
+            position=matrix.MultiplyPoint3x4(Vector3.zero);
+            return IsFinite(position.x)&&IsFinite(position.y)&&IsFinite(position.z);
+        }
+
+        private bool TryRestMatrix(Transform bone,Dictionary<string,SkeletonBone> skeleton,out Matrix4x4 matrix)
+        {
+            matrix=Matrix4x4.identity;var chain=new Stack<Transform>();
+            for(var node=bone;node!=null&&node!=CurrentAnimator.transform;node=node.parent)chain.Push(node);
+            while(chain.Count>0)
+            {
+                var node=chain.Pop();SkeletonBone rest;
+                // Current animated transforms cannot serve as a rest-pose fallback.
+                if(!skeleton.TryGetValue(node.name,out rest))return false;
+                matrix=matrix*Matrix4x4.TRS(rest.position,rest.rotation,Maoxig.RuntimeVmd.VmdRigScaleSnapshot.Capture(CurrentAnimator).ScaleFor(node,rest.scale));
+            }
+            return true;
+        }
+
+        private static bool IsFinite(float value) => !float.IsNaN(value) && !float.IsInfinity(value);
+
+        /// <summary>
+        /// Resolves the real active host camera for native VMD camera tracks.
+        /// The serialized RenderCamera reference is absent in some installed
+        /// MateEngine mod bundles, while Camera.main remains the authoritative
+        /// camera used by the desktop renderer.
+        /// </summary>
+        public Camera ResolveRuntimeVmdCamera()
+        {
+            Camera main = Camera.main;
+            if (main != null && main.isActiveAndEnabled) return main;
+            if (RenderCamera != null && RenderCamera.isActiveAndEnabled) return RenderCamera;
+
+            DanceCameraSync sync = FindFirstObjectByType<DanceCameraSync>();
+            if (sync != null && sync.RenderCamera != null && sync.RenderCamera.isActiveAndEnabled)
+                return sync.RenderCamera;
+
+            Camera[] cameras = FindObjectsByType<Camera>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+            for (int index = 0; index < cameras.Length; index++)
+            {
+                Camera candidate = cameras[index];
+                if (candidate != null && candidate.isActiveAndEnabled) return candidate;
+            }
+            return null;
+        }
+
         // Sets up dummy mesh for dance if needed
         public void SetupDummyForDance()
         {
             if (TargetSMR != null) return;
+            var bindings=Maoxig.RuntimeVmd.VmdExpressionBindings.Create(CurrentAnimator,Enumerable.Range(0,DummyBlendshapeMesh.blendShapeCount).Select(DummyBlendshapeMesh.GetBlendShapeName));
 
             Transform existingBody = CurrentAvatar.transform.Find(BODY_NAME);
             if (existingBody != null)
@@ -279,15 +441,20 @@ namespace CustomDancePlayer
             }
             dummySync.dummySmr = dummySmr;
             dummySync.enabled = true;
+            var expressions=CurrentAvatar.GetComponent<DanceLegacyExpressionDriver>()??CurrentAvatar.AddComponent<DanceLegacyExpressionDriver>();expressions.Bind(dummySmr,bindings);
         }
 
         // Restores original body if dummy was used
         public void RestoreOriginalBody()
         {
-            if (TargetSMR != null) return;
+            if (CurrentAvatar == null) return;
+            var expressions=CurrentAvatar.GetComponent<DanceLegacyExpressionDriver>();if(expressions!=null)expressions.enabled=false;
+            if (TargetSMR != null) { if(smrLeased){var t=TargetSMR.transform;t.SetParent(smrParent,false);t.name=smrName;t.localPosition=smrPosition;t.localRotation=smrRotation;t.localScale=smrScale;smrLeased=false;} if(_originalBodyTransform!=null){_originalBodyTransform.name=_oldBodyName ?? BODY_NAME;_originalBodyTransform=null;_oldBodyName=null;} return; }
 
             if (_dummyBodyTransform != null)
             {
+                _dummyBodyTransform.name = "Body_DanceRetired";
+                _dummyBodyTransform.gameObject.SetActive(false); // Destroy is deferred; don't let the next clip bind to this node.
                 Destroy(_dummyBodyTransform.gameObject);
                 _dummyBodyTransform = null;
             }
@@ -310,9 +477,12 @@ namespace CustomDancePlayer
         {
             if (CurrentAnimator == null || clip == null) return;
 
+
             CurrentOverrideController = new AnimatorOverrideController(CustomDanceAvatarController);
             CurrentOverrideController["CUSTOM_DANCE"] = clip;
             CurrentAnimator.runtimeAnimatorController = CurrentOverrideController;
+            var rebind=typeof(Animator).GetMethod("Rebind", Type.EmptyTypes);
+            if(rebind!=null)rebind.Invoke(CurrentAnimator,null);
             CurrentAnimator.SetBool("isDancing", true);
             CurrentAnimator.Update(0f);
         }

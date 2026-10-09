@@ -15,6 +15,7 @@
 
 # Mono auto generated files
 mono_crash.*
+.audit
 
 # Build results
 [Dd]ebug/
@@ -361,3 +362,12 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Unity convention: keep test and editor sources, exclude their build output.
+!Tests~/
+!Tests~/**
+Tests~/**/bin/
+Tests~/**/obj/
+
+# Local development history and machine-specific evidence
+/docs/dev/internal/

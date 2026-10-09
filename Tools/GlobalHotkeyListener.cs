@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -7,7 +7,7 @@ using UnityEngine;
 namespace CustomDancePlayer
 {
     /// <summary>
-    /// Standalone global hotkey listener component (Ctrl+Alt+H), supports enabling/disabling hook, depends on DancePlayerCore for playback
+    /// Shared, non-exclusive global hook; mounted only while a playback shortcut is assigned.
     /// </summary>
     public class GlobalHotkeyListener : MonoBehaviour
     {
@@ -16,20 +16,32 @@ namespace CustomDancePlayer
         private const int WH_KEYBOARD_LL = 13;
         private const int WM_KEYDOWN = 0x0100;
         private const int WM_KEYUP = 0x0101; // Key up message (fix state residue)
-                                             // Hotkey virtual codes (Ctrl+Alt+>)
-                                             // TODO: make configurable if needed
-        private const int VK_CONTROL = 162;
-        private const int VK_ALT = 164;
-        private const int VK_PERIOD = 190;
+        private const int WM_SYSKEYDOWN = 0x0104;
+        private const int WM_SYSKEYUP = 0x0105;
+        private const int VK_LCONTROL = 0xA2;
+        private const int VK_RCONTROL = 0xA3;
+        private const int VK_LALT = 0xA4;
+        private const int VK_RALT = 0xA5;
+
 
         // Hook core variables
         private IntPtr _hookId = IntPtr.Zero;
         private LowLevelKeyboardProc _keyboardCallback;
         // Key states (avoid single key mis-trigger)
-        private bool _isCtrlPressed;
-        private bool _isAltPressed;
+        private bool _isLeftCtrlPressed;
+        private bool _isRightCtrlPressed;
+        private bool _isLeftAltPressed;
+        private bool _isRightAltPressed;
+        private bool _isLeftShiftPressed, _isRightShiftPressed;
+        private readonly System.Collections.Generic.HashSet<int> pressed = new System.Collections.Generic.HashSet<int>();
+
         // Main thread sync flag (prevent cross-thread Unity API calls)
         private bool _needTriggerPlay;
+        private int pendingAction=-1;
+        private readonly System.Collections.Generic.List<Chord> bindings=new System.Collections.Generic.List<Chord>();
+        private int bindingRevision=-1;
+        private DanceSettingsHandler.DanceSettingsData bindingSettings;
+        private struct Chord { public DanceHotkeys.Action action; public int key; public bool ctrl,alt,shift; }
 
 
         [Header("Dependency Reference")]
@@ -51,7 +63,7 @@ namespace CustomDancePlayer
         }
 
         // ================================ Lifecycle & Hook Management ================================
-        private void Start()
+        private void Awake()
         {
             if (dancePlayerUIManager == null)
             {
@@ -72,7 +84,7 @@ namespace CustomDancePlayer
             yield return null;
             yield return null;
 
-            MountGlobalHook();
+            if(isActiveAndEnabled && DanceHotkeys.HasGlobalBinding) { RefreshBindings(); MountGlobalHook(); }
         }
 
         private void OnDisable()
@@ -87,11 +99,37 @@ namespace CustomDancePlayer
 
         private void Update()
         {
-
-            if (_needTriggerPlay && dancePlayerUIManager != null)
-            {
-                TriggerPlayerPlay();
-                _needTriggerPlay = false; // Reset flag
+            RefreshBindings();
+            if(bindings.Count==0){UnmountGlobalHook();return;}
+            if(_hookId==IntPtr.Zero)MountGlobalHook();
+            if(DanceHotkeys.IsSuppressed){_needTriggerPlay=false;pendingAction=-1;return;}
+            if(_needTriggerPlay && dancePlayerUIManager!=null) {
+                var action=pendingAction<0?DanceHotkeys.Action.PlayPause:(DanceHotkeys.Action)pendingAction;
+                _needTriggerPlay=false;pendingAction=-1;
+                Dispatch(action);
+            }
+        }
+        private void RefreshBindings()
+        {
+            var current=DanceSettingsHandler.Instance.data;
+            if(bindingRevision==DanceHotkeys.Revision && ReferenceEquals(bindingSettings,current))return;
+            bindingRevision=DanceHotkeys.Revision;bindingSettings=current;bindings.Clear();
+            foreach(DanceHotkeys.Action action in Enum.GetValues(typeof(DanceHotkeys.Action))) {
+                if(action==DanceHotkeys.Action.Panel)continue;
+                var b=DanceHotkeys.Get(action);int key=DanceHotkeys.VirtualKey(b.key);if(key==0||!b.enabled)continue;
+                bindings.Add(new Chord{action=action,key=key,ctrl=b.control,alt=b.alt,shift=b.shift});
+            }
+        }
+        public void Dispatch(DanceHotkeys.Action action)
+        {
+            if(dancePlayerUIManager==null)return;
+            var core=dancePlayerUIManager.playerCore;
+            switch(action) {
+                case DanceHotkeys.Action.PlayPause:dancePlayerUIManager.OnPlayPauseBtnClick();break;
+                case DanceHotkeys.Action.PlayStop:dancePlayerUIManager.OnPlayStopBtnClick();break;
+                case DanceHotkeys.Action.Stop:core.StopPlay();break;
+                case DanceHotkeys.Action.Previous:core.PlayPrev();break;
+                case DanceHotkeys.Action.Next:core.PlayNext();break;
             }
         }
 
@@ -120,7 +158,7 @@ namespace CustomDancePlayer
             }
             else
             {
-                Debug.Log("GlobalHotkeyListener: Global hotkey hook mounted (Ctrl+Alt+>)");
+                Debug.Log("GlobalHotkeyListener: Global hotkey hook mounted ("+DanceHotkeys.GlobalLabel()+")");
             }
         }
 
@@ -135,8 +173,13 @@ namespace CustomDancePlayer
             }
 
             // Reset key states (avoid residue when re-enabled)
-            _isCtrlPressed = false;
-            _isAltPressed = false;
+            _isLeftCtrlPressed = false;
+            _isRightCtrlPressed = false;
+            _isLeftAltPressed = false;
+            _isRightAltPressed = false;
+            _isLeftShiftPressed = _isRightShiftPressed = false;
+            pressed.Clear();
+            _needTriggerPlay = false;pendingAction=-1;
         }
 
 
@@ -150,25 +193,38 @@ namespace CustomDancePlayer
 
 
             KBDLLHOOKSTRUCT keyEvent = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
-            bool isKeyDown = wParam == (IntPtr)WM_KEYDOWN;
-            bool isKeyUp = wParam == (IntPtr)WM_KEYUP;
+            bool isKeyDown = wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN;
+            bool isKeyUp = wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP;
 
-            switch (keyEvent.vkCode)
-            {
-                case VK_CONTROL:
-                    _isCtrlPressed = isKeyDown;
-                    break;
-                case VK_ALT:
-                    _isAltPressed = isKeyDown;
-                    break;
-            }
-
-            if (isKeyDown && keyEvent.vkCode == VK_PERIOD && _isCtrlPressed && _isAltPressed)
+            if (ApplyKeyState(keyEvent.vkCode, isKeyDown, isKeyUp))
             {
                 _needTriggerPlay = true;
             }
-
             return CallNextHookEx(_hookId, nCode, wParam, lParam);
+        }
+
+        // Kept separate from the native callback so the one-shot chord logic can
+        // be exercised by the in-game audit without synthesizing OS input.
+        private bool ApplyKeyState(int vkCode, bool isKeyDown, bool isKeyUp)
+        {
+            switch (vkCode)
+            {
+                case VK_LCONTROL: if (isKeyDown || isKeyUp) _isLeftCtrlPressed = isKeyDown; break;
+                case VK_RCONTROL: if (isKeyDown || isKeyUp) _isRightCtrlPressed = isKeyDown; break;
+                case VK_LALT: if (isKeyDown || isKeyUp) _isLeftAltPressed = isKeyDown; break;
+                case VK_RALT: if (isKeyDown || isKeyUp) _isRightAltPressed = isKeyDown; break;
+                case 0xA0: if (isKeyDown || isKeyUp) _isLeftShiftPressed = isKeyDown; break;
+                case 0xA1: if (isKeyDown || isKeyUp) _isRightShiftPressed = isKeyDown; break;
+            }
+            if(isKeyUp){pressed.Remove(vkCode);return false;}
+            if(!isKeyDown||!pressed.Add(vkCode))return false;
+            bool ctrl = _isLeftCtrlPressed || _isRightCtrlPressed;
+            bool alt = _isLeftAltPressed || _isRightAltPressed;
+            bool shift = _isLeftShiftPressed || _isRightShiftPressed;
+            foreach(var binding in bindings)if(vkCode==binding.key && ctrl==binding.ctrl && alt==binding.alt && shift==binding.shift) {
+                pendingAction=(int)binding.action;return true;
+            }
+            return false;
         }
 
         private void TriggerPlayerPlay()

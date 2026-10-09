@@ -28,6 +28,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="Tests~\**\*.cs" />
+    <Compile Remove="Shared\RuntimeVmd\**\*.cs;Loader\**\*.cs" />
+    <ProjectReference Include="Shared\RuntimeVmd\RuntimeVmd.csproj" AdditionalProperties="GameManagedDir=$(GameManagedDir)" />
+    <Reference Include="System.IO.Compression" />
+    <Reference Include="System.IO.Compression.FileSystem" />
     <Reference Include="Assembly-CSharp">
       <HintPath>$(GameManagedDir)\Assembly-CSharp.dll</HintPath>
     </Reference>
@@ -45,7 +49,10 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>$(GameManagedDir)\Newtonsoft.Json.dll</HintPath>
     </Reference>
-    <Reference Include="System" />
+    <Reference Include="UnityEngine.ImageConversionModule"><HintPath>$(GameManagedDir)\UnityEngine.ImageConversionModule.dll</HintPath><Private>false</Private></Reference>
+<Reference Include="UnityEngine.UnityWebRequestModule"><HintPath>$(GameManagedDir)\UnityEngine.UnityWebRequestModule.dll</HintPath><Private>false</Private></Reference>
+<Reference Include="UnityEngine.UnityWebRequestAudioModule"><HintPath>$(GameManagedDir)\UnityEngine.UnityWebRequestAudioModule.dll</HintPath><Private>false</Private></Reference>
+<Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />

@@ -15,7 +15,7 @@ namespace CustomDancePlayer
         {
             if (playerCore != null)
             {
-                playerCore.PlayNext();
+                playerCore.OnLegacyAnimationCompleted();
             }
         }
 

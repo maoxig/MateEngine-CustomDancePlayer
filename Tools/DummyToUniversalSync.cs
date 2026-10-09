@@ -3,6 +3,7 @@
 namespace CustomDancePlayer
 {
     [RequireComponent(typeof(UniversalBlendshapes))]
+    [DefaultExecutionOrder(-100)]
     public class DummyToUniversalSync : MonoBehaviour
     {
         public SkinnedMeshRenderer dummySmr;
@@ -54,22 +55,28 @@ namespace CustomDancePlayer
 
         void LateUpdate()
         {
+            if (ub == null) ub = GetComponent<UniversalBlendshapes>();
+            if (dummySmr == null || dummySmr.sharedMesh == null || ub == null) return;
+            dummyMesh = dummySmr.sharedMesh;
+            // Several MMD names are aliases of one preset. A zero-valued alias
+            // must not overwrite the active one; single vowel names need exact matches.
+            ub.Blink = Maximum("まばたき");
+            ub.Blink_L = Maximum("ウィンク", "ウィンク２");
+            ub.Blink_R = Maximum("ウィンク右", "ｳｨﾝｸ２右");
+            ub.A = Maximum("あ"); ub.I = Maximum("い"); ub.U = Maximum("う"); ub.E = Maximum("え"); ub.O = Maximum("お");
+            ub.Joy = Maximum("にこり"); ub.Angry = Maximum("怒り"); ub.Sorrow = Maximum("困る"); ub.Neutral = Maximum("真面目"); ub.Fun = Maximum("笑い");
+        }
 
-            if (dummySmr == null || dummyMesh == null || ub == null) return;
-
+        private float Maximum(params string[] names)
+        {
+            float value = 0;
             for (int i = 0; i < dummyMesh.blendShapeCount; i++)
             {
-                string bsName = dummyMesh.GetBlendShapeName(i);
-                float weight01 = dummySmr.GetBlendShapeWeight(i) / 100f;
-
-                foreach (var (mmd, setter) in map)
-                {
-                    if (bsName.Contains(mmd))
-                    {
-                        setter(ub, weight01);
-                    }
-                }
+                string name = dummyMesh.GetBlendShapeName(i).Normalize(System.Text.NormalizationForm.FormKC);
+                foreach (string alias in names) if (name == alias.Normalize(System.Text.NormalizationForm.FormKC))
+                    value = Mathf.Max(value, dummySmr.GetBlendShapeWeight(i) / 100f);
             }
+            return Mathf.Clamp01(value);
         }
     }
 }

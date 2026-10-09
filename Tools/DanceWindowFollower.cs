@@ -55,6 +55,7 @@ namespace CustomDancePlayer
         private Coroutine activeShiftCoroutine = null;
         private Coroutine restoreCoroutine = null;
         private bool wasPlaying = false;
+        private bool transitionActive = false;
 
         private IntPtr hWnd = IntPtr.Zero;
 
@@ -155,12 +156,42 @@ namespace CustomDancePlayer
                 }
             }
         }
+        public void BeginDanceTransition()
+        {
+            var currentMain = Camera.main;
+            if (currentMain != null) targetCamera = currentMain;
+            if (targetCamera == null) return;
+            if (activeShiftCoroutine != null) { StopCoroutine(activeShiftCoroutine); activeShiftCoroutine = null; }
+            if (restoreCoroutine != null) { StopCoroutine(restoreCoroutine); restoreCoroutine = null; }
+            if (hWnd == IntPtr.Zero) hWnd = Process.GetCurrentProcess().MainWindowHandle;
+            cameraOriginalPos = targetCamera.transform.position;
+            windowOriginalPos = GetWindowPosition(hWnd);
+            additionalOriginalPos = additionalTransforms.ConvertAll(t => t ? t.position : Vector3.zero);
+            cumulativeWindowShift = Vector2.zero;
+            haveOriginals = true;
+            wasPlaying = true;
+            transitionActive = true;
+        }
+        public void RestoreForDanceTransition()
+        {
+            if(!transitionActive && !wasPlaying && activeShiftCoroutine==null && restoreCoroutine==null)return;
+            if(activeShiftCoroutine!=null){StopCoroutine(activeShiftCoroutine);activeShiftCoroutine=null;}
+            if(restoreCoroutine!=null){StopCoroutine(restoreCoroutine);restoreCoroutine=null;}
+            if(haveOriginals)
+            {
+                if(targetCamera!=null)targetCamera.transform.position=cameraOriginalPos;
+                SetWindowPosition(hWnd, windowOriginalPos);
+                for(int i=0;i<additionalTransforms.Count;i++)if(additionalTransforms[i]!=null)additionalTransforms[i].position=additionalOriginalPos[i];
+            }
+            cumulativeWindowShift=Vector2.zero;wasPlaying=false;transitionActive=false;
+        }
 
         private IEnumerator CheckLoop()
         {
             while (true)
             {
                 yield return new WaitForSeconds(checkInterval);
+                yield return new WaitForEndOfFrame(); // Observe the final native VMD pose.
 
                 if (!isEnabled)
                 {
@@ -190,13 +221,7 @@ namespace CustomDancePlayer
                 {
                     if (!wasPlaying)
                     {
-                        wasPlaying = true;
-                        // capture baseline for restore
-                        cameraOriginalPos = targetCamera.transform.position;
-                        windowOriginalPos = GetWindowPosition(hWnd);
-                        additionalOriginalPos = additionalTransforms.ConvertAll(t => t ? t.position : Vector3.zero);
-                        cumulativeWindowShift = Vector2.zero;
-                        if (restoreCoroutine != null) { StopCoroutine(restoreCoroutine); restoreCoroutine = null; }
+                        BeginDanceTransition();
                     }
 
                     // Handle window drag using UniWindowMoveHandle
@@ -266,15 +291,22 @@ namespace CustomDancePlayer
                     if (deltaPixels.sqrMagnitude > 0f && Time.unscaledTime - lastShiftTime > 0f)
                     {
                         // compute effective camera pixel delta accounting for camera invert flags
-                        Vector2 effectiveCamPixelDelta = new Vector2(
+                        Vector2 requestedCamPixelDelta = new Vector2(
                             deltaPixels.x * (invertCameraX ? -1f : 1f),
                             deltaPixels.y * (invertCameraY ? -1f : 1f)
                         );
 
+                        // The authored MMD camera owns the host camera while its view is
+                        // selected. Window follow may still move the desktop window, but
+                        // must not offset the authored shot.
+                        bool authoredCamera = dancePlayerCore?.uiManager?.CameraSync != null &&
+                            dancePlayerCore.uiManager.CameraSync.IsUsingDanceView;
+                        Vector2 effectiveCamPixelDelta = authoredCamera ? Vector2.zero : requestedCamPixelDelta;
+
                         // compute window pixel delta accounting for invert flags and multiplier
                         Vector2 effectiveWindowDelta = new Vector2(
-                            effectiveCamPixelDelta.x * (invertWindowX ? -1f : 1f) * windowMovementMultiplier,
-                            effectiveCamPixelDelta.y * (invertWindowY ? -1f : 1f) * windowMovementMultiplier
+                            requestedCamPixelDelta.x * (invertWindowX ? -1f : 1f) * windowMovementMultiplier,
+                            requestedCamPixelDelta.y * (invertWindowY ? -1f : 1f) * windowMovementMultiplier
                         );
 
                         // clamp cumulative
@@ -443,6 +475,7 @@ namespace CustomDancePlayer
             SetWindowPosition(hWnd, winTarget);
 
             cumulativeWindowShift = Vector2.zero;
+            transitionActive = false;
             restoreCoroutine = null;
         }
 

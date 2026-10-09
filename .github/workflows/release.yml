@@ -1,9 +1,9 @@
-name: Release
+name: Legacy 0.1 Release
 
 on:
   push:
     tags:
-      - "v*"
+      - "v0.1.*"
   workflow_dispatch:
 
 permissions:
@@ -11,6 +11,8 @@ permissions:
 
 jobs:
   release:
+    # 0.2 packages are built and verified separately; never upload legacy dist for them.
+    if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v0.1.')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo

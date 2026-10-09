@@ -8,6 +8,7 @@ using UnityEngine.UI;
 
 namespace CustomDancePlayer
 { // Manages UI interactions and updates
+    [DefaultExecutionOrder(-20000)]
     public class DancePlayerUIManager : MonoBehaviour
     {
         public Canvas TargetCanvas;
@@ -55,439 +56,184 @@ namespace CustomDancePlayer
         public DanceAvatarHelper avatarHelper;
         public DanceResourceManager resourceManager;
 
-        private DanceSettingsHandler _settingsHandler;
-        // Other Components
-        private HipsFollower _hipsFollower;
-        private DanceShadowFollower _shadowFollower;
-        private DanceWindowFollower _danceWindowFollower;
-        private DanceCameraDistKeeper _danceCameraDistKeeper;
-        private GlobalHotkeyListener _globalHotkeyListener;
-
-        private DanceCameraSync _danceCameraSync;
-
-
-        private bool _isAdvancedOpen;
-
-        // TODO remove them
-        private MenuActions _gameMenuActions;
-        private MenuEntry _myUIMenuEntry;
-        private bool _isMyUIAddedToMenuList;
-
-
+        public DanceCameraSync CameraSync { get; private set; }
+        public DanceWindow Window { get; internal set; }
+        private bool initialized;
+        private bool panelGesture;
+        public bool PanelOwnsPointer { get; private set; }
+        public static bool SuppressHostDragAnimation() {var ui=DanceBootstrap.Root==null?null:DanceBootstrap.Root.GetComponentInChildren<DancePlayerUIManager>(true);return ui!=null && (ui.PanelOwnsPointer || (ui.playerCore!=null && ui.playerCore.IsPlaying));}
+        private MenuActions menus;
+        private MenuEntry entry;
+        public void Initialize()
+        {
+            if (initialized) return;
+            initialized = true;
+            var settings = DanceSettingsHandler.Instance;
+            DanceLocale.Set(settings.data.language);
+            if (settings.data.enableMMDCamera && settings.data.enableWindowFollow)
+            {
+                settings.data.restoreWindowFollowAfterMmdCamera = true;
+                settings.data.enableWindowFollow = false;
+            }
+            playerCore.InitPlayer();
+            var root=DanceBootstrap.Root!=null?DanceBootstrap.Root:transform.root.gameObject;
+            foreach(var c in root.GetComponentsInChildren<DanceShadowFollower>(true)) { c.enabled=true; c.ApplyVisibility(); }
+            foreach(var c in root.GetComponentsInChildren<DanceCameraDistKeeper>(true))c.enabled=settings.data.enableCameraDistanceKeep;
+            foreach(var c in root.GetComponentsInChildren<DanceWindowFollower>(true))c.SetEnabled(settings.data.enableWindowFollow);
+            var hotkeys = GetComponentsInChildren<GlobalHotkeyListener>(true);
+            foreach (var hotkey in hotkeys) hotkey.enabled = DanceHotkeys.HasGlobalBinding;
+            DanceCameraDemo.EnsureCreated(this);
+            CameraSync = GetComponentInChildren<DanceCameraSync>(true);
+            if (CameraSync != null)
+            {
+                CameraSync.enabled = settings.data.enableMMDCamera;
+                if (EnableMMDCamera != null)
+                {
+                    EnableMMDCamera.isOn = settings.data.enableMMDCamera;
+                    EnableMMDCamera.onValueChanged.AddListener(SetCameraEnabled);
+                }
+                if (MMDCameraScaleSlider != null) MMDCameraScaleSlider.value = settings.data.mmdCameraScale;
+            }
+            var oldCanvas = TargetCanvas;
+            Window = DanceWindow.Create(this);
+            if (oldCanvas != null) oldCanvas.gameObject.SetActive(false);
+            TargetCanvas = Window.Canvas;
+            menus = FindFirstObjectByType<MenuActions>();
+            entry = new MenuEntry { menu = TargetCanvas.gameObject, blockMovement = false, blockHandTracking = false, blockReaction = false, blockChibiMode = false };
+            if (menus != null) menus.menuEntries.Add(entry);
+            SetPanelVisible(!settings.data.hidePanelOnStart);
+        }
         void Start()
         {
-            DanceCameraDemo.EnsureCreated(this);
-            // Other Components
-            _danceWindowFollower = FindFirstObjectByType<DanceWindowFollower>();
-            _danceCameraDistKeeper = FindFirstObjectByType<DanceCameraDistKeeper>();
-            _hipsFollower = FindFirstObjectByType<HipsFollower>();
-            _shadowFollower = FindFirstObjectByType<DanceShadowFollower>();
-            _globalHotkeyListener = FindFirstObjectByType<GlobalHotkeyListener>();
-            _danceCameraSync = FindFirstObjectByType<DanceCameraSync>();
-
-            _settingsHandler = DanceSettingsHandler.Instance;
-            RefreshDropdown();
-            playerCore.InitPlayer();
-            UpdateToggleKeyText();
-            InitUI();
-            BindButtonEvents();
-
-            if (_settingsHandler.data.hidePanelOnStart && TargetCanvas != null)
-            {
-                TargetCanvas.gameObject.SetActive(false);
-            }
-
-            if (_settingsHandler.data.autoPlayOnStart && _settingsHandler.data.currentPlayIndex >= 0)
-            {
-                StartCoroutine(TryAutoPlay());
-            }
-
-            // TODO remove them
-            _gameMenuActions = UnityEngine.Object.FindFirstObjectByType<MenuActions>();
-            _myUIMenuEntry = new MenuEntry
-            {
-                menu = TargetCanvas.gameObject,
-                blockMovement = true,
-                blockHandTracking = false,
-                blockReaction = false,
-                blockChibiMode = false
-            };
-            AddMyUIToGameMenuList();
+            if (DanceBootstrap.Root != null && !transform.IsChildOf(DanceBootstrap.Root.transform))
+            { if (TargetCanvas != null) TargetCanvas.gameObject.SetActive(false); enabled = false; Debug.LogWarning("[CustomDancePlayer] Duplicate legacy UI disabled."); return; }
+            Initialize();
+            if (DanceSettingsHandler.Instance.data.autoPlayOnStart) StartCoroutine(TryAutoPlay());
         }
-
         void Update()
         {
-            UpdateUI();
-            HandleKeyToggleUI();
+            if (!initialized) return;
+            UpdatePointerOwnership(Input.mousePosition,Input.GetMouseButtonDown(0),Input.GetMouseButton(0));
+            if (DanceHotkeys.PanelPressed() && !DanceDialogs.Busy && !IsInTextInputState()) SetPanelVisible(!TargetCanvas.gameObject.activeSelf);
         }
-
-        // Initializes UI elements
-        private void InitUI()
+        public void UpdatePointerOwnership(Vector2 position,bool pressed,bool held)
         {
-            CurrentPlayText.text = playerCore.GetCurrentPlayFileName();
-            PlayModeText.text = GetPlayModeText();
-            AvatarStatusText.text = "Avatar Status: Not Connected";
-            UpdateDropdownValue();
+            bool inside=Window!=null && Window.ContainsPointer(position);
+            if(pressed)panelGesture=inside;
+            if(!held)panelGesture=false;
+            PanelOwnsPointer=held?panelGesture:inside;
+            if(entry!=null)entry.blockMovement=PanelOwnsPointer;
         }
-
-        // Public method to set panel visibility
-        public void SetPanelVisible(bool visible)
+        public void SetCameraEnabled(bool value)
         {
-            if (TargetCanvas == null)
+            var data = DanceSettingsHandler.Instance.data;
+            bool changed = data.enableMMDCamera != value;
+            if (value && changed)
             {
-                return;
+                data.restoreWindowFollowAfterMmdCamera = data.enableWindowFollow;
+                ApplyWindowFollow(false);
             }
-
-            GameObject targetCanvasObject = TargetCanvas.gameObject;
-            if (targetCanvasObject.activeSelf != visible)
+            data.enableMMDCamera = value;
+            if (!value) playerCore.SetRuntimeCamera(null);
+            if (CameraSync != null)
             {
-                targetCanvasObject.SetActive(visible);
-
-                if (visible)
+                CameraSync.enabled = value;
+                if (value)
                 {
-                    AddMyUIToGameMenuList();
+                    CameraSync.PrepareSwitch();
+                    if (playerCore.IsPlaying && playerCore.resourceManager.IsVmdResource)
+                        playerCore.SetRuntimeCamera(CameraSync.RenderCamera);
                 }
             }
+            if (EnableMMDCamera != null && EnableMMDCamera.isOn != value) EnableMMDCamera.isOn = value;
+            if (!value && changed)
+            {
+                ApplyWindowFollow(data.restoreWindowFollowAfterMmdCamera);
+                data.restoreWindowFollowAfterMmdCamera = false;
+            }
+            DanceSettingsHandler.OnSettingChanged();
+            Window?.RefreshSettingsState();
         }
-
-        // Handles UI toggle key press
-        private void HandleKeyToggleUI()
+        public void SetWindowFollowEnabled(bool value)
         {
-            if (TargetCanvas == null) return;
-            if (IsInTextInputState())
-                return;
-            if (Input.GetKeyDown(_settingsHandler.data.toggleKey))
+            var data = DanceSettingsHandler.Instance.data;
+            if (value && data.enableMMDCamera)
             {
-                GameObject targetCanvasObject = TargetCanvas.gameObject;
-                bool newVisibleState = !targetCanvasObject.activeSelf;
-                targetCanvasObject.SetActive(newVisibleState);
-
-                if (newVisibleState)
-                {
-                    AddMyUIToGameMenuList();
-                }
+                // Selecting window follow explicitly gives it ownership and exits
+                // the authored MMD camera view.
+                data.restoreWindowFollowAfterMmdCamera = false;
+                SetCameraEnabled(false);
             }
+            ApplyWindowFollow(value);
+            DanceSettingsHandler.OnSettingChanged();
+            Window?.RefreshSettingsState();
         }
-
-        // Binds UI events to handlers
-        private void BindButtonEvents()
+        private void ApplyWindowFollow(bool value)
         {
-            PrevBtn.onClick.AddListener(playerCore.PlayPrev);
-            PlayPauseBtn.onClick.AddListener(OnPlayPauseBtnClick);
-            NextBtn.onClick.AddListener(playerCore.PlayNext);
-            StopBtn.onClick.AddListener(playerCore.StopPlay);
-            PlayModeBtn.onClick.AddListener(OnPlayModeBtnClick);
-            RefreshBtn.onClick.AddListener(RefreshDropdown);
-
-            if (DanceFileDropdown != null)
-            {
-                DanceFileDropdown.onValueChanged.AddListener(index =>
-                {
-                    _settingsHandler.data.currentPlayIndex = index;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (VolumeSlider != null)
-            {
-                VolumeSlider.value = _settingsHandler.data.danceVolume;
-                VolumeValueText.text = $"{Mathf.RoundToInt(_settingsHandler.data.danceVolume * 100)}%";
-                VolumeSlider.onValueChanged.AddListener(value =>
-                {
-                    _settingsHandler.data.danceVolume = value;
-                    avatarHelper.UpdateAudioVolume();
-                    VolumeValueText.text = $"{Mathf.RoundToInt(value * 100)}%";
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (AdvancedToggleBtn != null)
-            {
-                AdvancedToggleBtn.onClick.AddListener(ToggleAdvancedPanel);
-                AdvancedToggleBtnText.text = "Settings";
-            }
-
-            if (AnimationStartDelaySlider != null)
-            {
-                AnimationStartDelaySlider.value = _settingsHandler.data.animationStartDelay;
-                AnimationStartDelayValueText.text = $"{_settingsHandler.data.animationStartDelay:0.000}s";
-                AnimationStartDelaySlider.onValueChanged.AddListener(value =>
-                {
-                    _settingsHandler.data.animationStartDelay = value;
-                    AnimationStartDelayValueText.text = $"{value:0.000}s";
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-            if (AutoPlayOnStartToggle != null)
-            {
-                AutoPlayOnStartToggle.isOn = _settingsHandler.data.autoPlayOnStart;
-                AutoPlayOnStartToggle.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.autoPlayOnStart = isOn;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (HidePanelOnStartToggle != null)
-            {
-                HidePanelOnStartToggle.isOn = _settingsHandler.data.hidePanelOnStart;
-                HidePanelOnStartToggle.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.hidePanelOnStart = isOn;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            // Other Components related toggles
-            if (EnableUIPanelFollow != null && _hipsFollower != null)
-            {
-                EnableUIPanelFollow.isOn = _settingsHandler.data.enableDanceUIFollow;
-                _hipsFollower.enabled = _settingsHandler.data.enableDanceUIFollow;
-                EnableUIPanelFollow.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.enableDanceUIFollow = isOn;
-                    _hipsFollower.enabled = isOn;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (EnableShadowFollow != null && _shadowFollower != null)
-            {
-                EnableShadowFollow.isOn = _settingsHandler.data.enableShadowFollow;
-                _shadowFollower.enabled = _settingsHandler.data.enableShadowFollow;
-                EnableShadowFollow.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.enableShadowFollow = isOn;
-                    _shadowFollower.enabled = isOn;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-
-
-            if (EnableWindowFollow != null && _danceWindowFollower != null)
-            {
-                EnableWindowFollow.isOn = _settingsHandler.data.enableWindowFollow;
-                _danceWindowFollower.SetEnabled(_settingsHandler.data.enableWindowFollow);
-                EnableWindowFollow.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.enableWindowFollow = isOn;
-                    _danceWindowFollower.SetEnabled(isOn);
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (EnableCameraDistanceKeep != null & _danceCameraDistKeeper != null)
-            {
-                EnableCameraDistanceKeep.isOn = _settingsHandler.data.enableCameraDistanceKeep;
-                _danceCameraDistKeeper.enabled = _settingsHandler.data.enableCameraDistanceKeep;
-                EnableCameraDistanceKeep.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.enableCameraDistanceKeep = isOn;
-                    _danceCameraDistKeeper.enabled = isOn;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (EnableGlobalHotkey != null && _globalHotkeyListener != null)
-            {
-                EnableGlobalHotkey.isOn = _settingsHandler.data.enableGlobalHotkey;
-                _globalHotkeyListener.enabled = _settingsHandler.data.enableGlobalHotkey;
-                EnableGlobalHotkey.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.enableGlobalHotkey = isOn;
-                    _globalHotkeyListener.enabled = isOn;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (EnableMMDCamera != null && _danceCameraSync != null)
-            {
-                EnableMMDCamera.isOn = _settingsHandler.data.enableMMDCamera;
-                _danceCameraSync.enabled = _settingsHandler.data.enableMMDCamera;
-                EnableMMDCamera.onValueChanged.AddListener(isOn =>
-                {
-                    _settingsHandler.data.enableMMDCamera = isOn;
-                    _danceCameraSync.enabled = isOn;
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
-            if (MMDCameraScaleSlider != null)
-            {
-                MMDCameraScaleSlider.value = _settingsHandler.data.mmdCameraScale;
-                if (MMDCameraScaleValueText != null) MMDCameraScaleValueText.text = $"{_settingsHandler.data.mmdCameraScale:0.0}x";
-                MMDCameraScaleSlider.onValueChanged.AddListener(value =>
-                {
-                    _settingsHandler.data.mmdCameraScale = value;
-                    if (MMDCameraScaleValueText != null) MMDCameraScaleValueText.text = $"{value:0.0}x";
-                    DanceSettingsHandler.OnSettingChanged();
-                });
-            }
-
+            var data = DanceSettingsHandler.Instance.data;
+            data.enableWindowFollow = value;
+            var root = DanceBootstrap.Root != null ? DanceBootstrap.Root : gameObject;
+            foreach (var c in root.GetComponentsInChildren<DanceWindowFollower>(true)) c.SetEnabled(value);
+            if (EnableWindowFollow != null && EnableWindowFollow.isOn != value) EnableWindowFollow.isOn = value;
         }
-
-        // Updates UI elements in real-time
-        private void UpdateUI()
+        public void SetPanelVisible(bool visible) { if (TargetCanvas != null) TargetCanvas.gameObject.SetActive(visible); }
+        private IEnumerator InitializeLibrary()
         {
-            CurrentPlayText.text = playerCore.GetCurrentPlayFileName();
-            AvatarStatusText.text = avatarHelper.IsAvatarAvailable() ? "Avatar Status: Connected" : "Avatar Status: Not Connected";
-            PlayModeText.text = GetPlayModeText();
-
-            bool isPlayerReady = avatarHelper.IsAvatarAvailable() && resourceManager.DanceFileList.Count > 0;
-            PlayPauseBtn.interactable = isPlayerReady && !_settingsHandler.data.isPlaying;
-            PrevBtn.interactable = isPlayerReady && _settingsHandler.data.isPlaying;
-            NextBtn.interactable = isPlayerReady && _settingsHandler.data.isPlaying;
-            StopBtn.interactable = isPlayerReady && _settingsHandler.data.isPlaying;
-            DanceFileDropdown.interactable = isPlayerReady && !_settingsHandler.data.isPlaying;
-            RefreshBtn.interactable = !_settingsHandler.data.isPlaying;
-
-
-            if (_settingsHandler.data.isPlaying && resourceManager.CurrentAudioClip != null)
-            {
-                float elapsed = Time.time - _settingsHandler.data.audioStartTime;
-                float total = resourceManager.CurrentAudioClip.length;
-                ProgressSlider.value = Mathf.Clamp01(elapsed / total);
-            }
-            else
-            {
-                ProgressSlider.value = 0f;
-            }
+            yield return resourceManager.RefreshDanceFileListAsync();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            playerCore.playlistManager.ApplyFilters();
+            Window?.RefreshLibrary();
+            watch.Stop();
+            Debug.Log("[CustomDancePlayer] Library UI refresh completed in " + watch.ElapsedMilliseconds + " ms.");
         }
-
-
-
-        // Attempts auto-play with timeout
-        public IEnumerator TryAutoPlay()
+        public void BeginLibraryInitialization()
         {
-            yield return new WaitForSeconds(3f);
-            float timeout = 10f;
-            float elapsed = 0f;
-
-            while (!avatarHelper.IsAvatarAvailable() && elapsed < timeout)
-            {
-                yield return null;
-                elapsed += Time.deltaTime;
-            }
-
-            if (avatarHelper.IsAvatarAvailable() &&
-                _settingsHandler.data.currentPlayIndex >= 0 && DanceFileDropdown.options.Count > 0 &&
-                _settingsHandler.data.currentPlayIndex < DanceFileDropdown.options.Count)
-            {
-                OnPlayPauseBtnClick();
-            }
+            if (!resourceManager.IsRefreshing && resourceManager.DanceFileList.Count == 0)
+                StartCoroutine(InitializeLibrary());
         }
-
+        public void RefreshDropdown() { resourceManager.RefreshDanceFileList(); playerCore.playlistManager.ApplyFilters(); Window?.RefreshLibrary(); }
+        public void RefreshDropdownAsync() { if (!resourceManager.IsRefreshing) StartCoroutine(InitializeLibrary()); }
+        public bool RefreshAndPlayPackage(string path)
+        {
+            RefreshDropdown(); var playlist = playerCore.playlistManager;
+            playlist.Search = ""; playlist.Format = ""; playlist.SetPlaylistType(DancePlaylistManager.PlaylistType.All); playlist.ApplyFilters();
+            var descriptor = resourceManager.Descriptors.Values.FirstOrDefault(d => System.IO.Path.GetFullPath(d.Path).Equals(System.IO.Path.GetFullPath(path), StringComparison.OrdinalIgnoreCase));
+            return descriptor != null && playerCore.PlayDanceByIndex(playlist.GetIndexByFile(descriptor.Id));
+        }
         public void OnPlayPauseBtnClick()
         {
-            if (!_settingsHandler.data.isPlaying && DanceFileDropdown.value >= 0)
-            {
-                playerCore.PlayDanceByIndex(DanceFileDropdown.value);
-            }
-            else if (_settingsHandler.data.isPlaying)
-            {
-                playerCore.StopPlay();
-            }
+            if (playerCore.IsPlaying) { playerCore.TogglePause(); return; }
+            int index = playerCore.playlistManager.GetIndexByFile(DanceSettingsHandler.Instance.data.lastResourceId);
+            if (index < 0) index = DanceSettingsHandler.Instance.data.currentPlayIndex;
+            playerCore.PlayDanceByIndex(Math.Max(0, index));
         }
-
-        private void OnPlayModeBtnClick()
+        public void OnPlayStopBtnClick()
         {
-            _settingsHandler.data.currentPlayMode = (DancePlayerCore.PlayMode)(((int)_settingsHandler.data.currentPlayMode + 1) % Enum.GetValues(typeof(DancePlayerCore.PlayMode)).Length);
-            DanceSettingsHandler.OnSettingChanged();
+            if(playerCore.IsPlaying)playerCore.StopPlay();
+            else OnPlayPauseBtnClick();
         }
-
-        private string GetPlayModeText()
+        public void UpdateDropdownValue() { Window?.RefreshLibrary(); }
+        public void AddMyUIToGameMenuList() { }
+        public IEnumerator TryAutoPlay()
         {
-            return _settingsHandler.data.currentPlayMode switch
-            {
-                DancePlayerCore.PlayMode.Sequence => "Sequence",
-                DancePlayerCore.PlayMode.Loop => "Loop",
-                DancePlayerCore.PlayMode.Random => "Random",
-                _ => "Sequence"
-            };
+            yield return new WaitForSecondsRealtime(3);
+            float timeout = Time.realtimeSinceStartup + 15;
+            while ((!avatarHelper.IsAvatarAvailable() || resourceManager.IsRefreshing) && Time.realtimeSinceStartup < timeout) yield return null;
+            if (!avatarHelper.IsAvatarAvailable() || resourceManager.IsRefreshing) yield break;
+            int index = playerCore.playlistManager.GetIndexByFile(DanceSettingsHandler.Instance.data.lastResourceId);
+            if (index < 0) index = DanceSettingsHandler.Instance.data.currentPlayIndex;
+            playerCore.PlayDanceByIndex(index);
         }
-        public void UpdateDropdownValue()
-        {
-            if (DanceFileDropdown == null || DanceFileDropdown.options.Count == 0)
-                return;
-
-            int targetIndex = _settingsHandler.data.currentPlayIndex;
-            if (targetIndex < 0 || targetIndex >= DanceFileDropdown.options.Count)
-            {
-                targetIndex = 0;
-                _settingsHandler.data.currentPlayIndex = targetIndex;
-                DanceSettingsHandler.OnSettingChanged();
-            }
-
-            if (DanceFileDropdown.value != targetIndex)
-            {
-                DanceFileDropdown.value = targetIndex;
-                DanceFileDropdown.captionText.text = DanceFileDropdown.options[targetIndex].text;
-            }
-        }
-        // Refreshes dropdown with dance files
-        public void RefreshDropdown()
-        {
-            DanceFileDropdown.ClearOptions();
-            resourceManager.RefreshDanceFileList();
-            var danceFiles = resourceManager.DanceFileList;
-
-            if (danceFiles.Count == 0)
-            {
-                DanceFileDropdown.options.Add(new Dropdown.OptionData("No dance files (put in CustomDances folder)"));
-            }
-            else
-            {
-                DanceFileDropdown.AddOptions(danceFiles.Select(file => file.EndsWith(".unity3d", StringComparison.OrdinalIgnoreCase)
-                    ? file.Substring(0, file.Length - ".unity3d".Length) : file).ToList());
-            }
-        }
-
-        // Updates toggle key text
-        public void UpdateToggleKeyText()
-        {
-            if (ToggleKeyText != null)
-            {
-                ToggleKeyText.text = $"Press {_settingsHandler.data.toggleKey} to hide UI";
-            }
-        }
-
-        // Checks if in text input state
         private bool IsInTextInputState()
         {
-            if (EventSystem.current == null) return false;
-            GameObject selectedObj = EventSystem.current.currentSelectedGameObject;
-            return selectedObj != null && (selectedObj.GetComponent<InputField>() != null || selectedObj.GetComponent<TMP_InputField>() != null);
+            var selected = EventSystem.current == null ? null : EventSystem.current.currentSelectedGameObject;
+            return selected != null && (selected.GetComponent<InputField>() != null || selected.GetComponent<TMP_InputField>() != null);
         }
-
-        // Toggles advanced panel visibility
-        private void ToggleAdvancedPanel()
+        void OnDestroy()
         {
-            _isAdvancedOpen = !_isAdvancedOpen;
-            MainPanelRoot.SetActive(!_isAdvancedOpen);
-            SettingsPanelRoot.SetActive(_isAdvancedOpen);
-            AdvancedToggleBtnText.text = _isAdvancedOpen ? "Back" : "Settings";
-
-            if (_isAdvancedOpen && SettingsScrollRect != null)
-            {
-                SettingsScrollRect.verticalNormalizedPosition = 1f;
-            }
+            if (menus != null && entry != null) menus.menuEntries.Remove(entry);
+            if (Window != null) Destroy(Window.gameObject);
+            playerCore?.StopPlay();
         }
-        public void AddMyUIToGameMenuList()
-        {
-            if (_gameMenuActions == null || _isMyUIAddedToMenuList || _myUIMenuEntry == null)
-                return;
-
-
-            bool isAlreadyInList = _gameMenuActions.menuEntries.Exists(
-                entry => entry.menu == gameObject
-            );
-            if (!isAlreadyInList)
-            {
-                _gameMenuActions.menuEntries.Add(_myUIMenuEntry);
-                _isMyUIAddedToMenuList = true;
-            }
-        }
-
     }
 }

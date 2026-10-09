@@ -1,238 +1,76 @@
 # [Mate Engine](https://github.com/shinyflvre/Mate-Engine) - Custom Dance Player
 
-**Other Language Versions: [English](README.md), [中文](README_zh.md)**
+**Languages: [English](README.md), [中文](README_zh.md)**
 
-## v0.1.2: catch up with committed changes
+This mod started as a way to play MMD dances converted for our 7 Days to Die VRoidMod in MateEngine. Dance playback later became part of MateEngine itself; this player continues to support the existing dance collection.
 
-This release rebuilds the DLL to include changes committed after v0.1.1: recursive dance discovery, audio warm-up synchronization, window-follow improvements, and the **MMD camera demo**. It keeps the existing UI/installation method and creates the camera components and controls at startup; no manual setup is required. Install the DLL and `.me` from the same release; do not mix in development DLLs. See the [v0.1.2 release notes](.github/releases/v0.1.2.md).
+Version 0.2.0 adds VMD dance packages, an import and creation page, and full and mini player views. Existing `.unity3d` dances remain supported. See [what changed since 0.1](CHANGELOG.md).
 
-v0.1.2 plays legacy `.unity3d` dances. Its `.me` attachment contains the player UI; it does not add playback of official `.me` dance packages. VMD / `.vmdance`, a unified BepInEx loader, localization, new UI, and playlist changes are planned for **0.2**.
+![Hatsune Miku dancing with the panel following her](docs/images/player-preview.gif)
 
-## Fixing old dance bundle lag: DanceBundleAudioFixer
+Model: [Hatsune Miku (YYB Default)](https://steamcommunity.com/sharedfiles/filedetails/?id=3582662597) by YYB, from the MateEngine Workshop. Dance: Catch The Wave. The library panel follows the character while the front camera stays active.
 
-Added **DanceBundleAudioFixer**, an optional offline tool that can fix audio-loading lag caused by some old `.unity3d` dance files. Download `DanceBundleAudioFixer.rar` from the [release assets](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases/tag/v0.1.2), extract it, and run the EXE. The player does not require this tool.
+## Installation and migration
 
-1. Close the game. In the tool, select `MateEngineX_Data\StreamingAssets\CustomDances` and click **Scan**. Its default folder is the 7 Days to Die `Dances` directory; MateEngine users should select their folder manually.
-2. Choose **Fix and keep backups (recommended)**, then test playback in game.
-3. Backups use `*.unity3d.vroidaudio.bak`. Use **Restore from backups** if necessary, and delete backups only after verification.
+Download the `With-BepInEx` archive, exit the game, and extract everything beside `MateEngineX.exe`. When upgrading from 0.1.x, run `Run-OldVersionMigration.cmd`. Start the game and press **H** to open the player.
 
-The tool changes safely matched Vorbis + FSB5 AudioClips from Decompress On Load to Streaming, disables Preload Audio Data, enables Load In Background, and repacks the bundle with LZ4. It preserves encoded audio, animations, and controllers, and verifies payload/object hashes before replacing the original. Unsupported or damaged bundles are skipped. It does not repair official `.me` / `.vmdance` packages or every cause of lag. The UI supports Chinese and English. See the [tool guide](docs/DANCE_BUNDLE_AUDIO_FIXER.md).
+For later updates to an existing compatible BepInEx installation, use the smaller plugin archive. See [installation instructions](docs/user/INSTALL_0.2.md). Supported hosts are Windows x64 MateEngine GitHub 3.3 and Steam 3.4.
 
-## **IMPORTANT**
+## Using the player
 
-a unified clarification here:
-- This mod is released at here. Specifically, it can load and play dance .unity3d files compatible with the 7 Days to Die's VRoidMod. All 250+ dance files are available for download from my cloud drive: https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing. Detailed instructions on how to create dance files are also provided on the mod’s release page.
-- After the release of MateEngine 2.4, through the joint efforts of Shiny and me, this mod has been integrated into the official features. The official dance player will be more comprehensive and polished in the future, and it can still load and use the old dance .unity3d files (even when placed in the original dance folder).
-- The standalone mod remains usable and maintenance has resumed. v0.1.2 cannot play dance packages created by the official mod exporter; additional formats are planned for 0.2.
-- If you have suggestions or bug reports for the official dance player, you can submit them in the official GitHub Issues section or the corresponding post.
-- If you encounter issues with some .unity3d files, since these files were created by my friend and me, you can report them via issue, and please include detailed information.
-- I’ve consulted a friend (he was the one who first taught us to make these files and converted most of the dances in the cloud drive; everyone in our community respects him deeply), and **he disagrees with uploading the dance files to the Steam Workshop, so I won’t upload them either. However, you can still download them from my Google Drive — please do not upload the old .unity3d files to the Workshop. Additionally, I recommend that every user abide by the rules of the MMD community.**
+### Dance library
 
-在这里做一个统一澄清：
+![Dance library](docs/images/library-en.png)
 
-- 这个 mod 发布于这里。具体来说，它能加载并播放可用于 7 日杀（7dtd）VRoidMod 的舞蹈.unity3d 文件，所有 250 + 个舞蹈文件可从我的谷歌云盘下载：https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing  舞蹈文件的制作方法，在 mod 发布页也有详细说明。
-- MateEngine 2.4 版本之后，经过 Shiny 和我的共同努力，这个 mod 已整合为官方功能。官方舞蹈播放器未来会更全面、更完善，且仍能加载使用旧的舞蹈.unity3d 文件（甚至可放在原舞蹈文件夹中）。
-- 但这并不代表该 mod 无法使用 —— 你依然可以继续使用它，只是后续不会再提供额外支持与更新，也无法加载官方 mod 导出器制作的舞蹈文件。
-- 若你对官方舞蹈播放器有建议或 bug 反馈，可在官方 GitHub 的 issue 板块或对应帖子中提交。
-- 若发现部分.unity3d 文件存在问题，由于这些文件由我和朋友制作，可通过issue反馈，务必附带详细信息。
-- 我已询问过一位朋友（他最早教会我们制作这类文件，还转换了云盘中的大部分舞蹈，社区里每个人都很尊敬他），**他不同意将舞蹈文件上传至 Steam 创意工坊，因此我也不会上传。不过你们仍可从我的谷歌云盘下载，请不要将旧的.unity3d 文件上传至创意工坊。此外，建议每位使用者都遵循 MMD 社区的相关规则。**
+Place dances in `MateEngineX_Data/StreamingAssets/CustomDances`; subfolders can organize your collection. You can also use **Add files** or open the dance folder from Settings. Refresh the library after adding files.
 
+| Format | Description |
+| --- | --- |
+| `.unity3d` | Existing animation and audio bundles, including expressions and MMD cameras |
+| `.me` | Official dance containers; ordinary avatar or object mods are not dances |
+| `.vmdance` | A package containing VMD motion, expressions, lip sync, camera and audio |
+| `.vmd` | Direct motion preview; use the creation page to package accompanying files |
 
-## Preview
-<div style="display: flex; gap: 16px;">
-    <img src="./resources/mod_preview_img.png" alt="Preview Image" style="max-width: 320px; height: auto; border: 1px solid #ccc;">
-    <img src="./resources/mod_preview.gif" alt="Preview GIF" style="max-width: 320px; height: auto; border: 1px solid #ccc;">
-</div>
+Search and filter by format or folder, browse favorites, or create a queue. The star saves a favorite and `+` adds a dance to the queue. The current dance also has a favorite button beside its title.
 
-For users in China, please watch this video:  
-https://www.bilibili.com/video/BV1Yge6zqETU/
+The bottom bar provides seeking, previous, play/pause, stop, next and volume. Its playback order button cycles through sequential playback, repeat one and shuffle. This bar appears in the library and creation pages; Settings uses the space for options.
 
-If you have any questions, feel free to leave a comment below the video.  
+The small window icon switches to the mini player; the expand icon returns to the full view. Each view remembers its position. Drag an empty area to move the panel. You can also drag the character while the panel is open.
 
-You can also post on the Discord page:  
-https://discord.com/channels/1367667737437929513/1408758200462999583
+![Mini player](docs/images/mini-en.png)
 
+### Import and create
 
-## Introduction
-Previously, I was a player for *7 Days to Die*—. There is a mod [VRoidMod](https://www.nexusmods.com/7daystodie/mods/3501) by author Alter that was well-received by the Chinese community. It allows players to switch character models and perform dances in the game.
+![Import and create](docs/images/composer-en.png)
 
-Along with friends from the community, we converted over 250+ dance files for use with VRoidMod (mainly from MMDs, and the number is still growing). We also experimented with embedding facial expression curves and camera curves into animations, letting us dance to MMD-style animations whenever we felt bored in *7 Days to Die*! You can see the effect in this video
+Choose a body motion VMD and optional audio, enter a title, then add the dance to the library and preview it. Folder matching can fill in a set of accompanying files. Expressions, lip sync and cameras embedded in the body VMD are included; separate files can be added in Advanced options. Hover over or click `?` for help.
 
-https://www.bilibili.com/video/BV12Cb6zjEfS/
+**Open dance package** restores an existing `.vmdance` and its settings for preview, editing or exporting a copy. Use the music timing controls to adjust synchronization while listening.
 
-After discovering the MATE-ENGINE project, I found it very interesting and wondered if I could adapt the dance files we created for *7 Days to Die* to work with MATE-ENGINE. I also noticed multiple requests for custom dance functionality in MATE-ENGINE’s GitHub Issues, so I decided to develop this mod. 
+For dances with a camera, the creator captures the current character's reference eye height. Adjust the reference multiplier during preview to frame that character. Other characters are then adapted using their own eye height. Foot IK preferences can also be saved per dance.
 
+See the [creation guide](docs/user/IMPORT_AND_CREATE.md) for steps and field descriptions.
 
-## Project Overview
-This is a custom mod developed for the **Mate Engine** desktop pet game. Its core functionality is to add "dance player" capabilities to the desktop pet—supporting custom dance resource loading, playback mode switching, playback control, and an intuitive UI interface. Users can manage the pet’s dance playback just like operating a music player.
+### Settings
 
-### Download Mod Files (Excluding Dance Files)
+![Settings](docs/images/settings-en.png)
 
-You can download the latest release of the mod (does **not** include dance files) here:  
-[https://github.com/maoxig/MateEngine-CustomDancePlayer/releases](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)
+Configure panel and desktop-window following, startup playback, background shadows, MMD cameras and global VMD options. Enabling an MMD camera switches to the dance camera; disabling it or stopping playback restores the front camera. Native game menus temporarily use the front camera and resume the dance camera when closed.
 
-The mod consists of three main parts:
-1. **.me Mod Package**: Contains UI prefabs (e.g., playback control buttons, track dropdown, status text) and basic UI style resources, exported using the MATE-ENGINE SDK.
-2. **DLL Scripts**: Handle core logic, including dance resource loading/unloading, playback state management, and UI event binding. This part involves custom C# scripts and may require modifying game DLL references in dangerous ways (which may not be permitted). By using this DLL, you acknowledge that you trust this repository—you can review the source code to understand its implementation, or fork the repo to modify and compile your own version.
-3. **Dance Files**: Custom dance resources that must follow specific formatting (see [Usage Guide](#usage-guide)). You can also download pre-converted dance files (a subset of the 100+ files my friends in *7 Days to Die* community created, mostly converted from MMD motion data):
-   - https://www.nexusmods.com/7daystodie/mods/3956
-   - https://www.nexusmods.com/7daystodie/mods/5430
-   - https://www.7risha.com/rolemodel (may be less user-friendly for non-Chinese users, apologies)
-   
-   **Important for Non-East Asian Users**: These .unity3d files may contain Simplified Chinese, Traditional Chinese, Japanese, or Korean (CJK) characters in their filenames. Ensure the files unzip and display correctly (adjust your unzipping software’s name encoding settings, install required fonts, etc.), otherwise the mod may fail to load the dances.
+Shortcuts are customizable. Click a key button and press a new combination; Esc cancels. The switch on the left temporarily disables the shortcut while keeping its binding; the buttons on the right clear or reset it. **H** opens the panel by default. Play/pause, play/stop, stop, previous and next can each be bound separately. Matching global shortcuts can control multiple MateEngine instances together.
 
-If there is sufficient interest, I may collect all dance files and upload them to a cloud storage service. (Note: These files are converted from MMD .vmd motion data—please comply with relevant laws and copyright regulations when using them.)
+### Languages
 
-**Edit:** I have uploaded a dance file pack containing **250+** converted dance files. The link is as follows:
-https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing
+English and Simplified Chinese are included. Additional languages can be added by translating a JSON file; see [adding a language](docs/dev/LOCALIZATION.md).
 
-You must ensure that the filenames are displayed correctly and that you do not rename the files, and also make sure to place them in the correct directory. (See [step1.3](#step-13-load-dance-files-unity3d-format))
-## Installation Steps
-### Prerequisites
-- **Mate Engine** desktop pet game installed
-- Downloaded .me & .dll files from [here](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)
-- Downloaded dance files (with .unity3d extension)
+## Old dance audio stalls: DanceBundleAudioFixer
 
-You can view the mod release page on Discord, there is a tutorial video.
+Some old `.unity3d` bundles stall while loading audio. The optional `DanceBundleAudioFixer.rar` is available in the [0.1.2 release assets](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases/tag/v0.1.2).
 
-https://discord.com/channels/1367667737437929513/1408758200462999583
+Exit the game, select your `CustomDances` folder in the tool, scan, and repair with backups. Its default folder targets 7 Days to Die, so MateEngine users need to choose their folder manually. See the [tool guide](docs/user/DANCE_BUNDLE_AUDIO_FIXER.md).
 
-### 1. Deploy Mod Files
-The mod requires both the **.me Mod Package** and **DLL Scripts** to work.
+## Dance resources and feedback
 
-#### Step 1.1: Add DLL Scripts to the Game
-This step requires caution, as it may cause game crashes or unexpected behavior. **Backup the files you intend to modify first**. Game updates may also require you to reapply these changes—this is the simplest method I’ve found so far, but better alternatives may exist.
+Previously converted dances are available on [Google Drive](https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing). **The converter does not permit uploading these dances to Steam Workshop. Please respect this restriction and each work's usage rules.**
 
-   a. Place the `CustomDancePlayer.dll` file into the game’s `MateEngine\MateEngineX_Data\Managed` folder.  
-   <div align="center">
-        <img src="./resources/dll_guide1.png" alt="DLL Placement Guide" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-   </div>
-
-   b. Modify `MateEngineX_Data\ScriptingAssemblies.json` to reference the new DLL:
-      - Add `"CustomDancePlayer.dll"` to the `"names"` array.
-      - Add `16` to the `"types"` array.  
-   <div align="center">
-        <img src="./resources/dll_guide2.png" alt="ScriptingAssemblies.json Modification" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-   </div>
-
-#### Step 1.2: Load the .me Mod Package
-   <div align="center">
-        <img src="./resources/load_me_mod.png" alt="Load .me Mod" style="width: 50%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-   </div>
-
-#### Step 1.3: Load Dance Files (.unity3d Format)
-If all steps above are completed correctly, you will see the mod’s UI panel. Place your downloaded .unity3d dance files into the `MateEngineX_Data\StreamingAssets\CustomDances` folder, then click the "Refresh" button in the UI to load the dance resources.  
-   <div align="center">
-        <img src="./resources/dance_files.png" alt="Example of Dance File Placement" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-   </div>
-
-
-
-## Core Features
-
-### Dance Player
-No extra explanation needed—it’s straightforward: load dance files from disk in a specific order and play them like a music player.
-
-### Facial Expression Support
-Nearly all the .unity3d dance files 7DTD community created support facial expressions (since most are converted from MMD motion data, which typically includes expression data). However, this requires the character model to follow specific conventions:
-
-The **Skinned Mesh Renderer** on the model’s "Body" object must include MMD-style Japanese-named blend shapes:  
-![Blend Shape Guide](./resources/blendshape_guide.png)
-
-If you convert a PMX model to FBX/VRM using Unity’s MMD4Mecanim + uniVRM plugins:
-1. Before conversion, go to MMD4Mecanim’s advanced settings and **uncheck "PrefixMorphNoName"** (this option adds numeric prefixes to blend shape names, which breaks compatibility).
-2. Adjust the model’s hierarchy to match the structure shown above.
-
-For other model types, the most universal solution is to modify and adjust the model in Blender to meet the above conventions.
-
-### MMD camera demo (v0.1.2)
-
-Enable **MMD camera demo** in Settings to open an independent preview. The `.unity3d` animation needs camera tracks under `Camera_root/Camera_root_1/Camera`; the preview shows a waiting message when idle or without a track. **Camera scale** adjusts the camera position relative to the avatar. Use the preview's close button to disable it. This keeps the main desktop camera unchanged and is not a loader for loose VMD camera files.
-
-
-## Usage Guide
-The mod works just like a standard music player—controls are intuitive and require no additional explanation.
-
-- **Global Hotkey**:  
-   - `H`: Show/Hide UI
-
-- **Playback Modes**:  
-   - Single Loop  
-   - Playlist Loop  
-   - Shuffle
-
-- **Settings**:  
-   > persistent settings are saved in `C:\Users{YOURUSERNAME}\AppData\LocalLow\Shinymoon\MateEngineX\danceSettings.json` file. 
-   If you run into issues that seem to be caused by the config file, try deleting this danceSettings.json to see if it fixes the problem.
-   - Volume control  
-   - Animation start delay (default: 0.3s)  
-   - UI follows character  
-   - Shadow panel follows character  
-   - Auto-play on startup  
-   - Hide UI on startup
-
-
-## Custom Dance File Specifications
-Dance resources must follow these rules to load correctly. I also provide a toolbox to help you quickly convert MMD motions, expressions, and camera data into compatible dance files (takes ~3 minutes per file):  
-https://github.com/maoxig/UnityMMDConverter/
-
-
-### Dance File Structure (.unity3d AssetBundle)
-Each dance corresponds to one `.unity3d` AssetBundle, which must contain the following resources (**filenames must match exactly**):
-
-| Resource Type       | Filename Specification          | Description                                                                                                                                                                                                                                                                                                           |
-| ------------------- | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Animator Controller | `[DanceName].controller`        | A simple single-state controller: Create a new Animator Controller, then drag the corresponding [DanceName].anim file into the controller window. Unity will automatically generate a single animation state, and the controller’s "Entry" (default entry point) will have an unconditional transition to this state. |
-| Audio File          | `[DanceName].wav`/`.mp3`/`.ogg` | Supports 3 common audio formats. Duration must match the animation (to avoid audio-visual desync).                                                                                                                                                                                                                    |
-| Animation           | `[DanceName].anim`              | Must include the dance’s animation data.                                                                                                                                                                                                                                                                              |
-
-Example:  
-For a dance file named "HappyDance.unity3d", the AssetBundle must contain `HappyDance.controller`, `HappyDance.mp3`, and `HappyDance.anim`.
-
-### Dance File Placement
-Place your `.unity3d` dance files into the `StreamingAssets/CustomDances` directory. The mod will automatically detect them and add them to the track list.
-   <div align="center">
-        <img src="./resources/dance_files.png" alt="Example of Dance File Placement" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
-   </div>
-
-## Technical Details (For Developers)
-The overall logic is simple—you can easily understand it by reviewing the source code. To modify the mod:
-1. Drag the .prefab files into your MATE-ENGINE Unity project, along with the relevant scripts, to edit the UI.
-2. To modify the DLL scripts: Edit the code in Visual Studio, compile it into a DLL, and import it into Unity.
-
-
-## Frequently Asked Questions (FAQ)
-### Q1: The UI doesn’t appear when pressing the H key—what should I do?
-- Check if the DLL loaded successfully (the UI will show a warning if the DLL is missing).
-- Ensure the mouse focus is on the MATE-ENGINE window.
-
-
-### Q2: Dance files fail to load, and the character stays in a T-pose—how to fix this?
-- Verify the file path: Ensure `.unity3d` files are placed in `StreamingAssets/CustomDances`.
-- Check for garbled filenames: Avoid special characters or unrecognized symbols in filenames (these can break controller/audio loading).
-
-
-### Q3: The UI shows square boxes (garbled text)—how to resolve this?
-- The UI now uses Unity's default text component, which usually prevents garbled characters. If you still see square boxes, check if your system fonts support CJK characters.
-
-### Q4: UI, Dance, or DLL fails to load?
-- Please check the following:
-   - Ensure all files are placed in the correct directories and filenames have not been changed (the game and mod depend on specific filenames).
-   - Try reloading the game or restarting the software.
-
-
-## License
-This mod is open-source under the **MIT License** and complies with the official [Mate Engine License](https://github.com/shinyflvre/Mate-Engine/blob/main/LICENSE). It is permitted for **personal non-commercial use, modification, and distribution**, but prohibited for commercial profit. By using this mod, you agree to abide by the official Mate Engine terms. The developer is not liable for any game errors or issues caused by this mod.
-
-- License Details: [MIT License](https://opensource.org/licenses/MIT), [MATE-ENGINE License](https://github.com/shinyflvre/Mate-Engine/blob/main/LICENSE)
-- Prohibited Actions: Integrating this mod into commercial software without permission, or redistributing it after removing copyright information.
-- Note for Japanese Users: The aforementioned .unity3d dance files may involve copyright issues in Japan (most are converted from MMD motion data, which may not be permitted). Do not upload these files, images, videos, or other related resources to public platforms.
-
-
-## Contact & Feedback
-If you encounter issues or have feature requests, please provide feedback via:
-- GitHub Issues: [Submit an Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)
-
-
-**Last Updated**: October 6, 2025  
-**Compatible Mate Engine Version**: 2.2.0
+The [demo video](https://www.bilibili.com/video/BV1Yge6zqETU/) and [0.1.2 instructions](docs/legacy/LEGACY_0.1.2_README.md) remain available. When reporting an issue, include the game version, dance file, model, reproduction steps and relevant errors from `BepInEx/LogOutput.log`.

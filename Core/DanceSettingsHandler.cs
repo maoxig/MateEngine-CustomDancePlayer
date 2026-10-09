@@ -10,13 +10,14 @@ namespace CustomDancePlayer
     public class DanceSettingsHandler : MonoBehaviour
     {
         private static DanceSettingsHandler _instance;
+        internal static DanceSettingsHandler Existing => _instance;
         public static DanceSettingsHandler Instance
         {
             get
             {
                 if (_instance == null)
                 {
-                    _instance = FindFirstObjectByType<DanceSettingsHandler>();
+                    _instance = FindFirstObjectByType<DanceSettingsHandler>(FindObjectsInactive.Include);
                     if (_instance == null)
                     {
                         GameObject go = new GameObject("DanceSettingsHandler");
@@ -29,6 +30,8 @@ namespace CustomDancePlayer
         }
 
         private DanceSettingsData _data;
+        private bool pendingSave;
+        private float saveAfter;
         public DanceSettingsData data
         {
             get
@@ -81,13 +84,13 @@ namespace CustomDancePlayer
                     if (data.enableDanceUIFollow)
                     {
                         // If follow enabled, use basePosition (offset relative to hips)
-                        rect.anchoredPosition = data.uiBasePosition;
+                        rect.anchoredPosition = data.miniMode ? data.miniBasePosition : data.uiBasePosition;
                         Instance.hipsFollower.UpdateBaseAndInitial(); // Lock in new base
                     }
                     else
                     {
                         // If follow disabled, use raw position
-                        rect.anchoredPosition = data.uiRawPosition;
+                        rect.anchoredPosition = data.miniMode ? data.miniRawPosition : data.uiRawPosition;
                     }
                 }
             }
@@ -102,11 +105,11 @@ namespace CustomDancePlayer
                 {
                     if (data.enableDanceUIFollow)
                     {
-                        data.uiBasePosition = hipsFollower.basePosition;
+                        if(data.miniMode)data.miniBasePosition=hipsFollower.basePosition;else data.uiBasePosition = hipsFollower.basePosition;
                     }
                     else
                     {
-                        data.uiRawPosition = rect.anchoredPosition;
+                        if(data.miniMode)data.miniRawPosition=rect.anchoredPosition;else data.uiRawPosition = rect.anchoredPosition;
                     }
                 }
             }
@@ -136,7 +139,10 @@ namespace CustomDancePlayer
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore
                 };
 
-                File.WriteAllText(FilePath, JsonConvert.SerializeObject(data, settings));
+                var pending = FilePath + ".tmp";
+                File.WriteAllText(pending, JsonConvert.SerializeObject(data, settings));
+                if (File.Exists(FilePath)) File.Replace(pending, FilePath, FilePath + ".bak");
+                else File.Move(pending, FilePath);
             }
             catch (Exception e)
             {
@@ -160,11 +166,24 @@ namespace CustomDancePlayer
                 {
                     Converters = new List<JsonConverter> { new Vector2Converter() }
                 });
+                if (data == null) data = new DanceSettingsData();
+                if (data.favorites == null) data.favorites = new List<string>();
+                if (data.queue == null) data.queue = new List<string>();
+
+                data.playStopKey = data.playStopKey ?? new DanceHotkeyBinding();
+                data.stopKey = data.stopKey ?? new DanceHotkeyBinding();
+                data.previousKey = data.previousKey ?? new DanceHotkeyBinding();
+                data.nextKey = data.nextKey ?? new DanceHotkeyBinding();
+                data.favorites = data.favorites.ConvertAll(id => id.Replace('\\', '/'));
+                data.lastResourceId = (data.lastResourceId ?? "").Replace('\\', '/');
+                data.schemaVersion = 3;
+                data.isPlaying = false;
                 Debug.Log("[DanceSettingsHandler] Settings loaded.");
             }
             catch (Exception e)
             {
                 Debug.LogError($"[DanceSettingsHandler] Failed to load: {e}");
+                File.Copy(FilePath, FilePath + ".invalid-" + DateTime.Now.ToString("yyyyMMdd-HHmmss-fff"), false);
                 data = new DanceSettingsData();
             }
         }
@@ -173,32 +192,70 @@ namespace CustomDancePlayer
         // Triggers save on setting changes
         public static void OnSettingChanged()
         {
-            //if (Instance != null)
-            //{
-            //    Instance.SaveToDisk();
-            //}
+            if (_instance == null) return;
+            _instance.pendingSave = true; _instance.saveAfter = Time.unscaledTime + 0.4f;
         }
+        void LateUpdate() { if (pendingSave && Time.unscaledTime >= saveAfter) { pendingSave = false; SaveToDisk(); } }
+        void OnDestroy() { if (_instance == this) { if (pendingSave) SaveToDisk(); _instance = null; } }
 
+        [Serializable]
+        public class DanceHotkeyBinding
+        {
+            public KeyCode key = KeyCode.None;
+            public bool enabled = true;
+            public bool control, alt, shift;
+        }
         [Serializable]
         public class DanceSettingsData
         {
+            public int schemaVersion = 3;
+            public string language = "auto";
+            public bool miniMode;
+            public Vector2 miniBasePosition = Vector2.zero;
+            public Vector2 miniRawPosition = Vector2.zero;
+            public string lastResourceId = "";
+            public List<string> favorites = new List<string>();
+            public List<string> queue = new List<string>();
             public string version = "1.0";
             public DancePlayerCore.PlayMode currentPlayMode = DancePlayerCore.PlayMode.Sequence;
             public int currentPlayIndex = -1;
             public float animationStartDelay = 0.3f;
             public float danceVolume = 0.25f;
             public bool enableDanceUIFollow = true;
+            public bool showAvatarShadow = true;
             public bool enableShadowFollow = true;
             public bool enableWindowFollow = true;
             public bool enableCameraDistanceKeep = true;
             public bool enableGlobalHotkey = false;
+            // Preserve the old public field identity, but never deserialize or
+            // persist the retired backend selector. Playback always uses PMX.
+            [JsonIgnore] public bool useNativeVmd = true;
+            public bool enableVmdFootIk = true;
+            public bool keepVmdRootUpright = true;
+            public bool lockVmdFacingForward = false;
             public bool enableMMDCamera = false;
+            // Remembers the user's window-follow preference while the MMD camera
+            // temporarily owns the main view. This survives a restart made while
+            // the MMD camera is still enabled.
+            public bool restoreWindowFollowAfterMmdCamera = false;
+            public bool autoMmdCameraScale = true;
             public float mmdCameraScale = 1.0f;
             public bool autoPlayOnStart = false;
             public bool hidePanelOnStart = false;
             public bool isPlaying = false;
             public float audioStartTime;
             public KeyCode toggleKey = KeyCode.H;
+            public bool panelHotkeyEnabled = true;
+            public bool toggleControl, toggleAlt, toggleShift;
+            public KeyCode globalPlaybackKey = KeyCode.None;
+            public int hotkeySchema = 1;
+            public DanceHotkeyBinding playStopKey = new DanceHotkeyBinding();
+            public DanceHotkeyBinding stopKey = new DanceHotkeyBinding();
+            public DanceHotkeyBinding previousKey = new DanceHotkeyBinding();
+            public DanceHotkeyBinding nextKey = new DanceHotkeyBinding();
+            public bool globalControl = true;
+            public bool globalAlt = true;
+            public bool globalShift;
             public Vector2 uiBasePosition = Vector2.zero;
             public Vector2 uiRawPosition = new Vector2(300f, 0f);
         }

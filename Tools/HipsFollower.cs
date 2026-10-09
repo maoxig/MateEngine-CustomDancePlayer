@@ -2,6 +2,7 @@
 
 namespace CustomDancePlayer
 {
+    [DefaultExecutionOrder(12000)]
     public class HipsFollower : MonoBehaviour
     {
         [Tooltip("The smoothness factor for following (0 = instant, 1 = no movement).")]
@@ -15,6 +16,8 @@ namespace CustomDancePlayer
         private Vector3 initialHipsPos;
         private Vector2 currentPosition;
         private bool hasInitialSetup;
+        private bool vmdPosePending;
+        private Transform boundHips;
 
         private void Start()
         {
@@ -34,22 +37,45 @@ namespace CustomDancePlayer
 
         public void UpdateBaseAndInitial()
         {
+            if (panelRect == null) panelRect = GetComponent<RectTransform>();
             if (panelRect == null) return;
 
             basePosition = panelRect.anchoredPosition;
             currentPosition = basePosition;
 
 
-            if (avatarHelper.CurrentAvatarHips != null)
+            if (avatarHelper != null && avatarHelper.CurrentAvatarHips != null)
             {
+                boundHips = avatarHelper.CurrentAvatarHips;
                 initialHipsPos = avatarHelper.CurrentAvatarHips.position;
                 hasInitialSetup = true;
             }
 
         }
 
+        public void ApplyAfterVmdPose()
+        {
+            // HumanPose bone transforms can become observable after the pose
+            // callback on some host frames. Defer exactly one follow update to
+            // this component's late execution slot instead of applying twice.
+            vmdPosePending = true;
+        }
+
         private void LateUpdate()
         {
+            bool isVmd = avatarHelper?.playerCore != null && avatarHelper.playerCore.IsPlaying && avatarHelper.playerCore.resourceManager.IsVmdResource;
+            if (isVmd)
+            {
+                if (vmdPosePending) { vmdPosePending = false; ApplyFollow(); }
+                return;
+            }
+            vmdPosePending = false;
+            ApplyFollow();
+        }
+        public void ApplyFollow()
+        {
+            if (avatarHelper == null) return;
+            if (!hasInitialSetup || boundHips != avatarHelper.CurrentAvatarHips) UpdateBaseAndInitial();
             if (!hasInitialSetup || panelRect == null || avatarHelper.CurrentAvatarHips == null) return;
 
             if (mainCam == null)
@@ -64,7 +90,9 @@ namespace CustomDancePlayer
             Vector3 currentScreenPos = mainCam.WorldToScreenPoint(currentHipsPos);
 
             Vector2 deltaScreen = (Vector2)(currentScreenPos - initialScreenPos);
-            Vector2 targetPosition = basePosition + deltaScreen;
+            var canvas = panelRect.GetComponentInParent<Canvas>();
+            if (canvas == null || !canvas.isActiveAndEnabled) return;
+            Vector2 targetPosition = basePosition + deltaScreen / (canvas == null ? 1 : canvas.scaleFactor);
 
             currentPosition = Vector2.Lerp(currentPosition, targetPosition, 1f - smoothness);
             panelRect.anchoredPosition = currentPosition;
@@ -74,14 +102,18 @@ namespace CustomDancePlayer
 
         private void ClampToScreenBounds()
         {
-            Vector2 size = panelRect.rect.size * panelRect.lossyScale;
+            if (panelRect == null) return;
+            var canvas = panelRect.GetComponentInParent<Canvas>();
+            if (canvas == null) return;
+            var bounds = canvas.GetComponent<RectTransform>().rect.size;
+            Vector2 size = panelRect.rect.size;
             float halfW = size.x / 2f;
             float halfH = size.y / 2f;
 
-            float minX = -Screen.width / 2f + halfW;
-            float maxX = Screen.width / 2f - halfW;
-            float minY = -Screen.height / 2f + halfH;
-            float maxY = Screen.height / 2f - halfH;
+            float minX = Mathf.Min(0,-bounds.x / 2f + halfW);
+            float maxX = Mathf.Max(0,bounds.x / 2f - halfW);
+            float minY = Mathf.Min(0,-bounds.y / 2f + halfH);
+            float maxY = Mathf.Max(0,bounds.y / 2f - halfH);
 
             Vector2 pos = panelRect.anchoredPosition;
             pos.x = Mathf.Clamp(pos.x, minX, maxX);

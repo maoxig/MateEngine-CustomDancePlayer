@@ -1,0 +1,235 @@
+# [Mate Engine](https://github.com/shinyflvre/Mate-Engine) - 自定义舞蹈播放器
+
+**这是 0.1.2 的归档说明。0.2 安装请看 [当前安装说明](../user/INSTALL_0.2.md)。**
+
+**其他语言版本: [English](LEGACY_0.1.2_README.md), [中文](LEGACY_0.1.2_README_zh.md)**
+
+## v0.1.2：同步已提交的更新
+
+本版本更新发行 DLL，补上 v0.1.1 之后已提交的子目录舞蹈扫描、音频预热同步、窗口跟随改进与 **MMD 镜头演示**。沿用现有 UI 和安装方式，启动时自动接入镜头组件和设置控件；无需手动配置。请使用同一 Release 的 DLL 与 `.me`，不要混用本地开发 DLL。详情见 [v0.1.2 发布说明](../../.github/releases/v0.1.2.md)。
+
+v0.1.2 仍播放旧 `.unity3d` 舞蹈；发行 `.me` 是播放器 UI 资源，不代表能够播放官方 `.me` 舞蹈。VMD / `.vmdance`、统一 BepInEx 加载、本地化、新 UI 与播放列表等大更新计划进入 **0.2**。
+
+## 旧舞蹈卡顿修复：DanceBundleAudioFixer
+
+已加入工具 **DanceBundleAudioFixer**，用于修复部分旧 `.unity3d` 舞蹈包的音频加载卡顿。从 [Release 附件](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases/tag/v0.1.2) 下载可选的 `DanceBundleAudioFixer.rar`，解压后运行 EXE；播放器本身不依赖这个工具。
+
+1. 关闭游戏，在工具界面选择 `MateEngineX_Data\StreamingAssets\CustomDances` 文件夹，点击“扫描”。工具默认寻找七日杀的 `Dances`，MateEngine 用户需要手动选择自己的目录。
+2. 选择“修复并保留备份（推荐）”，然后在游戏中验证播放。
+3. 原文件备份为 `*.unity3d.vroidaudio.bak`；异常时使用“从备份恢复”，确认正常后再清理备份。
+
+工具仅修改可安全匹配的 Vorbis + FSB5 AudioClip：由 Decompress On Load 改为 Streaming，关闭 Preload Audio Data、开启 Load In Background，并重新封装为 LZ4。音频不重新编码，动画和控制器保持不变；写回前检查音频 payload 与其他对象哈希。未知、损坏或不符合条件的包会跳过。它不处理官方 `.me` / `.vmdance`，也不是所有卡顿问题的通用修复。界面支持中文／English。详见 [工具使用说明](../user/DANCE_BUNDLE_AUDIO_FIXER.md)。
+
+## 重要
+在这里做一个统一澄清：
+
+- 这个 mod 发布于这里。具体来说，它能加载并播放可用于 7 日杀（7dtd）VRoidMod 的舞蹈.unity3d 文件，所有 250 + 个舞蹈文件可从我的谷歌云盘下载：https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing  舞蹈文件的制作方法，在 mod 发布页也有详细说明。
+- MateEngine 2.4 版本之后，经过 Shiny 和我的共同努力，这个 mod 已整合为官方功能。官方舞蹈播放器未来会更全面、更完善，且仍能加载使用旧的舞蹈.unity3d 文件（甚至可放在原舞蹈文件夹中）。
+- 独立 Mod 仍可使用，并恢复维护；当前 v0.1.2 无法加载官方 mod 导出器制作的舞蹈文件，格式扩展计划在 0.2 实现。
+- 若你对官方舞蹈播放器有建议或 bug 反馈，可在官方 GitHub 的 issue 板块或对应帖子中提交。
+- 若发现部分.unity3d 文件存在问题，由于这些文件由我和朋友制作，可通过issue反馈，务必附带详细信息。
+- 我已询问过一位朋友（他最早教会我们制作这类文件，还转换了云盘中的大部分舞蹈，社区里每个人都很尊敬他），**他不同意将舞蹈文件上传至 Steam 创意工坊，因此我也不会上传。不过你们仍可从我的谷歌云盘下载，请不要将旧的.unity3d 文件上传至创意工坊。此外，建议每位使用者都遵循 MMD 社区的相关规则。**
+
+## 预览图
+<div style="display: flex; gap: 16px;">
+    <img src="https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/mod_preview_img.png" alt="预览图" style="max-width: 320px; height: auto; border: 1px solid #ccc;">
+    <img src="https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/mod_preview.gif" alt="预览gif" style="max-width: 320px; height: auto; border: 1px solid #ccc;">
+</div>
+
+
+国内用户请观看这个视频：
+https://www.bilibili.com/video/BV1Yge6zqETU/，
+
+如果有任何问题可以随时评论区回复。
+
+也可以在Discord页面回复：
+
+https://discord.com/channels/1367667737437929513/1408758200462999583
+
+## 前言
+
+
+我之前是7日杀的玩家，其中的[VRoidMod](https://www.nexusmods.com/7daystodie/mods/3501)受到了我们中文社区的广泛喜欢（它支持在游戏中切换角色模型、跳舞）。因此我和我社区上的朋友转换了大量的可供VRoidMod使用的舞蹈文件（主要来自于MMD，总计250+并且仍在增长），并且通过尝试将表情曲线、镜头曲线写入到anim中，使得我们在七日杀游戏中无聊时可以随时跳上一段MMD！效果就是下面这个视频（非中文用户抱歉）：
+
+https://www.bilibili.com/video/BV12Cb6zjEfS/
+
+最近看到MATE-ENGINE这个项目后觉得非常有趣，我就在思考是否能够让MATE-ENGINE也能够使用我们之前在七日杀的舞蹈文件。并且我看到ME的ISSUE中有不少人希望能有自定义跳舞的功能，因此我尝试着为它开发了这个Mod。
+
+## 项目介绍
+这是一款为 **Mate Engine** 桌宠游戏开发的自制Mod，核心功能是让桌宠具备「舞蹈播放器」的能力——支持加载自定义舞蹈资源、切换播放模式、控制播放流程，同时提供直观的UI交互界面，让用户能像操作音乐播放器一样管理桌宠的舞蹈播放。
+
+### 下载Mod文件（不含舞蹈文件）
+
+你可以在这里下载本Mod的最新发布版本（**不包含舞蹈文件**）：  
+[https://github.com/maoxig/MateEngine-CustomDancePlayer/releases](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)
+
+Mod 分为这几部分
+1. **.me模组**：包含UI预制体（如播放控制按钮、曲目下拉框、状态文本）、基础UI样式资源，这些由MATE-ENGINE SDK导出
+2. **DLL 脚本**：核心逻辑，舞蹈资源加载/卸载、播放状态管理、UI事件绑定等。这部分由于涉及到自定义C#脚本，并且需要以危险的方式修改游戏DLL引用（这也许是不被允许的），因此使用该DLL意味着你已经信任该仓库（你可以查看源代码以了解其实现细节，或者你也可以自己fork然后修改编译）
+3. **舞蹈文件**：自定义的舞蹈资源，需遵循特定格式（详见使用指南）。你也可以从以下链接下载已有的舞蹈（由我在七日杀社区的朋友制作转换的一部分，但是也有总共100+，主要转换自MMD的动作数据）
+   
+   - https://www.nexusmods.com/7daystodie/mods/3956
+   - https://www.nexusmods.com/7daystodie/mods/5430
+   - https://www.7risha.com/rolemodel (虽然是七日杀网站，但是这个板块主要还是分享模型和舞蹈，以及一些教程的，可以随便看看)
+    
+
+    **非东亚用户注意！这些.unity3d文件的文件名中可能混杂了简中繁中日韩等字符，因此你必须确保它们正常解压并显示（修改解压软件的名称编码、添加字体等），否则可能将无法正常加载舞蹈**
+
+  如果喜欢的人多，我也许会收集全部然后把它们上传到云盘。（这些数据来自于MMD动作.vmd，使用时请遵循相关法律法规）
+
+**更新：** 我已上传了一个包含**250+个**已转换舞蹈文件的舞蹈包。下载链接如下：  
+https://drive.google.com/drive/folders/1YU7-Hz-O8-9B2E58mxQxexJTBTCT42jr?usp=sharing
+
+请务必确保文件名能够正确显示，且不要随意重命名文件，并将其放置在正确的目录下。（参见[步骤1.3](#step-13-加载舞蹈文件unity3d格式)）
+
+
+## 安装步骤
+### 前置要求
+- 已安装 **Mate Engine** 桌宠游戏
+- 下载了 .me & .dll 文件（[这里](https://github.com/maoxig/MateEngine-CustomDancePlayer/releases)）
+- 下载舞蹈文件（.unity3d后缀）
+
+国内用户可以直接看我b站上传的视频教程
+
+https://www.bilibili.com/video/BV1Yge6zqETU/
+
+### 1. 部署 Mod 文件
+Mod 由「.me模组」和「DLL脚本」两部分组成
+
+#### Step 1.1 添加DLL脚本到游戏中（也许有更好的方式，而且我不确定这样做是否合适，但是至少这对我来说有用）
+
+  这一步必须非常谨慎，因为这很可能会导致游戏崩溃或其他不可预知的问题，因此建议你备份将要修改的文件。并且，游戏更新可能也会导致需要重新设置。但是目前我还没有找到更好、更简单的添加dll的方法。
+
+a. 将 `CustomDancePlayer.dll` 文件放入游戏目录的 `MateEngine\MateEngineX_Data\Managed` 文件夹中。
+
+<div align="center">
+    <img src="https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/dll_guide1.png" alt="放置" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
+
+b. 修改`MateEngineX_Data\ScriptingAssemblies.json`引用新增的dll。具体来说，在`'names"`数组中添加 `"CustomDancePlayer.dll"`，在`"types"`数组中添加 `16`。
+
+<div align="center">
+    <img src="https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/dll_guide2.png" alt="修改json文件" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
+
+
+#### Step 1.2 加载.me模组
+
+<div align="center">
+    <img src="https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/load_me_mod.png" alt="加载.me模组" style="width: 50%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
+
+#### Step 1.3 加载舞蹈文件（.unity3d格式）
+
+    如果以上步骤无误，你将会看到一个正确的UI面板，之后将下载的舞蹈文件放入 `MateEngineX_Data、StreamingAssets/CustomDances` 目录下，点击刷新按钮即可加载舞蹈资源。
+
+<div align="center">
+    <img src="https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/dance_files.png" alt="舞蹈文件示例" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+</div>
+
+
+
+## 核心功能特性
+
+### 舞蹈播放器
+
+不再多介绍，因为非常容易理解。从磁盘按某种顺序加载舞蹈文件并像播放音乐一样播放它们。
+
+- **全局热键**：  
+    - `H`：显示/隐藏UI
+
+- **播放模式**：  
+    - 单曲循环  
+    - 列表循环  
+    - 随机播放
+
+- **设置项**：  
+  > 持久化设置会保存在 `C:\Users\{你的用户名}\AppData\LocalLow\Shinymoon\MateEngineX\danceSettings.json` 文件中。如果遇到疑似由配置文件引起的问题，可以尝试删除该 danceSettings.json 文件，看是否能解决问题。
+    - 音量控制  
+    - 动画启动延迟（默认0.3秒）  
+    - UI跟随角色  
+    - 阴影面板跟随角色  
+    - 启动时自动播放  
+    - 启动时隐藏UI
+
+### 表情支持
+
+实际上，我们之前制作的舞蹈.unity3d全部都是支持舞蹈表情的（因为它们大部分转换自MMD的动作数据，而MMD的动作数据通常包含表情），然而这需要模型遵循一定的约定：
+
+模型的Body物体上的Skinned Mesh Renderer有MMD的日语形态键：
+![表情形态键说明](https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/blendshape_guide.png)
+
+通常如果你使用unity的MMD4Mecanim+uniVRM插件将pmx模型转换为fbx/vrm，你需要确保在MMD4Mecanim插件转换前的高级选项里取消勾选PrefixMorphNoName（因为这会给形态键添加上序号前缀），然后调整一下模型的层级结构符合上述规范即可。
+
+如果是其他类型，最通用的方法是使用Blender修改、调整以符合上述约定。
+
+### MMD 镜头演示（v0.1.2）
+
+在 Settings 中开启 **MMD camera demo**，即可显示独立镜头预览。舞蹈 `.unity3d` 内的动画需要包含 `Camera_root/Camera_root_1/Camera` 轨迹；没有轨迹或未播放时会显示等待提示。**Camera scale** 控制镜头相对角色的位置比例，预览右上角按钮可关闭。该功能保留桌面主镜头，不是裸 VMD 镜头文件加载器。
+
+## 使用指南
+
+非常简单，这个MOD就类似一个音乐播放器。
+
+## 自定义舞蹈文件
+舞蹈资源需按以下规范制作，否则可能加载失败，此外我提供了一个我自己的工具箱，你可以在其中方便快速地（~3min）将一个MMD动作、表情、镜头转换为可使用的舞蹈文件。
+https://github.com/maoxig/UnityMMDConverter/
+
+
+#### 舞蹈文件结构（.unity3d AssetBundle）
+每个舞蹈对应一个 `.unity3d` 格式的AssetBundle，内部必须包含以下资源（命名需一致）：
+| 资源类型                          | 文件名规范                   | 说明                                                                                                                                                                                  |
+| --------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 动画控制器（Animator Controller） | `[舞蹈名].controller`        | 简单的单状态控制器：新建一个 Animator Controller，然后将对应的 `[舞蹈名].anim` 文件拖入控制器窗口，Unity 会自动生成一个动画状态，且控制器的 "Entry"（默认入口）会无条件跳转到该状态。 |
+| 音频文件                          | `[舞蹈名].wav`/`.mp3`/`.ogg` | 支持3种常见音频格式，时长需与动画时长匹配（避免音画不同步）                                                                                                                           |
+| 动画（Animation）                 | `[舞蹈名].anim`              | 需包含舞蹈的动画数据                                                                                                                                                                  |
+
+示例：  
+若舞蹈名为「HappyDance」，则AssetBundle内需包含 `HappyDance.controller` 和 `HappyDance.mp3`。
+
+
+#### 放置舞蹈文件
+将制作好的 `.unity3d` 舞蹈文件放入 `StreamingAssets/CustomDances` 目录，Mod会自动识别并添加到曲目列表。
+   <div align="center">
+        <img src="https://raw.githubusercontent.com/maoxig/MateEngine-CustomDancePlayer/7f7c41013201990ed7c86ca3fb48d6e349dc5df4/resources/dance_files.png" alt="Example of Dance File Placement" style="width: 75%; max-width: 600px; height: auto; border: 1px solid #ccc;">
+   </div>
+
+## 技术细节（面向开发者）
+
+整体逻辑非常简单，只需要查看源码你就很容易理解。如果要修改的话，把.prefab拖到MATE-ENGINE的unity project中，然后把相关的脚本和一起拖入，然后你就可以编辑。如果要修改DLL脚本，你需要单独通过VS修改，然后编译为DLL之后放到Unity中。
+
+## 常见问题（FAQ）
+### Q1：UI 按 H 键不显示怎么办？
+- 检查DLL是否成功加载（如果未成功加载UI会有提示）
+- 确保鼠标焦点在MATE-ENGINE软件上
+
+
+### Q2：舞蹈文件加载失败，人物跳舞时变成T-Pose不能动？
+- 检查文件路径：确保 `.unity3d` 放在 `StreamingAssets/CustomDances` 目录下。
+- 检查文件文件名：确保 `.unity3d` 文件名中不包含乱码等（因为这会影响控制器、音频的读取）。
+
+
+### Q3：UI 显示方块字（乱码）怎么解决？
+- 我已经修改了UI组件，使用unity默认的text组件，通常他不会再有方块字乱码，如果出现了，请检查你的系统字体是否支持CJK字符。
+
+### Q4：加载UI/舞蹈/DLL失败？
+- 请检查以下内容：
+  - 确保所有文件都已正确放置在指定目录中，并且文件名没有被修改过（游戏和mod依赖文件名）。
+  - 尝试重新加载游戏或重启软件。
+
+## 许可证
+本Mod采用 **MIT 许可证** 开源，并且遵循Mate Engine 官方的[协议](https://github.com/shinyflvre/Mate-Engine/blob/main/LICENSE)，允许个人非商业使用、修改和分发，禁止用于商业盈利目的。使用前请遵守 Mate Engine 官方的[协议](https://github.com/shinyflvre/Mate-Engine/blob/main/LICENSE)，若因Mod使用导致游戏异常，开发者不承担责任。
+
+- 许可证详情：[MIT License](https://opensource.org/licenses/MIT)， [MATE-ENGINE协议](https://github.com/shinyflvre/Mate-Engine/blob/main/LICENSE)
+- 禁止行为：未经授权将本Mod整合到商业软件、或移除版权信息后分发。
+- 此外，对于**日本用户**，上述提及的舞蹈.unity3d文件在日本也许涉及版权问题（它们大部分转换自MMD的动作数据，这也许是不被允许的），因此请不要上传文件、图像、视频等资源到公共平台。
+
+
+## 联系与反馈
+若遇到问题或有功能建议，可通过以下方式反馈：
+- GitHub Issues：[提交Issue](https://github.com/maoxig/MateEngine-CustomDancePlayer/issues)
+
+
+**最后更新时间**：2025年10月6日  
+**适配Mate Engine版本**：2.2.0
+
