@@ -40,3 +40,7 @@
 ### Companion tool
 
 The optional `DanceBundleAudioFixer` is available in the 0.1.2 assets for some old `.unity3d` audio loading stalls. See the [tool guide](docs/user/DANCE_BUNDLE_AUDIO_FIXER.md).
+
+### Thanks
+
+Thanks to [**散歩猫**](https://space.bilibili.com/95425983) for her suggestions and feedback, which helped improve this update.

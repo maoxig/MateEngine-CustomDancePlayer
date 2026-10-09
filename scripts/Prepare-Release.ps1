@@ -37,6 +37,16 @@ $taskIntro = @"
 "@
 $taskNotes = $taskNotes.Replace("## v${Version}：相比 0.1 的变化", "## v${Version}：相比 0.1 的变化`n`n$taskIntro")
 Set-Content -LiteralPath (Join-Path $OutputDirectory 'RELEASE_NOTES_zh.md') -Value $taskNotes -Encoding utf8
+$taskEnglish = Get-Content -LiteralPath (Join-Path $taskRepo 'CHANGELOG.md') -Raw
+$taskEnglish = $taskEnglish.Replace('(docs/', "($RepositoryUrl/blob/v$Version/docs/")
+$taskEnglishIntro = @"
+For a first installation, download the With-BepInEx archive, exit the game, and extract everything beside MateEngineX.exe. When upgrading from 0.1.x, run Run-OldVersionMigration.cmd before starting the game. Use the smaller plugin archive to update an existing compatible BepInEx installation.
+
+[User guide]($RepositoryUrl/blob/v$Version/README.md) · [Installation and migration]($RepositoryUrl/blob/v$Version/docs/user/INSTALL_0.2.md)
+
+"@
+$taskEnglish = $taskEnglish.Replace("## v${Version}: changes since 0.1", "## v${Version}: changes since 0.1`n`n$taskEnglishIntro")
+Set-Content -LiteralPath (Join-Path $OutputDirectory 'RELEASE_NOTES.md') -Value $taskEnglish -Encoding utf8
 Get-ChildItem -LiteralPath $OutputDirectory -Filter '*.zip' | Sort-Object Name | ForEach-Object {
     (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $_.Name
 } | Set-Content -LiteralPath (Join-Path $OutputDirectory 'SHA256SUMS.txt') -Encoding ascii

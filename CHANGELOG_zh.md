@@ -40,3 +40,7 @@
 ### 配套工具
 
 可选工具 `DanceBundleAudioFixer` 已在 0.1.2 附件中提供，用于修复部分旧 `.unity3d` 音频加载卡顿。[使用说明](docs/user/DANCE_BUNDLE_AUDIO_FIXER.md)。
+
+### 致谢
+
+感谢 [**散歩猫**](https://space.bilibili.com/95425983) 提供的意见和反馈，帮助我们完善这次更新。
