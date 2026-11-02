@@ -57,7 +57,7 @@ namespace Maoxig.RuntimeVmd
             // Without a tolerance that valid projection incorrectly falls into
             // the intersection-circle branch, potentially far from the root.
             float squared=radius*radius;
-            return (point-center).sqrMagnitude<=squared+Mathf.Max(0.0000001f,squared*0.00001f);
+            return (point-center).sqrMagnitude<=squared+Mathf.Max(float.Epsilon,squared*0.00001f);
         }
 
         private static Vector3 Project(Vector3 point, Vector3 center, float radius)

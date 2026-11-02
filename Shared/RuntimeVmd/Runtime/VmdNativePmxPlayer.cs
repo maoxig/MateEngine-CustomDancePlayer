@@ -147,8 +147,7 @@ namespace Maoxig.RuntimeVmd
         private GameObject directRestRoot;
         private Dictionary<Transform, Transform> directRestBones;
         private readonly List<DirectRestNode> directRestNodes = new List<DirectRestNode>();
-        private bool hasDirectFacingBaseline;
-        private float directFacingBaseline;
+        private Quaternion directBodyCommonBindRotation = Quaternion.identity;
         private float playbackTime;
         private float duration;
         private bool isPrepared;
@@ -770,30 +769,20 @@ namespace Maoxig.RuntimeVmd
             UpdateNativeIkDiagnostics();
             ApplyNativeWorldMatrices();
             UpdateRetargetRootCorrection();
-            if (IsUsingDirectBoneRetargeting && keepBodyUpright && directBodyCommonBone != null)
+            if (IsUsingDirectBoneRetargeting && lockBodyYaw && directBodyCommonBone != null)
             {
-                if (!hasDirectFacingBaseline)
-                {
-                    directFacingBaseline = SignedPlanarYaw(Quaternion.identity,
-                        CorrectSourceRotation(directBodyCommonBone.rotation));
-                    hasDirectFacingBaseline = true;
-                }
-                float currentFacing = SignedPlanarYaw(Quaternion.identity,
+                // Calibration uses the static reference rig, not an authored
+                // first frame. A dance may intentionally begin facing sideways.
+                float currentFacing = SignedPlanarYaw(directBodyCommonBindRotation,
                     CorrectSourceRotation(directBodyCommonBone.rotation));
-                Quaternion baselineCorrection = Quaternion.AngleAxis(-directFacingBaseline, Vector3.up);
-                retargetRootCorrection = baselineCorrection * retargetRootCorrection;
-                if (lockBodyYaw)
-                {
-                    Quaternion turnCorrection = Quaternion.AngleAxis(
-                        -Mathf.DeltaAngle(directFacingBaseline, currentFacing), Vector3.up);
-                    // Lock orientation about the moving Center/Waist pivot,
-                    // not AllParent's distant origin. Otherwise an authored
-                    // turn sweeps the translated dancer around the scene.
-                    Vector3 center = retargetRootCorrection *
-                        (directBodyCommonBone.position - retargetRootPivot);
-                    directFacingPositionOffset = center - turnCorrection * center;
-                    retargetRootCorrection = turnCorrection * retargetRootCorrection;
-                }
+                Quaternion turnCorrection = Quaternion.AngleAxis(-currentFacing, Vector3.up);
+                // Lock orientation about the moving Center/Waist pivot,
+                // not AllParent's distant origin. Otherwise an authored
+                // turn sweeps the translated dancer around the scene.
+                Vector3 center = retargetRootCorrection *
+                    (directBodyCommonBone.position - retargetRootPivot);
+                directFacingPositionOffset = center - turnCorrection * center;
+                retargetRootCorrection = turnCorrection * retargetRootCorrection;
             }
             if(IsUsingDirectBoneRetargeting)
             {
@@ -801,7 +790,7 @@ namespace Maoxig.RuntimeVmd
                 // unused Humanoid conversion through the proxy every frame.
                 float yaw=SignedPlanarYaw(directHipsBinding.SourceBindWorldRotation,CorrectSourceRotation(directHipsBinding.Source.rotation));
                 if(!hasInitialSourceBodyYaw){initialSourceBodyYaw=yaw;hasInitialSourceBodyYaw=true;}
-                LastSourceBodyYawFromRest=keepBodyUpright?Mathf.DeltaAngle(initialSourceBodyYaw,yaw):yaw;
+                LastSourceBodyYawFromRest=yaw;
                 LastSourceBodyDeltaNormalized=(CorrectSourcePosition(directHipsBinding.Source.position)-directHipsBinding.SourceBindWorldPosition)/Mathf.Max(sourceHumanScale,0.00001f);
                 LastCalibratedBodyYawFromRest=LastSourceBodyYawFromRest;
                 ApplyDirectBonePose();LastAppliedHumanBoneCount=poseBindings.Count;
@@ -818,9 +807,7 @@ namespace Maoxig.RuntimeVmd
                 initialSourceBodyYaw = rawSourceBodyYaw;
                 hasInitialSourceBodyYaw = true;
             }
-            LastSourceBodyYawFromRest = keepBodyUpright
-                ? Mathf.DeltaAngle(initialSourceBodyYaw, rawSourceBodyYaw)
-                : rawSourceBodyYaw;
+            LastSourceBodyYawFromRest = rawSourceBodyYaw;
             // HumanPose.bodyPosition is already divided by Avatar humanScale.
             // Keep it in that canonical space when measuring and transferring
             // root motion between differently proportioned Humanoids.
@@ -1077,8 +1064,6 @@ namespace Maoxig.RuntimeVmd
         {
             directLeftLegIkName = FindLegIkName(true);
             directRightLegIkName = FindLegIkName(false);
-            hasDirectFacingBaseline = false;
-            directFacingBaseline = 0f;
             directHipsBinding = null;
             directSpineBinding = null;
             directHeadBinding = null;
@@ -1116,6 +1101,7 @@ namespace Maoxig.RuntimeVmd
             if (directHipsBinding != null && directSpineBinding != null)
             {
                 directBodyCommonBone = FindCommonAncestor(directHipsBinding.Source, directSpineBinding.Source);
+                directBodyCommonBindRotation = directBodyCommonBone == null ? Quaternion.identity : directBodyCommonBone.rotation;
             }
 
             Dictionary<HumanBodyBones, PoseBoneBinding> byBone = new Dictionary<HumanBodyBones, PoseBoneBinding>();
@@ -1491,12 +1477,9 @@ namespace Maoxig.RuntimeVmd
             }
             if (!keepBodyUpright && !lockBodyYaw) return;
 
-            // VMDs are commonly authored against models whose initial facing
-            // differs from the host avatar. Treat the first evaluated pose as
-            // the facing baseline, then preserve every authored turn relative
-            // to it. This removes a constant 90/120/180-degree package offset
-            // without freezing the dancer's yaw for the rest of the motion.
-            float yaw = lockBodyYaw ? 0f : Mathf.DeltaAngle(initialRetargetRootYaw, rawYaw);
+            // Upright removes root tilt; yaw belongs to the choreography.
+            // Only the explicit facing lock suppresses authored root turns.
+            float yaw = lockBodyYaw ? 0f : rawYaw;
             Quaternion desired = Quaternion.AngleAxis(yaw, Vector3.up) * retargetRootBindWorldRotation;
             retargetRootCorrection = desired * Quaternion.Inverse(retargetRootBone.rotation);
         }
@@ -1564,8 +1547,9 @@ namespace Maoxig.RuntimeVmd
             float targetReach = Mathf.Sqrt(Mathf.Max(0f,
                 targetUpperLength * targetUpperLength + targetLowerLength * targetLowerLength +
                 2f * targetUpperLength * targetLowerLength * bendCosine));
-            float minimumReach = Mathf.Abs(targetUpperLength - targetLowerLength) + 0.0001f;
-            float maximumReach = targetUpperLength + targetLowerLength - 0.0001f;
+            float reachReserve = (targetUpperLength + targetLowerLength) * 0.0001f;
+            float minimumReach = Mathf.Abs(targetUpperLength - targetLowerLength) + reachReserve;
+            float maximumReach = targetUpperLength + targetLowerLength - reachReserve;
             targetReach = Mathf.Clamp(targetReach, minimumReach, maximumReach);
             Vector3 goal = targetUpper.position + direction.normalized * targetReach;
 
@@ -1714,10 +1698,15 @@ namespace Maoxig.RuntimeVmd
             float distance = toGoal.magnitude;
             float upperLength = (lower.position - origin).magnitude;
             float lowerLength = (end.position - lower.position).magnitude;
-            if (distance <= 0.0001f || upperLength <= 0.0001f || lowerLength <= 0.0001f) return false;
+            float legLength = upperLength + lowerLength;
+            if (legLength <= 0f || distance <= legLength * 0.000001f ||
+                upperLength <= legLength * 0.000001f || lowerLength <= legLength * 0.000001f) return false;
             Vector3 axis = toGoal / distance;
-            distance = Mathf.Clamp(distance, Mathf.Abs(upperLength - lowerLength) + 0.0001f, upperLength + lowerLength - 0.0001f);
-            Vector3 reachableGoal=origin+axis*distance;
+            // Solve in leg-length units so wheel zoom does not change reach
+            // reserves or the threshold at which knee rotations are applied.
+            distance /= legLength; upperLength /= legLength; lowerLength /= legLength;
+            distance = Mathf.Clamp(distance, Mathf.Abs(upperLength - lowerLength) + 0.0001f, 1f - 0.0001f);
+            Vector3 reachableGoal=origin+axis*(distance*legLength);
             Vector3 poleAxis = pole - axis * Vector3.Dot(pole, axis);
             if (poleAxis.sqrMagnitude <= 0.000001f)
             {
@@ -1727,16 +1716,18 @@ namespace Maoxig.RuntimeVmd
             poleAxis /= (float)System.Math.Sqrt(poleAxis.sqrMagnitude);
             float along = (upperLength * upperLength - lowerLength * lowerLength + distance * distance) / (2f * distance);
             float perpendicular = Mathf.Sqrt(Mathf.Max(0f, upperLength * upperLength - along * along));
-            Vector3 desiredKnee = origin + axis * along + poleAxis * perpendicular;
+            Vector3 desiredKnee = origin + (axis * along + poleAxis * perpendicular) * legLength;
             Quaternion savedFootRotation = end.rotation;
             Vector3 currentUpper = lower.position - origin;
             Vector3 desiredUpper = desiredKnee - origin;
-            if (currentUpper.sqrMagnitude > 0.000001f && desiredUpper.sqrMagnitude > 0.000001f)
-                upper.rotation = Quaternion.FromToRotation(currentUpper, desiredUpper) * upper.rotation;
+            currentUpper /= legLength; desiredUpper /= legLength;
+            if (currentUpper.sqrMagnitude > 0.000000000001f && desiredUpper.sqrMagnitude > 0.000000000001f)
+                upper.rotation = Quaternion.FromToRotation(currentUpper.normalized, desiredUpper.normalized) * upper.rotation;
             Vector3 currentLower = end.position - lower.position;
             Vector3 desiredLower = reachableGoal - lower.position;
-            if (currentLower.sqrMagnitude > 0.000001f && desiredLower.sqrMagnitude > 0.000001f)
-                lower.rotation = Quaternion.FromToRotation(currentLower, desiredLower) * lower.rotation;
+            currentLower /= legLength; desiredLower /= legLength;
+            if (currentLower.sqrMagnitude > 0.000000000001f && desiredLower.sqrMagnitude > 0.000000000001f)
+                lower.rotation = Quaternion.FromToRotation(currentLower.normalized, desiredLower.normalized) * lower.rotation;
             end.rotation = savedFootRotation;
             return true;
         }

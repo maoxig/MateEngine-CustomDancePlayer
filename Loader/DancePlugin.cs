@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Diagnostics;
 using System.IO;
@@ -8,7 +8,7 @@ using BepInEx;
 using HarmonyLib;
 using UnityEngine;
 
-[BepInPlugin("maoxig.customdanceplayer", "CustomDancePlayer", "0.2.0")]
+[BepInPlugin("maoxig.customdanceplayer", "CustomDancePlayer", "0.2.1")]
 public sealed class DancePlugin : BaseUnityPlugin
 {
     private object root;

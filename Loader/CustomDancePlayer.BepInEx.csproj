@@ -3,10 +3,10 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>CustomDancePlayer.BepInEx</AssemblyName>
     <LangVersion>9.0</LangVersion>
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>0.2.0.0</FileVersion>
-    <InformationalVersion>0.2.0</InformationalVersion>
+    <FileVersion>0.2.1.0</FileVersion>
+    <InformationalVersion>0.2.1</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
     <GameManagedDir Condition="'$(GameManagedDir)'==''">E:\SteamLibrary\steamapps\common\MateEngine\MateEngineX_Data\Managed</GameManagedDir>
   </PropertyGroup>

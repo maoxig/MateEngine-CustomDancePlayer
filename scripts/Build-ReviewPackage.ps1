@@ -1,6 +1,6 @@
 ﻿[CmdletBinding(DefaultParameterSetName="Build")]
 param(
- [string]$Version='0.2.0',
+ [string]$Version='0.2.1',
  [Parameter(Mandatory=$true,ParameterSetName="Build")][string]$GameManagedDir,
  [Parameter(Mandatory=$true,ParameterSetName="Build")][string]$BepInExCoreDir,
  [Parameter(Mandatory=$true,ParameterSetName="Build")][string]$NativeLibrary,

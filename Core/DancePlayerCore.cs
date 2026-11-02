@@ -282,7 +282,8 @@ namespace CustomDancePlayer
                 // the stripped MateEngine Animator API before we freeze again.
                 leasedAnimator.Update(0.0001f);
                 leasedAnimator.speed = Paused ? 0f : 1f;
-                uiManager.CameraSync?.ApplyPose();
+                if (uiManager.CameraSync != null && uiManager.CameraSync.enabled)
+                    uiManager.CameraSync.ApplyPose();
             }
             settings.data.audioStartTime = Time.time - seconds; timeAtPause = seconds; var audio = avatarHelper.CurrentAudioSource;
             if (audio != null && audio.clip != null)
@@ -351,7 +352,8 @@ namespace CustomDancePlayer
         }
         private bool AllowRuntimeCamera()
         {
-            if (DanceNativeMenus.IsOpen()) return false;
+            if (!settings.data.enableMMDCamera || uiManager.CameraSync == null ||
+                !uiManager.CameraSync.enabled || DanceNativeMenus.IsOpen()) return false;
             // Seeking can run inside a UI event before CameraSync.Update.
             // Capture the host view before the first resumed camera write.
             var sync = uiManager.CameraSync;

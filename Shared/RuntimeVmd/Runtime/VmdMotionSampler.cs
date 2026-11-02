@@ -13,6 +13,7 @@ namespace Maoxig.RuntimeVmd
         private readonly Dictionary<string, List<VmdMorphKeyframe>> normalizedMorphTracks;
         private readonly Dictionary<string, List<IkToggleKeyframe>> ikTracks;
         private readonly List<VmdCameraKeyframe> cameraTrack;
+        private readonly bool[] cameraCuts;
         private readonly List<VmdLightKeyframe> lightTrack;
         private readonly List<VmdSelfShadowKeyframe> selfShadowTrack;
 
@@ -44,6 +45,7 @@ namespace Maoxig.RuntimeVmd
             ikTracks = BuildIkTracks(motion.IkFrames);
             cameraTrack = new List<VmdCameraKeyframe>(motion.CameraFrames);
             cameraTrack.Sort(delegate(VmdCameraKeyframe left, VmdCameraKeyframe right) { return left.FrameNumber.CompareTo(right.FrameNumber); });
+            cameraCuts = BuildCameraCuts();
             lightTrack = new List<VmdLightKeyframe>(motion.LightFrames);
             lightTrack.Sort(delegate(VmdLightKeyframe left, VmdLightKeyframe right) { return left.FrameNumber.CompareTo(right.FrameNumber); });
             selfShadowTrack = new List<VmdSelfShadowKeyframe>(motion.SelfShadowFrames);
@@ -153,13 +155,12 @@ namespace Maoxig.RuntimeVmd
             VmdCameraKeyframe previous = cameraTrack[previousIndex];
             VmdCameraKeyframe next = cameraTrack[previousIndex + 1];
             float span = next.FrameNumber - previous.FrameNumber;
-            // mmd-anim/MMD treat adjacent camera keys as a hard cut.  Unity can
-            // render between two 30 fps VMD frames, so a normal division here
-            // creates a synthetic half-frame pose that never exists in MMD and
-            // is particularly visible when TAA or motion blur is enabled.
-            float time = span <= 1f
+            // Preserve isolated one-frame cuts. Dense baked camera tracks also
+            // contain one-frame intervals; interpolate their continuous motion
+            // at render cadence instead of holding every other sample at 30 Hz.
+            float time = cameraCuts[previousIndex]
                 ? (frameNumber >= next.FrameNumber ? 1f : 0f)
-                : Mathf.Clamp01((frameNumber - previous.FrameNumber) / span);
+                : Mathf.Clamp01((frameNumber - previous.FrameNumber) / Mathf.Max(1f, span));
 
             pose = new VmdCameraPose();
             pose.Position = new Vector3(
@@ -175,8 +176,9 @@ namespace Maoxig.RuntimeVmd
         }
 
         /// <summary>
-        /// Returns true when playback crossed a pair of adjacent authored camera
-        /// keys.  Such a pair is a cut in MMD rather than a one-frame tween.
+        /// Returns true when playback crossed a camera cut. Uses the same
+        /// classification as sampling so continuous baked keys do not repeatedly
+        /// reset the renderer's temporal history.
         /// </summary>
         public bool HasCameraHardCutBetween(float previousFrame, float currentFrame)
         {
@@ -188,10 +190,74 @@ namespace Maoxig.RuntimeVmd
 
             for (; index < cameraTrack.Count && cameraTrack[index].FrameNumber <= currentFrame; index++)
             {
-                if (index > 0 && cameraTrack[index].FrameNumber - cameraTrack[index - 1].FrameNumber <= 1u)
+                if (index > 0 && cameraCuts[index - 1])
                     return true;
             }
             return false;
+        }
+
+        private bool[] BuildCameraCuts()
+        {
+            var cuts = new bool[Math.Max(0, cameraTrack.Count - 1)];
+            for (int index = 0; index < cuts.Length; index++)
+            {
+                var left = cameraTrack[index]; var right = cameraTrack[index + 1];
+                if (right.FrameNumber - left.FrameNumber > 1u) continue;
+                cuts[index] = true;
+                if (IsLargeCameraStep(left, right)) continue;
+                // A nearby run of 1-3 frame samples distinguishes baked motion
+                // from the isolated adjacent pair used by hand-keyed cuts.
+                int neighbours = 0;
+                Vector3 positionSpeed = Vector3.zero, rotationSpeed = Vector3.zero;
+                float distanceSpeed = 0f, fovSpeed = 0f;
+                for (int edge = Math.Max(0, index - 2); edge <= Math.Min(cuts.Length - 1, index + 2); edge++)
+                {
+                    if (edge == index) continue;
+                    var a = cameraTrack[edge]; var b = cameraTrack[edge + 1];
+                    uint span = b.FrameNumber - a.FrameNumber;
+                    if (span == 0u || span > 3u || IsLargeCameraStep(a, b)) continue;
+                    neighbours++;
+                    Vector3 dp = (b.Position - a.Position) / span, dr = (b.RotationRadians - a.RotationRadians) / span;
+                    positionSpeed.x = Mathf.Max(positionSpeed.x, Mathf.Abs(dp.x));
+                    positionSpeed.y = Mathf.Max(positionSpeed.y, Mathf.Abs(dp.y));
+                    positionSpeed.z = Mathf.Max(positionSpeed.z, Mathf.Abs(dp.z));
+                    rotationSpeed.x = Mathf.Max(rotationSpeed.x, Mathf.Abs(dr.x));
+                    rotationSpeed.y = Mathf.Max(rotationSpeed.y, Mathf.Abs(dr.y));
+                    rotationSpeed.z = Mathf.Max(rotationSpeed.z, Mathf.Abs(dr.z));
+                    distanceSpeed = Mathf.Max(distanceSpeed, Mathf.Abs(b.Distance - a.Distance) / span);
+                    fovSpeed = Mathf.Max(fovSpeed, Mathf.Abs((float)b.FieldOfView - a.FieldOfView) / span);
+                }
+                if (neighbours < 3) continue;
+                Vector3 positionDelta = right.Position - left.Position, rotationDelta = right.RotationRadians - left.RotationRadians;
+                // Discontinuous steps inside a baked track remain cuts. Floors
+                // are in source MMD units/radians, independent of avatar zoom.
+                bool jump = IsCameraJump(positionDelta.x, positionSpeed.x, .2f) ||
+                    IsCameraJump(positionDelta.y, positionSpeed.y, .2f) || IsCameraJump(positionDelta.z, positionSpeed.z, .2f) ||
+                    IsCameraJump(rotationDelta.x, rotationSpeed.x, .017453293f) ||
+                    IsCameraJump(rotationDelta.y, rotationSpeed.y, .017453293f) ||
+                    IsCameraJump(rotationDelta.z, rotationSpeed.z, .017453293f) ||
+                    IsCameraJump(right.Distance - left.Distance, distanceSpeed, .2f) ||
+                    IsCameraJump((float)right.FieldOfView - left.FieldOfView, fovSpeed, 1f);
+                cuts[index] = jump;
+            }
+            return cuts;
+        }
+
+        private static bool IsCameraJump(float delta, float neighbouringSpeed, float floor)
+        {
+            return Mathf.Abs(delta) > Mathf.Max(floor, neighbouringSpeed * 4f);
+        }
+
+        private static bool IsLargeCameraStep(VmdCameraKeyframe left, VmdCameraKeyframe right)
+        {
+            // Conservatively preserve substantial steps, even inside a dense
+            // run. Nearby cuts must not inflate the continuous-speed estimate.
+            // Position/distance are source MMD units, not displayed avatar size.
+            return left.Perspective != right.Perspective || left.Distance * right.Distance < 0f ||
+                (right.Position - left.Position).sqrMagnitude > 36f ||
+                (right.RotationRadians - left.RotationRadians).sqrMagnitude > .06853892f ||
+                Mathf.Abs(right.Distance - left.Distance) > 6f ||
+                Mathf.Abs((float)right.FieldOfView - left.FieldOfView) > 8f;
         }
 
         public bool TrySampleLight(float frameNumber, out VmdLightPose pose)

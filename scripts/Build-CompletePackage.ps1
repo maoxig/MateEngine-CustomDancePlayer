@@ -3,7 +3,7 @@
     [Parameter(Mandatory=$true)][string]$BepInExArchive,
     [Parameter(Mandatory=$true)][string]$UnstrippedSourceDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
-    [string]$Version = '0.2.0'
+    [string]$Version = '0.2.1'
 )
 
 $ErrorActionPreference = 'Stop'

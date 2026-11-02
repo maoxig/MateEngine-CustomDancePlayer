@@ -22,6 +22,8 @@ public partial class DanceAudit : BaseUnityPlugin
  {
   if (!Environment.GetCommandLineArgs().Contains("--cdp-audit")) return;
   StartCoroutine(Environment.GetCommandLineArgs().Contains("--cdp-dialog-only") ? DialogOnly() :
+   Environment.GetCommandLineArgs().Contains("--cdp-camera-cadence") ? CameraCadenceOnly() :
+   Environment.GetCommandLineArgs().Contains("--cdp-regression1103") ? Regression1103Only() :
    Environment.GetCommandLineArgs().Contains("--cdp-release-ui-audit") ? ReleaseUiOnly() :
    Environment.GetCommandLineArgs().Contains("--cdp-credits-audit") ? CreditsOnly() :
    Environment.GetCommandLineArgs().Contains("--cdp-gif-audit") ? PreviewGifOnly() :
@@ -657,7 +659,9 @@ public partial class DanceAudit : BaseUnityPlugin
   ui.Window.SetTab("settings");Canvas.ForceUpdateCanvases();
   Record("settings-tab-uses-footer-space",fullBody!=null&&fullTransport!=null&&!fullTransport.gameObject.activeSelf&&fullBody.rect.height>=470,new{body=fullBody==null?-1:fullBody.rect.height});
   var badge=ui.Window.GetComponentsInChildren<Transform>(true).First(t=>t.name=="VersionBadge").GetComponentInChildren<Text>();
-  Record("release-version-badge",badge.text=="v0.2.0"&&badge.preferredWidth<=badge.rectTransform.rect.width,new{badge.text,width=badge.rectTransform.rect.width,preferred=badge.preferredWidth});
+  var versionInfo=(AssemblyInformationalVersionAttribute)typeof(DanceWindow).Assembly.GetCustomAttributes(typeof(AssemblyInformationalVersionAttribute),false).Single();
+  var badgeVersion=versionInfo.InformationalVersion.Contains("rc.")?versionInfo.InformationalVersion.Substring(versionInfo.InformationalVersion.IndexOf("rc.",StringComparison.Ordinal)):"v"+versionInfo.InformationalVersion;
+  Record("release-version-badge",badge.text==badgeVersion&&badge.preferredWidth<=badge.rectTransform.rect.width,new{badge.text,width=badge.rectTransform.rect.width,preferred=badge.preferredWidth});
   foreach (var language in new[] { "zh-CN", "en" })
   {
    DanceSettingsHandler.Instance.data.language=language;DanceLocale.Set(language); yield return null;
@@ -840,7 +844,11 @@ public partial class DanceAudit : BaseUnityPlugin
   ui.SetCameraEnabled(false);ui.playerCore.playlistManager.Search="";ui.playerCore.playlistManager.Format="";ui.playerCore.playlistManager.SetPlaylistType(DancePlaylistManager.PlaylistType.All);ui.playerCore.playlistManager.ApplyFilters();var descriptor=ui.resourceManager.Descriptors.Values.First(d=>d.Id.IndexOf("03-catch-the-wave",StringComparison.OrdinalIgnoreCase)>=0);
   bool started=ui.playerCore.PlayDanceByIndex(ui.playerCore.playlistManager.GetIndexByFile(descriptor.Id));float deadline=Time.realtimeSinceStartup+15;while(ui.playerCore.IsLoading&&Time.realtimeSinceStartup<deadline)yield return null;Record("native-follow-load",started&&ui.playerCore.CurrentVmdPlayer!=null&&ui.playerCore.CurrentVmdPlayer.IsLoaded,ui.playerCore.LastError);ui.playerCore.TogglePause();ui.playerCore.Seek(0);yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();follow.UpdateBaseAndInitial();
   var panelOrigin=rect.anchoredPosition;var baselineWorld=ui.avatarHelper.CurrentAvatarHips.position;var origin=Camera.main.WorldToScreenPoint(baselineWorld);ui.playerCore.Seek(15/ui.playerCore.Duration);yield return new WaitForEndOfFrame();yield return new WaitForEndOfFrame();
-  var current=Camera.main.WorldToScreenPoint(ui.avatarHelper.CurrentAvatarHips.position);var expected=(Vector2)(current-Camera.main.WorldToScreenPoint(baselineWorld))/ui.TargetCanvas.scaleFactor;var actual=rect.anchoredPosition-panelOrigin;Record("native-panel-follow",expected.sqrMagnitude>0.1f&&Vector2.Distance(actual,expected)<0.5f,new{panelDelta=actual.ToString(),expected=expected.ToString(),time=ui.playerCore.PlaybackTime,baseline=Vec(baselineWorld),hips=Vec(ui.avatarHelper.CurrentAvatarHips.position),resource=descriptor.Id});yield return Capture("native-mini-follow");
+  var current=Camera.main.WorldToScreenPoint(ui.avatarHelper.CurrentAvatarHips.position);var expected=(Vector2)(current-Camera.main.WorldToScreenPoint(baselineWorld))/ui.TargetCanvas.scaleFactor;
+  // The panel must remain inside its canvas even when the character moves farther.
+  var bounds=ui.TargetCanvas.GetComponent<RectTransform>().rect.size;var half=rect.rect.size/2;var target=panelOrigin+expected;
+  target.x=Mathf.Clamp(target.x,Mathf.Min(0,-bounds.x/2+half.x),Mathf.Max(0,bounds.x/2-half.x));target.y=Mathf.Clamp(target.y,Mathf.Min(0,-bounds.y/2+half.y),Mathf.Max(0,bounds.y/2-half.y));expected=target-panelOrigin;
+  var actual=rect.anchoredPosition-panelOrigin;Record("native-panel-follow",expected.sqrMagnitude>0.1f&&Vector2.Distance(actual,expected)<0.5f,new{panelDelta=actual.ToString(),expected=expected.ToString(),time=ui.playerCore.PlaybackTime,baseline=Vec(baselineWorld),hips=Vec(ui.avatarHelper.CurrentAvatarHips.position),resource=descriptor.Id});yield return Capture("native-mini-follow");
   ui.playerCore.StopPlay();window.SetEnabled(true);distance.enabled=true;settings.data.enableDanceUIFollow=false;follow.enabled=false;ui.Window.SetMiniMode(false);yield return null;
  }
  private IEnumerator ScrollChecks()

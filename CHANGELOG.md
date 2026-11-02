@@ -1,5 +1,12 @@
 # Changelog
 
+## v0.2.1
+
+- Preserve the authored starting direction of VMD motions, including motions that begin facing sideways. Explicit facing lock remains available.
+- Scale IK tolerances and reach margins with leg length to improve playback at very small display sizes.
+- Prevent seeking from applying a disabled MMD camera, including legacy `.unity3d` dances.
+- Interpolate continuous movement in densely baked VMD camera tracks between render frames, while retaining isolated cuts and abrupt transitions.
+
 ## v0.2.0: changes since 0.1
 
 ### Installation

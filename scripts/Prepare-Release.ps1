@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory=$true)][string]$PluginBuildDirectory,
     [Parameter(Mandatory=$true)][string]$CompleteBuildDirectory,
     [Parameter(Mandatory=$true)][string]$OutputDirectory,
-    [string]$Version = '0.2.0',
+    [string]$Version = '0.2.1',
     [string]$RepositoryUrl = 'https://github.com/maoxig/MateEngine-CustomDancePlayer'
 )
 $ErrorActionPreference = 'Stop'
@@ -26,7 +26,14 @@ New-Item -ItemType Directory -Path $OutputDirectory | Out-Null
 Copy-Item -LiteralPath (Join-Path $PluginBuildDirectory "CustomDancePlayer-$Version.zip"),
     (Join-Path $CompleteBuildDirectory "CustomDancePlayer-$Version-With-BepInEx.zip") -Destination $OutputDirectory
 $taskRepo = Split-Path $PSScriptRoot -Parent
-$taskNotes = Get-Content -LiteralPath (Join-Path $taskRepo 'CHANGELOG_zh.md') -Raw
+function Get-VersionNotes([string]$Path, [string]$ReleaseVersion) {
+    $taskText = Get-Content -LiteralPath $Path -Raw
+    $taskPattern = '(?ms)^## v' + [regex]::Escape($ReleaseVersion) + '(?=[:：\s]|$)[^\r\n]*\r?\n(.*?)(?=^## v|\z)'
+    $taskMatch = [regex]::Match($taskText, $taskPattern)
+    if (-not $taskMatch.Success) { throw "Missing changelog section for $ReleaseVersion in $Path" }
+    return $taskMatch.Groups[1].Value.Trim()
+}
+$taskNotes = Get-VersionNotes (Join-Path $taskRepo 'CHANGELOG_zh.md') $Version
 # Release pages resolve relative links differently from repository Markdown.
 $taskNotes = $taskNotes.Replace('(docs/', "($RepositoryUrl/blob/v$Version/docs/")
 $taskIntro = @"
@@ -35,9 +42,9 @@ $taskIntro = @"
 [使用说明]($RepositoryUrl/blob/v$Version/README_zh.md) · [安装与迁移]($RepositoryUrl/blob/v$Version/docs/user/INSTALL_0.2.md)
 
 "@
-$taskNotes = $taskNotes.Replace("## v${Version}：相比 0.1 的变化", "## v${Version}：相比 0.1 的变化`n`n$taskIntro")
+$taskNotes = "# CustomDancePlayer v$Version`n`n$taskIntro`n`n$taskNotes"
 Set-Content -LiteralPath (Join-Path $OutputDirectory 'RELEASE_NOTES_zh.md') -Value $taskNotes -Encoding utf8
-$taskEnglish = Get-Content -LiteralPath (Join-Path $taskRepo 'CHANGELOG.md') -Raw
+$taskEnglish = Get-VersionNotes (Join-Path $taskRepo 'CHANGELOG.md') $Version
 $taskEnglish = $taskEnglish.Replace('(docs/', "($RepositoryUrl/blob/v$Version/docs/")
 $taskEnglishIntro = @"
 For a first installation, download the With-BepInEx archive, exit the game, and extract everything beside MateEngineX.exe. When upgrading from 0.1.x, run Run-OldVersionMigration.cmd before starting the game. Use the smaller plugin archive to update an existing compatible BepInEx installation.
@@ -45,7 +52,7 @@ For a first installation, download the With-BepInEx archive, exit the game, and 
 [User guide]($RepositoryUrl/blob/v$Version/README.md) · [Installation and migration]($RepositoryUrl/blob/v$Version/docs/user/INSTALL_0.2.md)
 
 "@
-$taskEnglish = $taskEnglish.Replace("## v${Version}: changes since 0.1", "## v${Version}: changes since 0.1`n`n$taskEnglishIntro")
+$taskEnglish = "# CustomDancePlayer v$Version`n`n$taskEnglishIntro`n`n$taskEnglish"
 Set-Content -LiteralPath (Join-Path $OutputDirectory 'RELEASE_NOTES.md') -Value $taskEnglish -Encoding utf8
 Get-ChildItem -LiteralPath $OutputDirectory -Filter '*.zip' | Sort-Object Name | ForEach-Object {
     (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant() + '  ' + $_.Name

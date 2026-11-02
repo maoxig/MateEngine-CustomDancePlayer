@@ -104,6 +104,9 @@ namespace CustomDancePlayer
 
         public void ApplyPose()
         {
+            // UI seeking calls this method directly; disabled components do not
+            // receive LateUpdate, but their public methods can still be invoked.
+            if (!enabled) return;
             if (DanceNativeMenus.IsOpen())
             {
                 AvatarHelper?.playerCore?.CurrentVmdPlayer?.CheckCameraOwnership();
