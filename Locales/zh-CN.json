@@ -106,7 +106,6 @@
   "library.folder.label": "目录",
   "library.folder": "切换目录",
   "settings.vmdFootIk": "全局 脚步 IK（包未指定时使用）",
-  "settings.vmdUpright": "全局 保持 VMD 角色直立（去除整体俯仰 / 侧倾）",
   "settings.vmdFacing": "全局 锁定播放前正面朝向（忽略舞蹈整体转身）",
   "error.native": "VMD 播放无法启动：{0}。请重新安装完整插件，或检查所选参考 PMX。",
   "window.mini": "切换到迷你播放器",

@@ -94,11 +94,10 @@ namespace CustomDancePlayer
             if (native != null) native.ApplyIk = effective;
             if (managed != null) { managed.ApplyLegIk = effective; managed.ApplyToeIk = effective; }
         }
-        public void SetVmdRootOptions(bool upright, bool lockFacing)
+        public void SetVmdFacingLock(bool lockFacing)
         {
-            settings.data.keepVmdRootUpright = upright;
             settings.data.lockVmdFacingForward = lockFacing;
-            if (native != null) { native.KeepBodyUpright = upright; native.LockBodyYaw = lockFacing; }
+            if (native != null) native.LockBodyYaw = lockFacing;
         }
         public bool IsPlaying { get => DanceSettingsHandler.Existing != null && DanceSettingsHandler.Existing.data.isPlaying; set { if (DanceSettingsHandler.Existing != null) DanceSettingsHandler.Existing.data.isPlaying=value; } }
         public float Duration => native != null ? native.Duration : managed != null ? managed.Duration : resourceManager.CurrentAnimationClip != null ? resourceManager.CurrentAnimationClip.length : 0;
@@ -139,7 +138,7 @@ namespace CustomDancePlayer
             hostAnimator=leasedAnimator.GetComponent<AvatarAnimatorController>();
             if(hostAnimator!=null){hostAnimatorWasEnabled=hostAnimator.enabled;hostAnimator.enabled=false;}
             blendshapes = leasedAnimator.GetComponent<UniversalBlendshapes>();
-            originalExpression = DanceExpressionState.Capture(avatarHelper.CurrentAvatar);
+            originalExpression = DanceExpressionState.Capture(avatarHelper.CurrentAvatar, blendshapes);
             if (blendshapes != null)
             {
                 originalBlendshapesEnabled = blendshapes.enabled;
@@ -147,6 +146,7 @@ namespace CustomDancePlayer
                 // must remain enabled to apply those inputs to VRM 0.x / 1.x faces.
                 blendshapes.enabled = !resourceManager.IsVmdResource && avatarHelper.TargetSMR == null;
             }
+            originalExpression.ClearHostFace(leasedAnimator);
             if (!resourceManager.IsVmdResource) { avatarHelper.PrepareBodyForDance(); if (avatarHelper.TargetSMR == null) avatarHelper.SetupDummyForDance(); avatarHelper.ResetMMDCameraHierarchy(); }
             IsPlaying = true; Paused = false; LastError = null; endQueued = false;
             int ticket = ++generation; loading = StartCoroutine(StartSequence(ticket)); DanceSettingsHandler.OnSettingChanged(); return true;
@@ -168,7 +168,7 @@ namespace CustomDancePlayer
                     native.NativeLibraryPath = NativeMmdSession.FindDefaultLibraryPath(); native.NativePhysicsMode = VmdNativePhysicsMode.Off;
                     native.UseExternalCameraScale=true;native.ExternalCameraGroundHeight=avatarHelper.MeasureAvatarGroundHeight();
                     native.ReferenceImportScale = resourceManager.CurrentVmdPositionScale ?? 0.08f; native.RespectAnimatorSpeed = false; native.Loop = false;
-                    native.ApplyIk = resourceManager.CurrentVmdFootIk ?? settings.data.enableVmdFootIk; native.KeepBodyUpright = settings.data.keepVmdRootUpright; native.LockBodyYaw = settings.data.lockVmdFacingForward;
+                    native.ApplyIk = resourceManager.CurrentVmdFootIk ?? settings.data.enableVmdFootIk; native.LockBodyYaw = settings.data.lockVmdFacingForward;
                     native.CameraDistanceScale = GetEffectiveCameraScale();
                     Task<VmdNativePreparedData> prepareTask = null;
                     try { prepareTask = VmdNativePmxPlayer.PrepareCachedAsync(pmx, resourceManager.CurrentVmdPath, resourceManager.CurrentVmdOverlayPaths); }

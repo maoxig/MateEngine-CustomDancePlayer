@@ -228,7 +228,8 @@ namespace Maoxig.RuntimeVmd
         private static VmdBezierCurve ParseSequentialCurve(byte[] bytes, int channel)
         {
             int offset = channel * 4;
-            return new VmdBezierCurve(bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3]);
+            // Camera VMD stores x1, x2, y1, y2; the curve takes x1, y1, x2, y2.
+            return new VmdBezierCurve(bytes[offset], bytes[offset + 2], bytes[offset + 1], bytes[offset + 3]);
         }
 
         private static uint ReadCount(BinaryReader reader, string section, int minimumItemBytes)

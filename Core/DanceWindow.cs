@@ -228,8 +228,7 @@ namespace CustomDancePlayer
             SettingsSection(content,"settings.section.playback");
             DanceUi.Toggle(content, DanceLocale.T("settings.autoplay"), data.autoPlayOnStart, v => { data.autoPlayOnStart = v; DanceSettingsHandler.OnSettingChanged(); });
             DanceUi.Toggle(content,DanceLocale.T("settings.vmdFootIk"),data.enableVmdFootIk,v=>{owner.playerCore.SetVmdFootIk(v);DanceSettingsHandler.OnSettingChanged();});
-            DanceUi.Toggle(content,DanceLocale.T("settings.vmdUpright"),data.keepVmdRootUpright,v=>{owner.playerCore.SetVmdRootOptions(v,data.lockVmdFacingForward);DanceSettingsHandler.OnSettingChanged();});
-            DanceUi.Toggle(content,DanceLocale.T("settings.vmdFacing"),data.lockVmdFacingForward,v=>{owner.playerCore.SetVmdRootOptions(data.keepVmdRootUpright,v);DanceSettingsHandler.OnSettingChanged();});
+            DanceUi.Toggle(content,DanceLocale.T("settings.vmdFacing"),data.lockVmdFacingForward,v=>{owner.playerCore.SetVmdFacingLock(v);DanceSettingsHandler.OnSettingChanged();});
             var delay=DanceUi.Row(content);DanceUi.Label(delay.transform,DanceLocale.T("settings.delay"),15,200);
             var delayText=DanceUi.Label(delay.transform,data.animationStartDelay.ToString("0.00")+" s",15,80);
             DanceUi.Slider(delay.transform,0,1,data.animationStartDelay,v=>{data.animationStartDelay=v;delayText.text=v.ToString("0.00")+" s";DanceSettingsHandler.OnSettingChanged();});

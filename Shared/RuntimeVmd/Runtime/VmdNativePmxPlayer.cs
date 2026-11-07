@@ -85,7 +85,6 @@ namespace Maoxig.RuntimeVmd
         [SerializeField] private bool applyRootMotion = true;
         [SerializeField] private bool applyMorphs = true;
         [SerializeField] private bool applyIk = true;
-        [SerializeField] private bool keepBodyUpright = true;
         [SerializeField] private bool lockBodyYaw = false;
         [SerializeField] private bool directBoneRetargeting = true;
         [SerializeField] private bool targetCalibratedRetargeting = true;
@@ -214,7 +213,6 @@ namespace Maoxig.RuntimeVmd
         public bool ApplyRootMotion { get { return applyRootMotion; } set { applyRootMotion = value; } }
         public bool ApplyMorphs { get { return applyMorphs; } set { applyMorphs = value; } }
         public bool ApplyIk { get { return applyIk; } set { applyIk = value; } }
-        public bool KeepBodyUpright { get { return keepBodyUpright; } set { keepBodyUpright = value; } }
         public bool LockBodyYaw { get { return lockBodyYaw; } set { lockBodyYaw = value; } }
         public bool DirectBoneRetargeting { get { return directBoneRetargeting; } set { directBoneRetargeting = value; } }
         public bool TargetCalibratedRetargeting { get { return targetCalibratedRetargeting; } set { targetCalibratedRetargeting = value; } }
@@ -844,11 +842,6 @@ namespace Maoxig.RuntimeVmd
                     sourceRestPose.bodyRotation,
                     sampledPose.bodyRotation,
                     targetRestPose.bodyRotation);
-                if (keepBodyUpright)
-                {
-                    float yaw = lockBodyYaw ? 0f : LastSourceBodyYawFromRest;
-                    outputPose.bodyRotation = targetRestPose.bodyRotation * Quaternion.AngleAxis(yaw, Vector3.up);
-                }
             }
             else
             {
@@ -1267,11 +1260,9 @@ namespace Maoxig.RuntimeVmd
             LastAppliedBodyYawFromRest = SignedPlanarYaw(
                 directHipsBinding.TargetBindWorldRotation,
                 directHipsBinding.Target.rotation);
-            LastAppliedBodyTiltDegrees = keepBodyUpright
-                ? 0f
-                : AngleBetween(
-                    directHipsBinding.TargetBindWorldRotation * Vector3.up,
-                    directHipsBinding.Target.rotation * Vector3.up);
+            LastAppliedBodyTiltDegrees = AngleBetween(
+                directHipsBinding.TargetBindWorldRotation * Vector3.up,
+                directHipsBinding.Target.rotation * Vector3.up);
             LastBodyYawRetargetError = Mathf.Abs(Mathf.DeltaAngle(
                 LastSourceBodyYawFromRest,
                 LastAppliedBodyYawFromRest));
@@ -1475,13 +1466,10 @@ namespace Maoxig.RuntimeVmd
                 initialRetargetRootYaw = rawYaw;
                 hasInitialRetargetRootYaw = true;
             }
-            if (!keepBodyUpright && !lockBodyYaw) return;
-
-            // Upright removes root tilt; yaw belongs to the choreography.
-            // Only the explicit facing lock suppresses authored root turns.
-            float yaw = lockBodyYaw ? 0f : rawYaw;
-            Quaternion desired = Quaternion.AngleAxis(yaw, Vector3.up) * retargetRootBindWorldRotation;
-            retargetRootCorrection = desired * Quaternion.Inverse(retargetRootBone.rotation);
+            // The direct path locks yaw once about the moving Center/Waist.
+            // Without that pivot, cancel only the direction root's yaw.
+            if (lockBodyYaw && (!IsUsingDirectBoneRetargeting || directBodyCommonBone == null))
+                retargetRootCorrection = Quaternion.AngleAxis(-rawYaw, Vector3.up);
         }
 
         private Quaternion CorrectSourceRotation(Quaternion rotation)

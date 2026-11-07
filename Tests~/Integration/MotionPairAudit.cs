@@ -22,7 +22,7 @@ public partial class DanceAudit
    if(core.CurrentVmdPlayer!=null&&Environment.GetCommandLineArgs().Contains("--cdp-converter-reference"))
     core.CurrentVmdPlayer.Load("F:/Program Files/7D2D/MMD2VRM/Assets/UnityMMDConverter/Model/Default.pmx",ui.resourceManager.CurrentVmdPath,ui.resourceManager.CurrentVmdOverlayPaths);
    if(core.CurrentVmdPlayer!=null&&Environment.GetCommandLineArgs().Contains("--cdp-canonical-reference")) {
-    core.CurrentVmdPlayer.DirectBoneRetargeting=false;core.CurrentVmdPlayer.TargetCalibratedRetargeting=false;core.CurrentVmdPlayer.KeepBodyUpright=false;
+    core.CurrentVmdPlayer.DirectBoneRetargeting=false;core.CurrentVmdPlayer.TargetCalibratedRetargeting=false;
    }
    var animator=ui.avatarHelper.CurrentAnimator;var root=animator.transform;var roles=new[]{HumanBodyBones.Hips,HumanBodyBones.LeftUpperLeg,HumanBodyBones.LeftLowerLeg,HumanBodyBones.LeftFoot,HumanBodyBones.RightUpperLeg,HumanBodyBones.RightLowerLeg,HumanBodyBones.RightFoot};
    var bones=roles.Select(animator.GetBoneTransform).ToArray();var samples=new List<object>();

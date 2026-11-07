@@ -231,7 +231,6 @@ namespace CustomDancePlayer
             // persist the retired backend selector. Playback always uses PMX.
             [JsonIgnore] public bool useNativeVmd = true;
             public bool enableVmdFootIk = true;
-            public bool keepVmdRootUpright = true;
             public bool lockVmdFacingForward = false;
             public bool enableMMDCamera = false;
             // Remembers the user's window-follow preference while the MMD camera

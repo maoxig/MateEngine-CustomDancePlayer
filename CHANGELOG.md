@@ -1,5 +1,11 @@
 # Changelog
 
+## v0.2.2
+
+- Clear lingering avatar expressions, such as a blink or lip shape, before the dance starts. Restore the host's expression state when playback stops.
+- Read VMD camera curve control points in the correct order to reduce stutter in densely keyed camera moves such as 404. Existing dance packages work as-is.
+- Remove the keep-upright option so VMD motions retain authored pitch and roll. Facing lock remains available.
+
 ## v0.2.1
 
 - Preserve the authored starting direction of VMD motions, including motions that begin facing sideways. Explicit facing lock remains available.

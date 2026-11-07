@@ -32,6 +32,8 @@
     <ProjectReference Include="Shared\RuntimeVmd\RuntimeVmd.csproj" AdditionalProperties="GameManagedDir=$(GameManagedDir)" />
     <Reference Include="System.IO.Compression" />
     <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="VRM"><HintPath>$(GameManagedDir)\VRM.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="VRM10"><HintPath>$(GameManagedDir)\VRM10.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>$(GameManagedDir)\Assembly-CSharp.dll</HintPath>
     </Reference>

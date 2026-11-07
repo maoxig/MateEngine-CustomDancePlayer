@@ -22,6 +22,8 @@ public partial class DanceAudit : BaseUnityPlugin
  {
   if (!Environment.GetCommandLineArgs().Contains("--cdp-audit")) return;
   StartCoroutine(Environment.GetCommandLineArgs().Contains("--cdp-dialog-only") ? DialogOnly() :
+   Environment.GetCommandLineArgs().Contains("--cdp-expression-lease") ? ExpressionLeaseOnly() :
+   Environment.GetCommandLineArgs().Contains("--cdp-camera-curve1107") ? CameraCurve1107() :
    Environment.GetCommandLineArgs().Contains("--cdp-camera-cadence") ? CameraCadenceOnly() :
    Environment.GetCommandLineArgs().Contains("--cdp-regression1103") ? Regression1103Only() :
    Environment.GetCommandLineArgs().Contains("--cdp-release-ui-audit") ? ReleaseUiOnly() :
@@ -815,11 +817,11 @@ public partial class DanceAudit : BaseUnityPlugin
  private IEnumerator VmdRootAndIkChecks()
  {
   var core=ui.playerCore;var data=DanceSettingsHandler.Instance.data;var descriptor=ui.resourceManager.Descriptors.Values.First(d=>d.Format=="vmdance"&&d.Title.IndexOf("Angelite",StringComparison.OrdinalIgnoreCase)>=0);
-  data.useNativeVmd=true;core.SetVmdFootIk(false);core.SetVmdRootOptions(true,false);core.PlayDanceByIndex(core.playlistManager.GetIndexByFile(descriptor.Id));yield return new WaitForSecondsRealtime(2);core.TogglePause();core.Seek(15/core.Duration);yield return new WaitForEndOfFrame();
-  var player=core.CurrentVmdPlayer;Record("vmd-foot-ik-off",player!=null&&!player.LastIkSolveEnabled);Record("vmd-root-upright",player!=null&&player.LastAppliedBodyTiltDegrees<0.1f,player==null?-1:player.LastAppliedBodyTiltDegrees);
+  data.useNativeVmd=true;core.SetVmdFootIk(false);core.SetVmdFacingLock(false);core.PlayDanceByIndex(core.playlistManager.GetIndexByFile(descriptor.Id));yield return new WaitForSecondsRealtime(2);core.TogglePause();core.Seek(15/core.Duration);yield return new WaitForEndOfFrame();
+  var player=core.CurrentVmdPlayer;Record("vmd-foot-ik-off",player!=null&&!player.LastIkSolveEnabled);
   core.SetVmdFootIk(true);core.Seek(16/core.Duration);yield return new WaitForEndOfFrame();Record("vmd-foot-ik-on",player!=null&&player.LastIkSolveEnabled&&player.LastNativeIkEnabledCount>0&&player.LastTargetLegIkSolvedCount==2,new{enabled=player?.LastNativeIkEnabledCount,targetLegs=player?.LastTargetLegIkSolvedCount});
-  core.SetVmdRootOptions(true,true);core.Seek(20/core.Duration);yield return new WaitForEndOfFrame();Record("vmd-facing-lock",player!=null&&Math.Abs(player.LastAppliedBodyYawFromRest)<0.1f,player==null?-999:player.LastAppliedBodyYawFromRest);
-  core.StopPlay();core.SetVmdFootIk(true);core.SetVmdRootOptions(true,false);
+  core.SetVmdFacingLock(true);core.Seek(20/core.Duration);yield return new WaitForEndOfFrame();Record("vmd-facing-lock",player!=null&&Math.Abs(player.LastAppliedBodyYawFromRest)<0.1f,player==null?-999:player.LastAppliedBodyYawFromRest);
+  core.StopPlay();core.SetVmdFootIk(true);core.SetVmdFacingLock(false);
  }
  private IEnumerator Expressions()
  {

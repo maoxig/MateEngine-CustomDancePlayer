@@ -7,6 +7,7 @@
   <Reference Include="Maoxig.RuntimeVmd"><HintPath>$(AuditGame)\BepInEx\plugins\CustomDancePlayer\Maoxig.RuntimeVmd.dll</HintPath><Private>false</Private></Reference>
   <Reference Include="Assembly-CSharp"><HintPath>$(AuditGame)\MateEngineX_Data\Managed\Assembly-CSharp.dll</HintPath><Private>false</Private></Reference>
   <Reference Include="VRM"><HintPath>$(AuditGame)\MateEngineX_Data\Managed\VRM.dll</HintPath><Private>false</Private></Reference>
+  <Reference Include="VRM10"><HintPath>$(AuditGame)\MateEngineX_Data\Managed\VRM10.dll</HintPath><Private>false</Private></Reference>
   <Reference Include="Newtonsoft.Json"><HintPath>$(AuditGame)\MateEngineX_Data\Managed\Newtonsoft.Json.dll</HintPath><Private>false</Private></Reference>
   <Reference Include="UnityEngine"><HintPath>$(AuditGame)\MateEngineX_Data\Managed\UnityEngine.dll</HintPath><Private>false</Private></Reference>
   <Reference Include="UnityEngine.CoreModule"><HintPath>$(AuditGame)\MateEngineX_Data\Managed\UnityEngine.CoreModule.dll</HintPath><Private>false</Private></Reference>

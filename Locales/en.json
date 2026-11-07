@@ -106,7 +106,6 @@
   "library.folder.label": "Folder",
   "library.folder": "Change folder",
   "settings.vmdFootIk": "Global foot IK (package default)",
-  "settings.vmdUpright": "Global keep VMD avatar upright",
   "settings.vmdFacing": "Global lock pre-play facing",
   "error.native": "VMD playback could not start: {0} Reinstall the complete plugin or check the selected reference PMX.",
   "window.mini": "Mini player",

@@ -137,8 +137,8 @@ namespace Maoxig.RuntimeVmd
         {
             int offset = channel * 4;
             output[offset] = curve.X1;
-            output[offset + 1] = curve.Y1;
-            output[offset + 2] = curve.X2;
+            output[offset + 1] = curve.X2;
+            output[offset + 2] = curve.Y1;
             output[offset + 3] = curve.Y2;
         }
 

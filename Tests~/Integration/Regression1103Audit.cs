@@ -17,7 +17,7 @@ public partial class DanceAudit
   yield return new WaitForSecondsRealtime(3);yield return WaitForLibrary();var core=ui.playerCore;core.InitPlayer();core.StopPlay();ui.SetPanelVisible(false);ui.SetCameraEnabled(false);
   string model=Environment.GetCommandLineArgs().Contains("--cdp-model-kokoro")?"E:/SteamLibrary/steamapps/common/MateEngine/Models/Kokoro_Amamiya.me":Environment.GetCommandLineArgs().Contains("--cdp-model-ayrina")?"Ayrina":"C:/Users/xp/AppData/LocalLow/Shinymoon/MateEngineX/Steam Workshop/YYBMikuV2.me";
   UnityEngine.Object.FindFirstObjectByType<VRMLoader>().LoadVRM(model);yield return new WaitForSecondsRealtime(3);
-  var data=DanceSettingsHandler.Instance.data;data.keepVmdRootUpright=true;data.lockVmdFacingForward=false;data.enableVmdFootIk=true;data.danceVolume=0;
+  var data=DanceSettingsHandler.Instance.data;data.lockVmdFacingForward=false;data.enableVmdFootIk=true;data.danceVolume=0;
   var logs=new List<object>();var actor=ui.avatarHelper.CurrentAvatar.transform;var originalScale=actor.localScale;
   string root="F:/BaiduNetdiskDownload/MMD与模型/KiiiKiii - 404 (New Era) (Solo Motion) by Winter_Jirachee";
   var roles=new[]{HumanBodyBones.Hips,HumanBodyBones.Head,HumanBodyBones.LeftUpperLeg,HumanBodyBones.LeftLowerLeg,HumanBodyBones.LeftFoot,HumanBodyBones.RightUpperLeg,HumanBodyBones.RightLowerLeg,HumanBodyBones.RightFoot};
@@ -61,12 +61,23 @@ public partial class DanceAudit
   }
   var synthetic=new VmdMotion{ModelName="Orientation regression"};
   var angles=new[]{30f,90f,-45f};
-  for(int i=0;i<angles.Length;i++)synthetic.BoneFrames.Add(new VmdBoneKeyframe{BoneName="全ての親",FrameNumber=(uint)(i*30),Position=Vector3.zero,Rotation=Quaternion.Euler(0,angles[i],0)});
+  for(int i=0;i<angles.Length;i++)synthetic.BoneFrames.Add(new VmdBoneKeyframe{BoneName="全ての親",FrameNumber=(uint)(i*30),Position=Vector3.zero,Rotation=Quaternion.Euler(25,angles[i],0)});
   string syntheticPath=Path.Combine(output,"authored-root.vmd");File.WriteAllBytes(syntheticPath,VmdWriter.Write(synthetic));
   string syntheticPackage=Path.Combine(ui.resourceManager.LibraryFolder,"Regression1103","authored-root.vmdance");VmdDancePackageBuilder.Build(new VmdDanceDraft{Id="authored-root",MotionVmd=syntheticPath},syntheticPackage);
   ui.RefreshAndPlayPackage(syntheticPackage);yield return Wait1103();if(!core.Paused)core.TogglePause();
-  for(int i=0;i<angles.Length;i++){core.SetVmdRootOptions(true,false);core.Seek(i/core.Duration);Record("authored-allparent-yaw-"+i,Math.Abs(Mathf.DeltaAngle(angles[i],core.CurrentVmdPlayer.LastAppliedBodyYawFromRest))<.1f,new{expected=angles[i],actual=core.CurrentVmdPlayer.LastAppliedBodyYawFromRest});core.SetVmdRootOptions(true,true);core.Seek(i/core.Duration);Record("explicit-facing-lock-"+i,Math.Abs(core.CurrentVmdPlayer.LastAppliedBodyYawFromRest)<.1f);}
-  core.SetVmdRootOptions(true,false);core.StopPlay();
+  for(int i=0;i<angles.Length;i++)
+  {
+   core.SetVmdFacingLock(false);
+   core.Seek(i/core.Duration);
+   var player=core.CurrentVmdPlayer;
+   float tilt=player.LastAppliedBodyTiltDegrees;
+   Record("authored-allparent-yaw-"+i,Math.Abs(Mathf.DeltaAngle(angles[i],player.LastAppliedBodyYawFromRest))<.1f,new{expected=angles[i],actual=player.LastAppliedBodyYawFromRest});
+   Record("authored-allparent-tilt-"+i,Math.Abs(tilt-25f)<.1f,new{tilt});
+   core.SetVmdFacingLock(true);
+   core.Seek(i/core.Duration);
+   Record("explicit-facing-lock-"+i,Math.Abs(player.LastAppliedBodyYawFromRest)<.1f&&Math.Abs(player.LastAppliedBodyTiltDegrees-tilt)<.1f,new{yaw=player.LastAppliedBodyYawFromRest,tilt=player.LastAppliedBodyTiltDegrees});
+  }
+  core.SetVmdFacingLock(false);core.StopPlay();
   core.playlistManager.Search="";core.playlistManager.Format="";core.playlistManager.SetPlaylistType(DancePlaylistManager.PlaylistType.All);core.playlistManager.ApplyFilters();
   var legacy=ui.resourceManager.Descriptors.Values.First(d=>d.Id.Contains("MMD-CatchTheWave.unity3d"));core.PlayDanceByIndex(core.playlistManager.GetIndexByFile(legacy.Id));yield return Wait1103();if(!core.Paused)core.TogglePause();ui.SetCameraEnabled(false);yield return null;
   var main=Camera.main;var position=main.transform.position;var facing=main.transform.rotation;var matrix=main.projectionMatrix;

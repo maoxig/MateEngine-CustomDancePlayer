@@ -80,6 +80,27 @@ namespace Maoxig.RuntimeVmd
             }
             return clips;
         }
+        public static void ClearFaceTargets(Animator animator, string[] channels)
+        {
+            foreach (var clip in ReadClips(animator))
+            {
+                if (!Array.Exists(channels, channel => VmdMorphNameMatcher.IsMatch(clip.Preset, channel))) continue;
+                foreach (var target in clip.Targets)
+                    target.Renderer.SetBlendShapeWeight(target.Index, 0f);
+            }
+            foreach (var renderer in animator.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                var mesh = renderer.sharedMesh;
+                if (mesh == null) continue;
+                for (int i = 0; i < mesh.blendShapeCount; i++)
+                {
+                    if (renderer.GetBlendShapeWeight(i) == 0f) continue;
+                    string name = mesh.GetBlendShapeName(i);
+                    if (Array.Exists(channels, channel => VmdMorphNameMatcher.IsMatch(name, channel)))
+                        renderer.SetBlendShapeWeight(i, 0f);
+                }
+            }
+        }
         public static VmdExpressionBindings Create(Animator animator,IEnumerable<string> morphNames)
         {
             var result=new VmdExpressionBindings();if(animator==null)return result;
